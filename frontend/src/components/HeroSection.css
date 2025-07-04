@@ -1,0 +1,307 @@
+/* Hero Section Styles */
+.hero-container {
+  position: relative;
+  overflow: hidden;
+  background-color: #F8FAFC;
+  background-image: radial-gradient(circle at 20% 100%, rgba(37, 99, 235, 0.1) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 0%, rgba(37, 99, 235, 0.05) 0%, transparent 50%);
+}
+
+.animated-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 0.6;
+}
+
+.animated-bg::before,
+.animated-bg::after {
+  content: '';
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: -50%;
+  left: -50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 60%);
+  animation: rotate 30s linear infinite;
+}
+
+.animated-bg::after {
+  animation: rotate 20s linear reverse infinite;
+  opacity: 0.5;
+}
+
+/* Particle animations */
+.particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  opacity: 0;
+  animation: particleFloat 3s infinite ease-in-out;
+}
+
+.particle:nth-child(odd) {
+  animation-duration: 4s;
+}
+
+.particle:nth-child(3n) {
+  animation-duration: 5s;
+}
+
+.particle:nth-child(3n + 1) {
+  animation-delay: 1s;
+}
+
+.particle:nth-child(3n + 2) {
+  animation-delay: 2s;
+}
+
+/* Hero content animations */
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+
+.hero-title {
+  opacity: 0;
+  animation: slideInLeft 1s forwards;
+  position: relative;
+}
+
+.hero-title::after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 0;
+  width: 60px;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0.5) 50%, transparent 100%);
+  animation: expandWidth 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards 1s;
+  border-radius: 2px;
+  box-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+.hero-subtitle {
+  opacity: 0;
+  animation: slideInLeft 1s forwards 0.3s;
+}
+
+.hero-buttons {
+  opacity: 0;
+  animation: fadeInUp 1s forwards 0.6s;
+}
+
+.hero-image {
+  opacity: 0;
+  animation: slideInRight 1s forwards 0.3s;
+  position: relative;
+}
+
+.hero-image::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0) 100%);
+  border-radius: 12px;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.hero-image:hover::before {
+  opacity: 1;
+}
+
+.hero-image img {
+  transform-style: preserve-3d;
+  perspective: 1000px;
+  transition: transform 0.5s ease;
+}
+
+.hero-image:hover img {
+  transform: rotateY(-5deg) rotateX(5deg);
+  filter: drop-shadow(30px 30px 40px rgba(0,0,0,0.3));
+}
+
+/* Keyframe Animations */
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes particleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) translateX(0);
+  }
+  50% {
+    opacity: 0.5;
+    transform: translateY(-20px) translateX(10px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes expandWidth {
+  from {
+    width: 0;
+  }
+  to {
+    width: 60px;
+  }
+}
+
+/* Glass effect for feature cards */
+.glass-effect {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+}
+
+.glass-effect:hover {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.2),
+              0 0 0 1px rgba(255, 255, 255, 0.5);
+  transform: translateY(-5px) scale(1.02);
+}
+
+/* Glowing dots background */
+.glowing-dots {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.glowing-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: white;
+  border-radius: 50%;
+  filter: blur(1px);
+  opacity: 0.3;
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1); opacity: 0.3; }
+  50% { transform: scale(1.5); opacity: 0.5; }
+  100% { transform: scale(1); opacity: 0.3; }
+}
+
+/* Feature card glow effect */
+.feature-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  background: linear-gradient(45deg, transparent 50%, rgba(255,255,255,0.5) 100%);
+  z-index: -1;
+  transition: opacity 0.3s ease;
+  opacity: 0;
+  border-radius: inherit;
+}
+
+.feature-card:hover::after {
+  opacity: 1;
+}
+
+/* Premium button effects */
+.hover-scale {
+  position: relative;
+  overflow: hidden;
+}
+
+.hover-scale::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 50%);
+  transition: width 0.4s ease, height 0.4s ease;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.hover-scale:hover::after {
+  width: 200px;
+  height: 200px;
+}
+
+/* Feature card enhancements */
+.feature-card {
+  position: relative;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(45deg, transparent 0%, rgba(255,255,255,0.1) 100%);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.feature-card:hover::before {
+  opacity: 1;
+}
+
+/* Responsive adjustments */
+@media (max-width: 960px) {
+  .hero-content {
+    text-align: center;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero-title::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
