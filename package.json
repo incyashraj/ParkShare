@@ -1,0 +1,56 @@
+{
+  "name": "parkshare",
+  "version": "1.0.0",
+  "description": "A comprehensive parking sharing platform with web and mobile applications",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "dev": "concurrently \"npm run backend\" \"npm run frontend\"",
+    "backend": "cd backend && npm start",
+    "frontend": "cd frontend && npm start",
+    "mobile": "cd ParkShareMobile && npm start",
+    "install-all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../ParkShareMobile && npm install",
+    "build": "cd frontend && npm run build",
+    "test": "concurrently \"cd backend && npm test\" \"cd frontend && npm test\"",
+    "clean": "rm -rf node_modules && cd backend && rm -rf node_modules && cd ../frontend && rm -rf node_modules && cd ../ParkShareMobile && rm -rf node_modules",
+    "setup": "npm run install-all",
+    "backend:dev": "cd backend && npm run dev",
+    "frontend:dev": "cd frontend && npm run dev",
+    "mobile:ios": "cd ParkShareMobile && npm run ios",
+    "mobile:android": "cd ParkShareMobile && npm run android"
+  },
+  "keywords": [
+    "parking",
+    "sharing",
+    "react",
+    "react-native",
+    "nodejs",
+    "express",
+    "socket.io",
+    "firebase",
+    "mobile",
+    "web"
+  ],
+  "author": "ParkShare Team",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/parkshare.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/parkshare/issues"
+  },
+  "homepage": "https://github.com/yourusername/parkshare#readme",
+  "workspaces": [
+    "frontend",
+    "backend",
+    "ParkShareMobile"
+  ]
+} 
