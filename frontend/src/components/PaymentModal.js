@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Dialog,
   DialogTitle,
@@ -9,17 +9,6 @@ import {
   Box,
   Alert,
   CircularProgress,
-  Chip,
-  Divider,
-  Grid,
-  Card,
-  CardContent,
-  useTheme,
-  TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem
 } from '@mui/material';
 import {
   loadStripe
@@ -31,13 +20,9 @@ import {
   useElements
 } from '@stripe/react-stripe-js';
 import { 
-  Payment, 
   CheckCircle, 
   Error, 
   AccessTime,
-  LocationOn,
-  Schedule,
-  AttachMoney
 } from '@mui/icons-material';
 
 // Initialize Stripe
@@ -61,7 +46,6 @@ const CARD_ELEMENT_OPTIONS = {
 const CheckoutForm = ({ bookingData, onSuccess, onError, onCancel }) => {
   const stripe = useStripe();
   const elements = useElements();
-  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [testMode, setTestMode] = useState(false);
@@ -176,25 +160,7 @@ const CheckoutForm = ({ bookingData, onSuccess, onError, onCancel }) => {
     }
   };
 
-  const getStatusIcon = () => {
-    if (testMode) {
-      return <CheckCircle sx={{ color: 'success.main', fontSize: 40 }} />;
-    } else if (error) {
-      return <Error sx={{ color: 'error.main', fontSize: 40 }} />;
-    } else {
-      return <AccessTime sx={{ color: 'warning.main', fontSize: 40 }} />;
-    }
-  };
 
-  const getStatusColor = () => {
-    if (testMode) {
-      return 'success';
-    } else if (error) {
-      return 'error';
-    } else {
-      return 'warning';
-    }
-  };
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 2 }}>
@@ -247,15 +213,13 @@ const CheckoutForm = ({ bookingData, onSuccess, onError, onCancel }) => {
 };
 
 const PaymentModal = ({ open, onClose, bookingData, onSuccess }) => {
-  const [error, setError] = useState(null);
-
   const handleSuccess = (result) => {
     onSuccess(result);
     onClose();
   };
 
   const handleError = (errorMessage) => {
-    setError(errorMessage);
+    console.error('Payment error:', errorMessage);
   };
 
   if (!bookingData) return null;
