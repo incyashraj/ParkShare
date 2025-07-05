@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { subDays, startOfMonth, endOfMonth } from 'date-fns';
 import {
   Box,
   Paper,
@@ -33,7 +34,6 @@ import {
   EmojiNature as EmojiNatureIcon,
   Security as SecurityIcon,
 } from '@mui/icons-material';
-import { format, subDays, startOfMonth, endOfMonth } from 'date-fns';
 
 const ParkingAnalytics = ({ user }) => {
   const [timeRange, setTimeRange] = useState('month');
@@ -447,4 +447,4 @@ const ParkingAnalytics = ({ user }) => {
   );
 };
 
-export default ParkingAnalytics; 
+export default ParkingAnalytics;

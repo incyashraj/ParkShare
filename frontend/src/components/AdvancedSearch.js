@@ -1,36 +1,6 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  TextField,
-  Slider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  Checkbox,
-  FormControlLabel,
-  Button,
-  Chip,
-  Grid,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  IconButton,
-  Divider,
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-  FilterList as FilterIcon,
-  Clear as ClearIcon,
-  ExpandMore as ExpandMoreIcon,
-  LocationOn as LocationIcon,
-  AttachMoney as MoneyIcon,
-  AccessTime as TimeIcon,
-  Security as SecurityIcon,
-  LocalParking as ParkingIcon,
-} from '@mui/icons-material';
+import { Box, Paper, Typography, TextField, Slider, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, Button, Chip, Grid, Accordion, AccordionSummary, AccordionDetails, IconButton, Divider,  } from '@mui/material';
+import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon, ExpandMore as ExpandMoreIcon, LocationOn as LocationIcon, AttachMoney as MoneyIcon, AccessTime as TimeIcon, Security as SecurityIcon, LocalParking as ParkingIcon,  } from '@mui/icons-material';
+import { useState } from 'react';
 
 const AdvancedSearch = ({ onSearch, onClear }) => {
   const [searchParams, setSearchParams] = useState({
@@ -298,4 +268,4 @@ const AdvancedSearch = ({ onSearch, onClear }) => {
   );
 };
 
-export default AdvancedSearch; 
+export default AdvancedSearch;

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../firebase';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import {
   Container,
   Typography,
@@ -19,7 +20,11 @@ import {
   Tabs,
   IconButton,
   Menu,
-  MenuItem
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
@@ -30,7 +35,7 @@ import {
   Phone
 } from '@mui/icons-material';
 import { format } from 'date-fns';
-import PaymentStatus from './PaymentStatus';
+import BookingCard from './BookingCard';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -58,6 +63,10 @@ function Profile() {
     verifiedEmail: '',
     verifiedMobile: ''
   });
+  const [cancellingBooking, setCancellingBooking] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [bookingToCancel, setBookingToCancel] = useState(null);
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -69,7 +78,7 @@ function Profile() {
 
   const handleLogout = async () => {
     try {
-      await auth.signOut();
+      await signOut(auth);
       navigate('/login');
     } catch (error) {
       setError('Failed to log out');
@@ -77,8 +86,66 @@ function Profile() {
     handleMenuClose();
   };
 
+  const handleCancelBooking = async (bookingId) => {
+    if (!currentUser) {
+      setError('You must be logged in to cancel a booking');
+      return;
+    }
+
+    // Show confirmation dialog
+    const booking = bookings.find(b => b.id === bookingId);
+    setBookingToCancel(booking);
+    setShowCancelConfirm(true);
+  };
+
+  const confirmCancelBooking = async () => {
+    if (!bookingToCancel) return;
+
+    setCancellingBooking(bookingToCancel.id);
+    setShowCancelConfirm(false);
+    
+    try {
+      const response = await fetch(`http://localhost:3001/bookings/${bookingToCancel.id}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to cancel booking');
+      }
+
+      const result = await response.json();
+      
+      // Update the bookings list by marking the booking as cancelled
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking.id === bookingToCancel.id 
+            ? { ...booking, status: 'cancelled', cancelledAt: new Date().toISOString() }
+            : booking
+        )
+      );
+
+      // Show success message
+      setError(null);
+      setSuccessMessage('Booking cancelled successfully! The parking spot is now available again.');
+      console.log('Booking cancelled successfully:', result);
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(''), 5000);
+      
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      setError('Failed to cancel booking. Please try again.');
+    } finally {
+      setCancellingBooking(null);
+      setBookingToCancel(null);
+    }
+  };
+
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (!user) {
         navigate('/login');
         return;
@@ -92,7 +159,7 @@ function Profile() {
     const fetchBookings = async (userId) => {
       setBookingsLoading(true);
       try {
-        const bookingsResponse = await fetch(`http://localhost:3001/bookings?userId=${userId}`);
+        const bookingsResponse = await fetch(`http://localhost:3001/users/${userId}/bookings`);
         if (!bookingsResponse.ok) {
           throw new Error('Failed to fetch bookings');
         }
@@ -243,14 +310,21 @@ function Profile() {
     <Grid container spacing={3}>
       {bookings.length === 0 ? (
         <Grid item xs={12}>
-          <Typography color="text.secondary">
-            No bookings found.
+          <Typography color="text.secondary" textAlign="center">
+            No bookings found. 
+            <Button color="primary" onClick={() => navigate('/')} sx={{ ml: 1 }}>
+              Browse Parking Spots
+            </Button>
           </Typography>
         </Grid>
       ) : (
         bookings.map((booking) => (
           <Grid item xs={12} key={booking.id}>
-            <PaymentStatus booking={booking} />
+            <BookingCard 
+              booking={booking} 
+              onCancel={handleCancelBooking}
+              isCancelling={cancellingBooking === booking.id}
+            />
           </Grid>
         ))
       )}
@@ -277,6 +351,60 @@ function Profile() {
     <Container maxWidth="lg">
       <Box py={4}>
         {renderUserInfo()}
+        
+        {/* Success Message */}
+        {successMessage && (
+          <Paper 
+            elevation={2} 
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              bgcolor: 'success.light', 
+              color: 'success.contrastText',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Typography variant="body1">
+              {successMessage}
+            </Typography>
+            <Button 
+              size="small" 
+              color="inherit" 
+              onClick={() => setSuccessMessage('')}
+            >
+              ✕
+            </Button>
+          </Paper>
+        )}
+        
+        {/* Error Message */}
+        {error && (
+          <Paper 
+            elevation={2} 
+            sx={{ 
+              p: 2, 
+              mb: 3, 
+              bgcolor: 'error.light', 
+              color: 'error.contrastText',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}
+          >
+            <Typography variant="body1">
+              {error}
+            </Typography>
+            <Button 
+              size="small" 
+              color="inherit" 
+              onClick={() => setError(null)}
+            >
+              ✕
+            </Button>
+          </Paper>
+        )}
 
         <Menu
           anchorEl={anchorEl}
@@ -405,6 +533,45 @@ function Profile() {
           </Paper>
         </TabPanel>
       </Box>
+      
+      {/* Cancellation Confirmation Dialog */}
+      <Dialog
+        open={showCancelConfirm}
+        onClose={() => setShowCancelConfirm(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          Cancel Booking
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body1" gutterBottom>
+            Are you sure you want to cancel your booking for:
+          </Typography>
+          <Typography variant="h6" color="primary" gutterBottom>
+            {bookingToCancel?.spotDetails?.location || bookingToCancel?.location || 'Parking Spot'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            This action cannot be undone. The parking spot will become available again for other users.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button 
+            onClick={() => setShowCancelConfirm(false)}
+            disabled={cancellingBooking}
+          >
+            Keep Booking
+          </Button>
+          <Button 
+            onClick={confirmCancelBooking}
+            color="error"
+            variant="contained"
+            disabled={cancellingBooking}
+          >
+            {cancellingBooking ? 'Cancelling...' : 'Cancel Booking'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 }

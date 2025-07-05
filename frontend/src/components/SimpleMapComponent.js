@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
 import { Box, Card, Typography, Button, TextField, Grid } from '@mui/material';
 import { LocationOn, MyLocation } from '@mui/icons-material';
+import { useState } from 'react';
 
 const SimpleMapComponent = ({ 
   center = [19.0760, 72.8777], 
@@ -128,4 +128,4 @@ const SimpleMapComponent = ({
   );
 };
 
-export default SimpleMapComponent; 
+export default SimpleMapComponent;

@@ -1,21 +1,9 @@
-import React from 'react';
-import '../styles/animations.css';
-import './HeroSection.css';
-import {
-  Box,
-  Container,
-  Typography,
-  Button,
-  Grid,
-  Paper,
-  useTheme,
-  alpha,
-  Fade,
-  Slide,
-  Grow
-} from '@mui/material';
+import { Box, Container, Typography, Button, Grid, Paper, useTheme, alpha, Fade, Slide, Grow } from '@mui/material';
 import { LocalParking, Security, Assessment, Timer, TrendingUp, Star } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
+
+import '../styles/animations.css';
+import './HeroSection.css';
 
 const FeatureCard = ({ icon: Icon, title, description, index }) => {
   const gradients = [

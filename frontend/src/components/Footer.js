@@ -1,23 +1,7 @@
-import React from 'react';
+import { Box, Container, Grid, Typography, Link, Divider, IconButton, Stack } from '@mui/material';
+import { Facebook, Twitter, Instagram, LinkedIn, Language, CurrencyRupee,  } from '@mui/icons-material';
+
 import './Footer.css';
-import {
-  Box,
-  Container,
-  Grid,
-  Typography,
-  Link,
-  Divider,
-  IconButton,
-  Stack
-} from '@mui/material';
-import {
-  Facebook,
-  Twitter,
-  Instagram,
-  LinkedIn,
-  Language,
-  CurrencyRupee,
-} from '@mui/icons-material';
 
 function Footer() {
   const footerSections = {

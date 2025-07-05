@@ -13,19 +13,12 @@ import {
   Rating,
   Avatar,
   Divider,
-  Paper,
   IconButton,
   Tooltip,
   Alert,
   CircularProgress,
-  Fade,
-  Zoom,
   Tabs,
   Tab,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -34,8 +27,6 @@ import {
 } from '@mui/material';
 import {
   LocationOn,
-  AccessTime,
-  AttachMoney,
   Star,
   Favorite,
   FavoriteBorder,
@@ -62,32 +53,30 @@ import {
   CheckCircle,
   Warning,
 } from '@mui/icons-material';
-import { format, parseISO } from 'date-fns';
+
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../contexts/RealtimeContext';
 import BookingModal from './BookingModal';
+
 import ReviewsAndRatings from './ReviewsAndRatings';
 import MapComponent from './MapComponent';
-import ReceiptDownload from './ReceiptDownload';
+
 
 const ParkingSpotDetail = () => {
   const { spotId } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { spotStatus } = useRealtime();
+  const { addNotification } = useRealtime();
   
   const [spot, setSpot] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
   const [showBookingModal, setShowBookingModal] = useState(false);
+
   const [selectedTab, setSelectedTab] = useState(0);
   const [showContactDialog, setShowContactDialog] = useState(false);
-  const [bookingData, setBookingData] = useState({
-    date: format(new Date(), 'yyyy-MM-dd'),
-    startTime: '10:00',
-    hours: 2,
-  });
+
 
   useEffect(() => {
     fetchSpotDetails();
@@ -164,12 +153,16 @@ const ParkingSpotDetail = () => {
     setShowBookingModal(true);
   };
 
+
+
   const handleBookingComplete = (success) => {
     setShowBookingModal(false);
     if (success) {
       fetchSpotDetails(); // Refresh spot data
     }
   };
+
+
 
   const getAvailabilityColor = () => {
     if (!spot) return 'default';
@@ -206,11 +199,7 @@ const ParkingSpotDetail = () => {
     return iconMap[amenity] || <Info />;
   };
 
-  // Helper function to safely get spot data
-  const getSpotData = (field, defaultValue = '') => {
-    if (!spot) return defaultValue;
-    return spot[field] || defaultValue;
-  };
+
 
   if (loading) {
     return (
@@ -594,24 +583,54 @@ const ParkingSpotDetail = () => {
                   sx={{ fontWeight: 'bold', mb: 2 }}
                 />
                 
-                {spot.available && (
+                {spot.available && !spot.isOwner && (
                   <Typography variant="body2" color="text.secondary">
-                    Instant booking available
+                    Available for booking - Select your preferred time and date
                   </Typography>
                 )}
               </Box>
 
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                startIcon={<BookOnline />}
-                onClick={handleBooking}
-                disabled={!spot.available || spot.isOwner}
-                sx={{ mb: 2, py: 1.5 }}
-              >
-                {spot.isOwner ? 'Your Spot' : spot.available ? 'Book Now' : 'Currently Unavailable'}
-              </Button>
+              {spot.available && !spot.isOwner && (
+                <>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    startIcon={<BookOnline />}
+                    onClick={() => {
+                      console.log('Book Now button clicked!');
+                      handleBooking();
+                    }}
+                    sx={{ mb: 2, py: 1.5, bgcolor: '#22C55E', '&:hover': { bgcolor: '#16A34A' } }}
+                  >
+                    Book Now
+                  </Button>
+                </>
+              )}
+
+              {!spot.available && (
+                <Button
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  disabled
+                  sx={{ mb: 2, py: 1.5 }}
+                >
+                  Currently Unavailable
+                </Button>
+              )}
+
+              {spot.isOwner && (
+                <Button
+                  variant="contained"
+                  size="large"
+                  fullWidth
+                  disabled
+                  sx={{ mb: 2, py: 1.5 }}
+                >
+                  Your Spot
+                </Button>
+              )}
 
               {!currentUser && (
                 <Typography variant="body2" color="text.secondary" textAlign="center">
@@ -698,6 +717,8 @@ const ParkingSpotDetail = () => {
           onBookingComplete={handleBookingComplete}
         />
       )}
+
+
     </Container>
   );
 };

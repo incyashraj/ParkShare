@@ -50,7 +50,7 @@ class ReceiptService {
         // Helper function to add compact section
         const addCompactSection = (title, y) => {
           doc.fontSize(10)
-             .font('Helvetica-Bold')
+           .font('Helvetica-Bold')
              .fillColor('#374151')
              .text(title, 25, y);
           return y + 15;
@@ -62,9 +62,9 @@ class ReceiptService {
              .font('Helvetica')
              .fillColor('#6B7280')
              .text(label, 25, y, { width: 120 });
-          
+
           doc.fontSize(8)
-             .font('Helvetica')
+           .font('Helvetica')
              .fillColor('#111827')
              .text(value || 'N/A', 150, y, { width: 400 });
           
@@ -76,7 +76,7 @@ class ReceiptService {
            .font('Helvetica-Bold')
            .fillColor('#111827')
            .text('ParkShare', 25, 30);
-        
+
         doc.fontSize(12)
            .font('Helvetica')
            .fillColor('#6B7280')
@@ -87,7 +87,7 @@ class ReceiptService {
            .font('Helvetica-Bold')
            .fillColor('#374151')
            .text(`Receipt #${booking.id}`, 400, 30);
-        
+
         doc.fontSize(9)
            .font('Helvetica')
            .fillColor('#6B7280')
@@ -164,7 +164,7 @@ class ReceiptService {
 
         // Price Breakdown Section - Compact table like Airbnb
         currentY = addCompactSection('PRICE BREAKDOWN', currentY);
-        
+
         const hourlyRate = spot?.price || parseFloat(spot?.hourlyRate?.replace(/[^0-9.]/g, '')) || booking.hourlyRate || 0;
         const totalHours = booking.hours || 0;
         const subtotal = hourlyRate * totalHours;
@@ -195,7 +195,7 @@ class ReceiptService {
            .text(`$${subtotal.toFixed(2)}`, 500, currentY);
         
         currentY += 12;
-        
+
         doc.text('Tax (10%)', 25, currentY)
            .text(`$${tax.toFixed(2)}`, 500, currentY);
         
@@ -235,7 +235,7 @@ class ReceiptService {
         // Footer - Clean and minimal
         drawLine(currentY);
         currentY += 15;
-        
+
         doc.fontSize(8)
            .font('Helvetica')
            .fillColor('#6B7280')

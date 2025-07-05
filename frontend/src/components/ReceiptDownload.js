@@ -1,22 +1,6 @@
-import React, { useState } from 'react';
-import {
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Typography,
-  Box,
-  CircularProgress,
-  Alert,
-  IconButton,
-  Tooltip
-} from '@mui/material';
-import {
-  Download as DownloadIcon,
-  Email as EmailIcon,
-  Receipt as ReceiptIcon
-} from '@mui/icons-material';
+import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, CircularProgress, Alert, IconButton, Tooltip } from '@mui/material';
+import { Download as DownloadIcon, Email as EmailIcon, Receipt as ReceiptIcon } from '@mui/icons-material';
+import { useState } from 'react';
 
 const ReceiptDownload = ({ booking, spot, user }) => {
   const [loading, setLoading] = useState(false);
@@ -161,4 +145,4 @@ const ReceiptDownload = ({ booking, spot, user }) => {
   );
 };
 
-export default ReceiptDownload; 
+export default ReceiptDownload;

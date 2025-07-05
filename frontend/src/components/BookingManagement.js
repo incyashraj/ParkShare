@@ -1,37 +1,12 @@
-import React, { useState, useEffect } from 'react';
 import { auth } from '../firebase';
-import {
-  Container,
-  Typography,
-  Box,
-  Tabs,
-  Tab,
-  Paper,
-  Grid,
-  Card,
-  CardContent,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  CircularProgress,
-  Alert,
-  Chip,
-  TextField
-} from '@mui/material';
-import {
-  Download as DownloadIcon,
-  Edit as EditIcon,
-  Cancel as CancelIcon,
-  AccessTime as AccessTimeIcon
-} from '@mui/icons-material';
+import { Container, Typography, Box, Tabs, Tab, Paper, Grid, Card, CardContent, Button, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, CircularProgress, Alert, Chip, TextField } from '@mui/material';
+import { Download as DownloadIcon, Edit as EditIcon, Cancel as CancelIcon, AccessTime as AccessTimeIcon } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import ReceiptDownload from './ReceiptDownload';
+import { useState, useEffect } from 'react';
 
 function TabPanel({ children, value, index }) {
   return (

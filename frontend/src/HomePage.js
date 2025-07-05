@@ -1,34 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import './styles/animations.css';
-import HeroSection from './components/HeroSection';
-import { 
-  Box, 
-  Container, 
-  Typography, 
-  Grid, 
-  Card, 
-  CardContent, 
-  Button, 
-  TextField, 
-  InputAdornment,
-  Chip,
-  Avatar,
-  Rating,
-  Paper
-} from '@mui/material';
-import {
-  Search as SearchIcon,
-  LocationOn as LocationIcon,
-  AttachMoney as MoneyIcon,
-  Star as StarIcon,
-  Security as SecurityIcon,
-  Speed as SpeedIcon,
-  EmojiNature as EmojiNatureIcon,
-  LocalParking as ParkingIcon,
-  Person as PersonIcon
-} from '@mui/icons-material';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Box, Container, Typography, Grid, Card, CardContent, Button, TextField, InputAdornment, Chip, Avatar, Rating, Paper } from '@mui/material';
+import { Search as SearchIcon, LocationOn as LocationIcon, AttachMoney as MoneyIcon, Star as StarIcon, Security as SecurityIcon, Speed as SpeedIcon, EmojiNature as EmojiNatureIcon, LocalParking as ParkingIcon, Person as PersonIcon } from '@mui/icons-material';
 import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import HeroSection from './components/HeroSection';
+import './styles/animations.css';
 
 function HomePage() {
   const [user, setUser] = useState(null);
@@ -38,7 +15,7 @@ function HomePage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
     });
@@ -413,4 +390,4 @@ function HomePage() {
   );
 }
 
-export default HomePage; 
+export default HomePage;

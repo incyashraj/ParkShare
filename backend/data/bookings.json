@@ -8,7 +8,8 @@
     "endTime": null,
     "totalPrice": 12,
     "createdAt": "2025-07-04T21:48:47.661Z",
-    "status": "confirmed"
+    "status": "cancelled",
+    "cancelledAt": "2025-07-05T10:41:54.511Z"
   },
   {
     "id": "booking_1751667846191",
@@ -77,12 +78,13 @@
     "totalPrice": 24,
     "hours": 2,
     "createdAt": "2025-07-05T08:53:47.513Z",
-    "status": "paid",
+    "status": "cancelled",
     "paymentId": "test_1751705627513",
     "paidAt": "2025-07-05T08:53:47.513Z",
     "paymentAmount": 24,
     "paymentMethod": "Test Mode",
-    "isTestBooking": true
+    "isTestBooking": true,
+    "cancelledAt": "2025-07-05T10:42:09.468Z"
   },
   {
     "id": "booking_1751705677885",
@@ -100,5 +102,106 @@
     "paymentAmount": 30,
     "paymentMethod": "Test Mode",
     "isTestBooking": true
+  },
+  {
+    "id": "booking_1751710463129",
+    "spotId": "spot_airport_002",
+    "userId": "test123",
+    "userName": "Test User",
+    "userEmail": "test@example.com",
+    "startTime": "2024-01-01T10:00:00.000Z",
+    "endTime": "2024-01-01T12:00:00.000Z",
+    "hours": 2,
+    "totalPrice": 40,
+    "hourlyRate": "$20",
+    "status": "confirmed",
+    "createdAt": "2025-07-05T10:14:23.129Z",
+    "spotOwner": "user_jane_456",
+    "spotOwnerName": "Jane Smith",
+    "location": "456 Airport Road, Near Terminal 1",
+    "spotDetails": {
+      "location": "456 Airport Road, Near Terminal 1",
+      "hourlyRate": "$20",
+      "coordinates": [
+        19.0896,
+        72.8656
+      ]
+    }
+  },
+  {
+    "id": "booking_1751710787212",
+    "spotId": "spot_airport_002",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "123",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-05T10:19:47.205Z",
+    "endTime": "2025-07-05T11:19:47.205Z",
+    "hours": 1,
+    "totalPrice": 20,
+    "hourlyRate": "$20",
+    "status": "cancelled",
+    "createdAt": "2025-07-05T10:19:47.212Z",
+    "spotOwner": "user_jane_456",
+    "spotOwnerName": "Jane Smith",
+    "location": "456 Airport Road, Near Terminal 1",
+    "spotDetails": {
+      "location": "456 Airport Road, Near Terminal 1",
+      "hourlyRate": "$20",
+      "coordinates": [
+        19.0896,
+        72.8656
+      ]
+    },
+    "cancelledAt": "2025-07-05T10:47:49.502Z"
+  },
+  {
+    "id": "booking_1751710811688",
+    "spotId": "spot_residential_004",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "123",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-05T10:20:00.000Z",
+    "endTime": "2025-07-06T10:20:00.000Z",
+    "hours": 24,
+    "totalPrice": 192,
+    "hourlyRate": "$8",
+    "status": "confirmed",
+    "createdAt": "2025-07-05T10:20:11.688Z",
+    "spotOwner": "user_sarah_101",
+    "spotOwnerName": "Sarah Jones",
+    "location": "321 Oak Street, Residential Area",
+    "spotDetails": {
+      "location": "321 Oak Street, Residential Area",
+      "hourlyRate": "$8",
+      "coordinates": [
+        19.0736,
+        72.8816
+      ]
+    }
+  },
+  {
+    "id": "booking_1751710873443",
+    "spotId": "spot_mall_003",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "123",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-05T10:21:13.437Z",
+    "endTime": "2025-07-05T11:21:13.437Z",
+    "hours": 1,
+    "totalPrice": 10,
+    "hourlyRate": "$10",
+    "status": "confirmed",
+    "createdAt": "2025-07-05T10:21:13.443Z",
+    "spotOwner": "user_mike_789",
+    "spotOwnerName": "Mike Wilson",
+    "location": "789 Mall Drive, Shopping District",
+    "spotDetails": {
+      "location": "789 Mall Drive, Shopping District",
+      "hourlyRate": "$10",
+      "coordinates": [
+        19.0624,
+        72.8898
+      ]
+    }
   }
 ]

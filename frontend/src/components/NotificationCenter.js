@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   IconButton,
   Badge,
@@ -36,7 +35,6 @@ import {
 import { useRealtime } from '../contexts/RealtimeContext';
 
 const NotificationCenter = () => {
-  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -76,12 +74,8 @@ const NotificationCenter = () => {
     // Handle different notification types
     switch (notification.type) {
       case 'booking':
-        // Navigate to booking details or profile with bookings tab
-        if (notification.data?.type === 'booking-confirmation') {
-          navigate('/profile?tab=bookings');
-        } else {
-          navigate('/profile?tab=bookings');
-        }
+        // Navigate to booking details
+        console.log('Navigate to booking:', notification.data);
         break;
       case 'message':
         // Open chat with sender

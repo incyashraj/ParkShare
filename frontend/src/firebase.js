@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+
 const firebaseConfig = {
   apiKey: "AIzaSyDc0RJWNSBr3bw1OGWHnf7q06iklghQ380",
   authDomain: "parkshare-40123.firebaseapp.com",

@@ -113,6 +113,8 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage })
     setShowBookingDialog(true);
   };
 
+
+
   const handleMessage = () => {
     setShowMessageDialog(true);
   };
@@ -278,75 +280,166 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage })
           flexDirection: 'column',
           transition: 'all 0.3s ease',
           position: 'relative',
+          cursor: 'pointer',
+          borderRadius: 3,
+          overflow: 'hidden',
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          border: '1px solid #e2e8f0',
           '&:hover': {
-            transform: 'translateY(-4px)',
-            boxShadow: 4,
+            transform: 'translateY(-8px)',
+            boxShadow: '0 20px 40px rgba(0,0,0,0.1)',
+            borderColor: '#22C55E',
           },
         }}
+        onClick={() => navigate(`/spot/${spot.id}`)}
       >
         {/* Real-time indicator */}
         <Fade in={isConnected}>
           <Box
             sx={{
               position: 'absolute',
-              top: 8,
-              right: 8,
+              top: 12,
+              right: 12,
               zIndex: 1,
               display: 'flex',
               alignItems: 'center',
               gap: 0.5,
-              backgroundColor: 'rgba(255, 255, 255, 0.9)',
-              borderRadius: 1,
-              px: 1,
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderRadius: 2,
+              px: 1.5,
               py: 0.5,
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
             }}
           >
             <Box
               sx={{
-                width: 6,
-                height: 6,
+                width: 8,
+                height: 8,
                 borderRadius: '50%',
-                backgroundColor: 'success.main',
+                backgroundColor: '#22C55E',
                 animation: 'pulse 2s infinite',
+                '@keyframes pulse': {
+                  '0%': {
+                    boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)',
+                  },
+                  '70%': {
+                    boxShadow: '0 0 0 10px rgba(34, 197, 94, 0)',
+                  },
+                  '100%': {
+                    boxShadow: '0 0 0 0 rgba(34, 197, 94, 0)',
+                  },
+                },
               }}
             />
-            <Typography variant="caption" color="success.main" sx={{ fontSize: '0.7rem', fontWeight: 'bold' }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                fontSize: '0.75rem', 
+                fontWeight: '700',
+                color: '#22C55E',
+                letterSpacing: '0.5px'
+              }}
+            >
               LIVE
             </Typography>
           </Box>
         </Fade>
 
-        <CardMedia
-          component="img"
-          height="200"
-          image={
-            spot.images && spot.images.length > 0 
-              ? (typeof spot.images[0] === 'string' 
-                  ? spot.images[0] 
-                  : spot.images[0].url || spot.images[0].preview)
-              : `https://via.placeholder.com/400x200/1E3A8A/FFFFFF?text=${encodeURIComponent(spot.title || 'Parking Spot')}`
-          }
-          alt={spot.title || 'Parking Spot'}
-          sx={{ objectFit: 'cover' }}
-        />
+        <Box sx={{ position: 'relative', height: 200 }}>
+          <CardMedia
+            component="img"
+            height="200"
+            image={
+              spot.images && spot.images.length > 0 
+                ? (typeof spot.images[0] === 'string' 
+                    ? spot.images[0] 
+                    : spot.images[0].url || spot.images[0].preview)
+                : `https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=200&fit=crop`
+            }
+            alt={spot.title || 'Parking Spot'}
+            sx={{ 
+              objectFit: 'cover',
+              width: '100%',
+              height: '100%'
+            }}
+          />
+          {/* Gradient overlay */}
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '60%',
+              background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+            }}
+          />
+          {/* Price badge */}
+          <Box
+            sx={{
+              position: 'absolute',
+              bottom: 12,
+              left: 12,
+              background: 'rgba(34, 197, 94, 0.95)',
+              color: 'white',
+              px: 2,
+              py: 0.5,
+              borderRadius: 2,
+              fontWeight: 'bold',
+              fontSize: '0.9rem',
+              backdropFilter: 'blur(10px)',
+            }}
+          >
+            ₹{spot.price}/hr
+          </Box>
+        </Box>
         
-        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Typography variant="h6" component="h2" fontWeight="bold" sx={{ flex: 1 }}>
+            <Typography 
+              variant="h6" 
+              component="h2" 
+              fontWeight="700" 
+              sx={{ 
+                flex: 1,
+                fontSize: '1.1rem',
+                lineHeight: 1.3,
+                color: '#1e293b'
+              }}
+            >
               {spot.title}
             </Typography>
             <IconButton 
-              onClick={handleFavorite}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleFavorite();
+              }}
               size="small"
-              sx={{ color: isFavorite ? 'error.main' : 'grey.500' }}
+              sx={{ 
+                color: isFavorite ? '#ef4444' : '#94a3b8',
+                '&:hover': {
+                  color: isFavorite ? '#dc2626' : '#ef4444',
+                  transform: 'scale(1.1)',
+                },
+                transition: 'all 0.2s ease'
+              }}
             >
               {isFavorite ? <Favorite /> : <FavoriteBorder />}
             </IconButton>
           </Box>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <LocationOn sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-            <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <LocationOn sx={{ fontSize: 18, color: '#64748b', mr: 1 }} />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                flex: 1,
+                color: '#64748b',
+                fontSize: '0.9rem',
+                fontWeight: 500
+              }}
+            >
               {spot.address}
             </Typography>
           </Box>
@@ -358,48 +451,97 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage })
               size="small" 
               sx={{ mr: 1 }}
             />
-            <Typography variant="body2" color="text.secondary">
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#64748b',
+                fontSize: '0.85rem',
+                fontWeight: 500
+              }}
+            >
               {spot.rating} ({spot.reviewCount || 0} reviews)
             </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <AccessTime sx={{ fontSize: 16, color: 'text.secondary', mr: 0.5 }} />
-            <Typography variant="body2" color="text.secondary">
+            <AccessTime sx={{ fontSize: 18, color: '#64748b', mr: 1 }} />
+            <Typography 
+              variant="body2" 
+              sx={{ 
+                color: '#64748b',
+                fontSize: '0.9rem',
+                fontWeight: 500
+              }}
+            >
               {calculateDistance(spot.distance)}
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
-            {spot.features?.map((feature, index) => (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+            {spot.features?.slice(0, 3).map((feature, index) => (
               <Chip
                 key={index}
                 label={feature}
                 size="small"
                 variant="outlined"
-                sx={{ fontSize: '0.75rem' }}
+                sx={{ 
+                  fontSize: '0.7rem',
+                  height: 24,
+                  borderColor: '#e2e8f0',
+                  color: '#64748b',
+                  '&:hover': {
+                    borderColor: '#22C55E',
+                    color: '#22C55E',
+                  }
+                }}
               />
             ))}
+            {spot.features?.length > 3 && (
+              <Chip
+                label={`+${spot.features.length - 3} more`}
+                size="small"
+                variant="outlined"
+                sx={{ 
+                  fontSize: '0.7rem',
+                  height: 24,
+                  borderColor: '#e2e8f0',
+                  color: '#64748b',
+                }}
+              />
+            )}
           </Box>
 
-          {/* Real-time availability status */}
+          {/* Availability status */}
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <AttachMoney sx={{ color: 'primary.main', mr: 0.5 }} />
-              <Typography variant="h6" color="primary.main" fontWeight="bold">
-                ${spot.price}/hr
-              </Typography>
-            </Box>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
               <Chip
                 label={getAvailabilityText(isAvailable)}
                 color={getAvailabilityColor(isAvailable)}
                 size="small"
                 variant={isAvailable ? 'filled' : 'outlined'}
                 icon={spotStatus?.lastUpdated ? <TrendingUp /> : undefined}
+                sx={{
+                  fontWeight: 600,
+                  fontSize: '0.75rem',
+                  height: 24,
+                  ...(isAvailable ? {
+                    bgcolor: '#22C55E',
+                    color: 'white',
+                  } : {
+                    borderColor: '#ef4444',
+                    color: '#ef4444',
+                  })
+                }}
               />
               {getLastUpdatedText() && (
-                <Typography variant="caption" color="text.secondary">
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: '#94a3b8',
+                    fontSize: '0.7rem',
+                    fontWeight: 500
+                  }}
+                >
                   {getLastUpdatedText()}
                 </Typography>
               )}
@@ -408,59 +550,84 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage })
 
           {/* Owner status */}
           {spot.ownerName && (
-            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, p: 1.5, bgcolor: '#f8fafc', borderRadius: 2 }}>
               <Badge
                 overlap="circular"
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 badgeContent={
                   <Circle
                     sx={{
-                      fontSize: 12,
-                      color: ownerOnline ? 'success.main' : 'grey.500',
+                      fontSize: 10,
+                      color: ownerOnline ? '#22C55E' : '#94a3b8',
                     }}
                   />
                 }
               >
-                <Avatar sx={{ width: 24, height: 24, fontSize: '0.8rem', mr: 1 }}>
+                <Avatar 
+                  sx={{ 
+                    width: 28, 
+                    height: 28, 
+                    fontSize: '0.9rem', 
+                    mr: 1.5,
+                    bgcolor: '#22C55E',
+                    fontWeight: 600
+                  }}
+                >
                   {spot.ownerName.charAt(0).toUpperCase()}
                 </Avatar>
               </Badge>
-              <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
-                {spot.ownerName}
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {spot.isVerifiedHost && (
-                  <Tooltip title="Verified Host">
-                    <VerifiedUser sx={{ fontSize: 16, color: 'success.main' }} />
-                  </Tooltip>
-                )}
-                <Typography variant="caption" color="text.secondary">
-                  {ownerOnline ? 'Online' : 'Offline'}
+              <Box sx={{ flex: 1 }}>
+                <Typography 
+                  variant="body2" 
+                  sx={{ 
+                    color: '#1e293b',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
+                    mb: 0.5
+                  }}
+                >
+                  {spot.ownerName}
                 </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {spot.isVerifiedHost && (
+                    <Tooltip title="Verified Host">
+                      <VerifiedUser sx={{ fontSize: 14, color: '#22C55E' }} />
+                    </Tooltip>
+                  )}
+                  <Typography 
+                    variant="caption" 
+                    sx={{ 
+                      color: ownerOnline ? '#22C55E' : '#94a3b8',
+                      fontSize: '0.75rem',
+                      fontWeight: 500
+                    }}
+                  >
+                    {ownerOnline ? 'Online' : 'Offline'}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           )}
 
           <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={<Info />}
-              fullWidth
-              onClick={() => navigate(`/spot/${spot.id}`)}
-            >
-              Details
-            </Button>
             {!spot.isOwner && spot.owner && (
               <Tooltip title="Message owner">
                 <IconButton
                   size="small"
-                  onClick={handleMessage}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleMessage();
+                  }}
                   disabled={!ownerOnline}
                   sx={{ 
-                    color: ownerOnline ? 'primary.main' : 'grey.400',
+                    color: ownerOnline ? '#22C55E' : '#cbd5e1',
                     border: '1px solid',
-                    borderColor: ownerOnline ? 'primary.main' : 'grey.400',
+                    borderColor: ownerOnline ? '#22C55E' : '#cbd5e1',
+                    '&:hover': {
+                      bgcolor: ownerOnline ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
+                      transform: 'scale(1.05)',
+                    },
+                    transition: 'all 0.2s ease'
                   }}
                 >
                   <Message />
@@ -471,11 +638,29 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage })
               variant="contained"
               size="small"
               fullWidth
-              disabled={!isAvailable || !isConnected}
-              onClick={handleBook}
-              sx={{ minWidth: 'auto' }}
+              startIcon={<Info />}
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/spot/${spot.id}`);
+              }}
+              sx={{ 
+                bgcolor: '#22C55E',
+                color: 'white',
+                fontWeight: 600,
+                fontSize: '0.9rem',
+                py: 1,
+                borderRadius: 2,
+                textTransform: 'none',
+                boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
+                '&:hover': { 
+                  bgcolor: '#16A34A',
+                  boxShadow: '0 6px 16px rgba(34, 197, 94, 0.4)',
+                  transform: 'translateY(-1px)',
+                },
+                transition: 'all 0.2s ease'
+              }}
             >
-              {!isConnected ? 'Connecting...' : isAvailable ? 'Book Now' : 'Unavailable'}
+              View Details
             </Button>
           </Box>
         </CardContent>

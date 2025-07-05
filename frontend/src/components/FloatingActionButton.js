@@ -1,21 +1,7 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Fab,
-  SpeedDial,
-  SpeedDialAction,
-  SpeedDialIcon,
-  Tooltip,
-  Zoom,
-} from '@mui/material';
-import {
-  Add as AddIcon,
-  Search as SearchIcon,
-  MyLocation as LocationIcon,
-  FilterList as FilterIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Box, Fab, SpeedDial, SpeedDialAction, SpeedDialIcon, Tooltip, Zoom,  } from '@mui/material';
+import { Add as AddIcon, Search as SearchIcon, MyLocation as LocationIcon, FilterList as FilterIcon, Close as CloseIcon,  } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 
 const FloatingActionButton = ({ onLocationClick, onFilterClick }) => {
   const [open, setOpen] = useState(false);
@@ -98,4 +84,4 @@ const FloatingActionButton = ({ onLocationClick, onFilterClick }) => {
   );
 };
 
-export default FloatingActionButton; 
+export default FloatingActionButton;

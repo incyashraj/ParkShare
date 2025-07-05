@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import { Box, Card, Typography, Button, Alert, CircularProgress } from '@mui/material';
 import { LocationOn, MyLocation, Refresh } from '@mui/icons-material';
 import SimpleMapComponent from './SimpleMapComponent';
+import { useState, useEffect } from 'react';
 
 // Import MapComponent with error handling
 let MapComponent = null;
@@ -187,4 +187,4 @@ const MapWrapper = ({
   );
 };
 
-export default MapWrapper; 
+export default MapWrapper;

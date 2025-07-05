@@ -1,4 +1,6 @@
-import React from 'react';
+import { Box, Container, Typography, Grid, Avatar, Card, CardContent, Rating, useTheme, alpha } from '@mui/material';
+import FormatQuote from '@mui/icons-material';
+
 import {
   Box,
   Container,
@@ -11,7 +13,6 @@ import {
   useTheme,
   alpha
 } from '@mui/material';
-import { FormatQuote } from '@mui/icons-material';
 
 const testimonials = [
   {

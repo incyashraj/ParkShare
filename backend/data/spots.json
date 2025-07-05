@@ -73,7 +73,8 @@
         "isTestBooking": true
       }
     ],
-    "available": false
+    "available": true,
+    "lastUpdated": "2025-07-05T10:42:09.468Z"
   },
   {
     "id": "spot_downtown_001",
@@ -169,7 +170,88 @@
       "suv",
       "truck"
     ],
-    "createdAt": "2025-07-04T21:54:49.373Z"
+    "createdAt": "2025-07-04T21:54:49.373Z",
+    "bookings": [
+      "booking_1751710463129"
+    ],
+    "bookingHistory": [
+      {
+        "bookingId": "booking_1751710463129",
+        "startTime": "2024-01-01T10:00:00.000Z",
+        "endTime": "2024-01-01T12:00:00.000Z",
+        "userId": "test123"
+      },
+      {
+        "bookingId": "booking_1751710787212",
+        "startTime": "2025-07-05T10:19:47.205Z",
+        "endTime": "2025-07-05T11:19:47.205Z",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+      }
+    ],
+    "pendingNotifications": [
+      {
+        "type": "booking",
+        "title": "New Booking Received",
+        "message": "Test User booked your spot at 456 Airport Road, Near Terminal 1",
+        "booking": {
+          "id": "booking_1751710463129",
+          "spotId": "spot_airport_002",
+          "userId": "test123",
+          "userName": "Test User",
+          "userEmail": "test@example.com",
+          "startTime": "2024-01-01T10:00:00.000Z",
+          "endTime": "2024-01-01T12:00:00.000Z",
+          "hours": 2,
+          "totalPrice": 40,
+          "hourlyRate": "$20",
+          "status": "confirmed",
+          "createdAt": "2025-07-05T10:14:23.129Z",
+          "spotOwner": "user_jane_456",
+          "spotOwnerName": "Jane Smith",
+          "location": "456 Airport Road, Near Terminal 1",
+          "spotDetails": {
+            "location": "456 Airport Road, Near Terminal 1",
+            "hourlyRate": "$20",
+            "coordinates": [
+              19.0896,
+              72.8656
+            ]
+          }
+        },
+        "timestamp": "2025-07-05T10:14:23.129Z"
+      },
+      {
+        "type": "booking",
+        "title": "New Booking Received",
+        "message": "123 booked your spot at 456 Airport Road, Near Terminal 1",
+        "booking": {
+          "id": "booking_1751710787212",
+          "spotId": "spot_airport_002",
+          "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+          "userName": "123",
+          "userEmail": "123@gmail.com",
+          "startTime": "2025-07-05T10:19:47.205Z",
+          "endTime": "2025-07-05T11:19:47.205Z",
+          "hours": 1,
+          "totalPrice": 20,
+          "hourlyRate": "$20",
+          "status": "confirmed",
+          "createdAt": "2025-07-05T10:19:47.212Z",
+          "spotOwner": "user_jane_456",
+          "spotOwnerName": "Jane Smith",
+          "location": "456 Airport Road, Near Terminal 1",
+          "spotDetails": {
+            "location": "456 Airport Road, Near Terminal 1",
+            "hourlyRate": "$20",
+            "coordinates": [
+              19.0896,
+              72.8656
+            ]
+          }
+        },
+        "timestamp": "2025-07-05T10:19:47.214Z"
+      }
+    ]
   },
   {
     "id": "spot_mall_003",
@@ -204,7 +286,18 @@
     "vehicleTypes": [
       "car"
     ],
-    "createdAt": "2025-07-04T21:54:49.373Z"
+    "createdAt": "2025-07-04T21:54:49.373Z",
+    "bookings": [
+      "booking_1751710873443"
+    ],
+    "bookingHistory": [
+      {
+        "bookingId": "booking_1751710873443",
+        "startTime": "2025-07-05T10:21:13.437Z",
+        "endTime": "2025-07-05T11:21:13.437Z",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+      }
+    ]
   },
   {
     "id": "spot_residential_004",
@@ -238,6 +331,74 @@
     "vehicleTypes": [
       "car"
     ],
-    "createdAt": "2025-07-04T21:54:49.373Z"
+    "createdAt": "2025-07-04T21:54:49.373Z",
+    "bookings": [
+      "booking_1751710811688"
+    ],
+    "bookingHistory": [
+      {
+        "bookingId": "booking_1751710811688",
+        "startTime": "2025-07-05T10:20:00.000Z",
+        "endTime": "2025-07-06T10:20:00.000Z",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+      }
+    ],
+    "pendingNotifications": [
+      {
+        "type": "booking",
+        "title": "New Booking Received",
+        "message": "123 booked your spot at 321 Oak Street, Residential Area",
+        "booking": {
+          "id": "booking_1751710811688",
+          "spotId": "spot_residential_004",
+          "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+          "userName": "123",
+          "userEmail": "123@gmail.com",
+          "startTime": "2025-07-05T10:20:00.000Z",
+          "endTime": "2025-07-06T10:20:00.000Z",
+          "hours": 24,
+          "totalPrice": 192,
+          "hourlyRate": "$8",
+          "status": "confirmed",
+          "createdAt": "2025-07-05T10:20:11.688Z",
+          "spotOwner": "user_sarah_101",
+          "spotOwnerName": "Sarah Jones",
+          "location": "321 Oak Street, Residential Area",
+          "spotDetails": {
+            "location": "321 Oak Street, Residential Area",
+            "hourlyRate": "$8",
+            "coordinates": [
+              19.0736,
+              72.8816
+            ]
+          }
+        },
+        "timestamp": "2025-07-05T10:20:11.689Z"
+      }
+    ]
+  },
+  {
+    "id": "1751708238335",
+    "location": "213, 123, 213 123",
+    "coordinates": [
+      19.055130521308893,
+      72.88222789764406
+    ],
+    "hourlyRate": "INR 123",
+    "maxDuration": "24 hours",
+    "securityFeatures": [
+      "cctv"
+    ],
+    "termsAndConditions": "Standard parking terms and conditions apply. Users must follow parking rules and respect the property.",
+    "images": [
+      {}
+    ],
+    "rating": 0,
+    "reviews": [],
+    "owner": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "ownerName": "123",
+    "createdAt": "2025-07-05T09:37:18.335Z",
+    "bookings": [],
+    "available": true
   }
 ]

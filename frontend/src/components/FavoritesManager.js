@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Paper,
@@ -43,7 +44,6 @@ import {
   Folder as FolderIcon,
   Create as CreateIcon,
 } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
 
 const FavoritesManager = ({ user }) => {
   const [favorites, setFavorites] = useState([]);
@@ -365,4 +365,4 @@ const FavoritesManager = ({ user }) => {
   );
 };
 
-export default FavoritesManager; 
+export default FavoritesManager;

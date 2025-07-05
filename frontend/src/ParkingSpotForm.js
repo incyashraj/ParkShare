@@ -1,67 +1,13 @@
-import React, { useState, useEffect } from 'react';
 import { auth } from './firebase';
-import 'leaflet/dist/leaflet.css';
-import {
-  Box,
-  TextField,
-  Button,
-  Typography,
-  Container,
-  Paper,
-  Grid,
-  InputAdornment,
-  MenuItem,
-  FormControlLabel,
-  Checkbox,
-  Alert,
-  Snackbar,
-  Stepper,
-  Step,
-  StepLabel,
-  Card,
-  CardContent,
-  Chip,
-  IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  FormControl,
-  InputLabel,
-  Select,
-  Slider,
-  Switch,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Tooltip,
-  LinearProgress,
-  Avatar,
-  Rating,
-} from '@mui/material';
+import { Box, TextField, Button, Typography, Container, Paper, Grid, InputAdornment, MenuItem, FormControlLabel, Checkbox, Alert, Snackbar, Stepper, Step, StepLabel, Card, CardContent, Chip, IconButton, Dialog, DialogTitle, DialogContent, DialogActions, FormControl, InputLabel, Select, Slider, Switch, Divider, List, ListItem, ListItemText, ListItemIcon, Tooltip, LinearProgress, Avatar, Rating,  } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import MapWrapper from './components/MapWrapper';
-import SimpleMapComponent from './components/SimpleMapComponent';
-import {
-  CloudUpload as CloudUploadIcon,
-  LocationOn as LocationIcon,
-  AttachMoney as MoneyIcon,
-  Security as SecurityIcon,
-  PhotoCamera as PhotoIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  CheckCircle as CheckIcon,
-  Info as InfoIcon,
-  Schedule as ScheduleIcon,
-  DirectionsCar as CarIcon,
-  AccessTime as TimeIcon,
-  Star as StarIcon,
-  TrendingUp as TrendingIcon,
-  LocalParking as ParkingIcon,
-} from '@mui/icons-material';
+import { CloudUpload as CloudUploadIcon, LocationOn as LocationIcon, AttachMoney as MoneyIcon, Security as SecurityIcon, PhotoCamera as PhotoIcon, Delete as DeleteIcon, Edit as EditIcon, CheckCircle as CheckIcon, Info as InfoIcon, Schedule as ScheduleIcon, DirectionsCar as CarIcon, AccessTime as TimeIcon, Star as StarIcon, TrendingUp as TrendingIcon, LocalParking as ParkingIcon,  } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
+import MapWrapper from './components/MapWrapper';
+import { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
+
+import 'leaflet/dist/leaflet.css';
 
 const VisuallyHiddenInput = styled('input')({
   clip: 'rect(0 0 0 0)',
@@ -134,7 +80,7 @@ function ParkingSpotForm() {
   const [showPreview, setShowPreview] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (!user) {
         navigate('/login');
       }

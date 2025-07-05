@@ -1,8 +1,8 @@
-import React from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import { Box, Paper } from '@mui/material';
+import L from 'leaflet';
+
+import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icon issue in react-leaflet
 delete L.Icon.Default.prototype._getIconUrl;

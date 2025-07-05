@@ -1,22 +1,11 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  TextField, 
-  Button, 
-  Typography, 
-  Container, 
-  Paper,
-  Divider,
-  Link,
-  Alert,
-  Snackbar
-} from '@mui/material';
+import { Box, TextField, Button, Typography, Container, Paper, Divider, Link, Alert, Snackbar } from '@mui/material';
 import { styled } from '@mui/material/styles';
-import { Google as GoogleIcon } from '@mui/icons-material';
-import AppleIcon from '@mui/icons-material/Apple';
 import { auth } from './firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
+import AppleIcon from '@mui/icons-material/Apple';
+import GoogleIcon from '@mui/icons-material/Google';
+import { useState } from 'react';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   marginTop: theme.spacing(8),

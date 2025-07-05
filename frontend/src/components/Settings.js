@@ -1,39 +1,8 @@
-import React, { useState, useEffect } from 'react';
 import { auth } from '../firebase';
-import {
-  Container,
-  Typography,
-  Box,
-  Paper,
-  Grid,
-  Switch,
-  TextField,
-  Button,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  ListItemSecondaryAction,
-  Divider,
-  Alert,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Snackbar
-} from '@mui/material';
-import {
-  Notifications as NotificationsIcon,
-  Security as SecurityIcon,
-  CreditCard as CreditCardIcon,
-  Lock as LockIcon,
-  Edit as EditIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon
-} from '@mui/icons-material';
+import { Container, Typography, Box, Paper, Grid, Switch, TextField, Button, List, ListItem, ListItemIcon, ListItemText, ListItemSecondaryAction, Divider, Alert, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Snackbar } from '@mui/material';
+import { Notifications as NotificationsIcon, Security as SecurityIcon, CreditCard as CreditCardIcon, Lock as LockIcon, Edit as EditIcon, Add as AddIcon, Delete as DeleteIcon, Email as EmailIcon, Phone as PhoneIcon } from '@mui/icons-material';
+import { useState, useEffect } from 'react';
+import { onAuthStateChanged } from 'firebase/auth';
 
 function Settings() {
   const [notifications, setNotifications] = useState({
@@ -63,7 +32,7 @@ function Settings() {
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       setUser(user);
       setLoading(false);
     });

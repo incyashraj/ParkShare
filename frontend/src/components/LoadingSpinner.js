@@ -1,6 +1,5 @@
-import React from 'react';
 import { Box, Typography, CircularProgress } from '@mui/material';
-import { LocalParking } from '@mui/icons-material';
+import LocalParking from '@mui/icons-material/LocalParking';
 
 const LoadingSpinner = ({ message = "Loading..." }) => {
   return (
@@ -70,4 +69,4 @@ const LoadingSpinner = ({ message = "Loading..." }) => {
   );
 };
 
-export default LoadingSpinner; 
+export default LoadingSpinner;

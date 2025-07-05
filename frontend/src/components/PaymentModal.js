@@ -20,9 +20,7 @@ import {
   useElements
 } from '@stripe/react-stripe-js';
 import { 
-  CheckCircle, 
   Error, 
-  AccessTime,
 } from '@mui/icons-material';
 
 // Initialize Stripe

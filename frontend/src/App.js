@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Footer from './components/Footer';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
@@ -47,6 +47,7 @@ import ReviewsAndRatings from './components/ReviewsAndRatings';
 import FavoritesManager from './components/FavoritesManager';
 import ParkingAnalytics from './components/ParkingAnalytics';
 import Dashboard from './components/Dashboard';
+import TestBooking from './TestBooking';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -113,6 +114,8 @@ const theme = createTheme({
 function AppContent() {
   const { currentUser } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
+
+  console.log('AppContent rendered, currentUser:', currentUser);
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -328,6 +331,9 @@ function AppContent() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/bookings" element={<BookingManagement />} />
                   <Route path="/verify" element={<HostVerification />} />
+                  <Route path="/favorites" element={<FavoritesManager />} />
+                  <Route path="/analytics" element={<ParkingAnalytics />} />
+                  <Route path="/test-booking" element={<TestBooking />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                 </Routes>
@@ -342,6 +348,21 @@ function AppContent() {
 }
 
 function App() {
+  // Add error boundary
+  React.useEffect(() => {
+    const handleError = (error) => {
+      console.error('Runtime error caught:', error);
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleError);
+
+    return () => {
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleError);
+    };
+  }, []);
+
   return (
     <RealtimeProvider>
       <AuthProvider>

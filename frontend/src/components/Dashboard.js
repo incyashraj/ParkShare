@@ -1,21 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  Container,
-  Grid,
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Avatar,
-  Button
-} from '@mui/material';
-import {
-  LocalParking,
-  AttachMoney,
-  TrendingUp,
-  Person
-} from '@mui/icons-material';
+import { Container, Grid, Card, CardContent, Typography, Box, Avatar, Button } from '@mui/material';
+import { LocalParking, AttachMoney, TrendingUp, Person } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -422,4 +408,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { io } from 'socket.io-client';
 import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 const RealtimeContext = createContext();
 
@@ -23,15 +24,23 @@ export const RealtimeProvider = ({ children }) => {
   const [spotStatus, setSpotStatus] = useState(new Map());
   const [connectedUsers, setConnectedUsers] = useState([]);
 
+  console.log('RealtimeProvider rendered, isConnected:', isConnected, 'socket:', socket);
+
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io('http://localhost:3001', {
-      transports: ['websocket', 'polling'],
-      autoConnect: true,
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionAttempts: 5
-    });
+    let newSocket;
+    try {
+      newSocket = io('http://localhost:3001', {
+        transports: ['websocket', 'polling'],
+        autoConnect: true,
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionAttempts: 5
+      });
+    } catch (error) {
+      console.error('Failed to initialize socket connection:', error);
+      return;
+    }
 
     newSocket.on('connect', () => {
       console.log('Connected to real-time server');
@@ -62,22 +71,6 @@ export const RealtimeProvider = ({ children }) => {
         title: notification.title,
         message: notification.message,
         data: notification.booking,
-        timestamp: notification.timestamp,
-        read: false
-      }, ...prev]);
-    });
-
-    // Booking confirmation for the user who made the booking
-    newSocket.on('booking-confirmation', (notification) => {
-      setNotifications(prev => [{
-        id: Date.now(),
-        type: 'booking',
-        title: notification.title,
-        message: notification.message,
-        data: {
-          ...notification.booking,
-          type: 'booking-confirmation'
-        },
         timestamp: notification.timestamp,
         read: false
       }, ...prev]);
@@ -208,13 +201,19 @@ export const RealtimeProvider = ({ children }) => {
     setSocket(newSocket);
 
     return () => {
-      newSocket.close();
+      if (newSocket) {
+        try {
+          newSocket.close();
+        } catch (error) {
+          console.error('Error closing socket:', error);
+        }
+      }
     };
   }, []);
 
   // Authenticate user when auth state changes
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       if (user && socket) {
         const userData = {
           uid: user.uid,
@@ -328,17 +327,6 @@ export const RealtimeProvider = ({ children }) => {
     );
   }, []);
 
-  const addNotification = useCallback((notification) => {
-    setNotifications(prev => [notification, ...prev]);
-  }, []);
-
-  // Make addNotification globally available for testing
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.addNotification = addNotification;
-    }
-  }, [addNotification]);
-
   const getConversation = useCallback((otherUserId) => {
     if (!currentUser) return [];
     const conversationId = [currentUser.uid, otherUserId].sort().join('-');
@@ -392,7 +380,6 @@ export const RealtimeProvider = ({ children }) => {
     clearNotification,
     clearAllNotifications,
     markNotificationAsRead,
-    addNotification,
     getConversation,
     isUserOnline,
     isUserTyping,

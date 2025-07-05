@@ -109,7 +109,7 @@ io.on('connection', (socket) => {
     // Emit user online status to relevant users
     emitUserPresenceUpdate(uid, true);
     
-    console.log(`User ${username} (${uid}) authenticated and joined rooms`);
+    console.log(`User ${username} (${uid}) authenticated`);
     
     // Send current user's data back
     socket.emit('user-authenticated', { uid, username, email });
@@ -124,8 +124,6 @@ io.on('connection', (socket) => {
       spotWatchers.set(spotId, new Set());
     }
     spotWatchers.get(spotId).add(socket.id);
-    
-    console.log(`User joined spot room: ${spotId}`);
     
     // Send current spot status
     const spot = parkingSpots.find(s => s.id === spotId);
@@ -150,8 +148,6 @@ io.on('connection', (socket) => {
         spotWatchers.delete(spotId);
       }
     }
-    
-    console.log(`User left spot room: ${spotId}`);
   });
 
   // Handle real-time spot availability updates
@@ -446,8 +442,13 @@ function deg2rad(deg) {
 
 // Check spot availability for given time period
 function isSpotAvailable(spotId, startTime, endTime) {
-  const spotBookings = bookings.filter(b => b.spotId === spotId);
-  return !spotBookings.some(booking => {
+  // Filter out cancelled bookings
+  const activeBookings = bookings.filter(b => 
+    b.spotId === spotId && 
+    b.status !== 'cancelled'
+  );
+  
+  return !activeBookings.some(booking => {
     const bookingStart = new Date(booking.startTime);
     const bookingEnd = new Date(booking.endTime);
     const checkStart = new Date(startTime);
@@ -457,9 +458,6 @@ function isSpotAvailable(spotId, startTime, endTime) {
 }
 
 app.post('/parking-spots', async (req, res) => {
-  console.log('Creating new parking spot:', req.body);
-  console.log('Current users in system:', users.map(u => ({ uid: u.uid, username: u.username })));
-  
   const {
     location,
     coordinates,
@@ -471,17 +469,13 @@ app.post('/parking-spots', async (req, res) => {
     userId
   } = req.body;
 
-  console.log('Looking for user with UID:', userId);
-
   if (!location || !hourlyRate || !termsAndConditions) {
-    console.log('Missing required fields:', { location: !!location, hourlyRate: !!hourlyRate, termsAndConditions: !!termsAndConditions });
     return res.status(400).send({ message: 'Location, hourly rate, and terms are required' });
   }
 
   // Get user from users array using userId
   const user = users.find(u => u.uid === userId);
   if (!user) {
-    console.log('User not found for UID:', userId);
     return res.status(404).send({ message: 'User not found. Please log in again.' });
   }
 
@@ -509,10 +503,7 @@ app.post('/parking-spots', async (req, res) => {
     // Save to file for persistence
     saveData(SPOTS_FILE, parkingSpots);
     
-    console.log('New parking spot added:', parkingSpot.id);
-    console.log('Total parking spots now:', parkingSpots.length);
-    console.log('Created by user:', user.username);
-    console.log('All parking spots:', parkingSpots.map(s => ({ id: s.id, location: s.location, owner: s.owner })));
+    console.log('New parking spot added:', parkingSpot.id, 'by user:', user.username);
 
     res.status(201).send({ 
       message: 'Parking spot listed successfully', 
@@ -530,17 +521,26 @@ app.post('/parking-spots', async (req, res) => {
 
 app.get('/parking-spots', (req, res) => {
   const { search, minPrice, maxPrice, rating, lat, lng, radius, userId } = req.query;
-  
-  console.log('Fetching spots. UserID:', userId);
-  console.log('Total spots in system:', parkingSpots.length);
 
   // First, return all spots with owner information
-  let filteredSpots = parkingSpots.map(spot => ({
-    ...spot,
-    isOwner: spot.owner === userId,
-    // Allow booking only if: user is logged in, spot is not owned by user, and spot is available
-    canBook: userId && spot.owner !== userId && spot.available
-  }));
+  let filteredSpots = parkingSpots.map(spot => {
+    // Check if spot has any active (non-cancelled) bookings
+    const activeBookings = bookings.filter(b => 
+      b.spotId === spot.id && 
+      b.status !== 'cancelled'
+    );
+    
+    // Spot is available if it has no active bookings
+    const isActuallyAvailable = activeBookings.length === 0;
+    
+    return {
+      ...spot,
+      isOwner: spot.owner === userId,
+      available: isActuallyAvailable,
+      // Allow booking only if: user is logged in, spot is not owned by user, and spot is actually available
+      canBook: userId && spot.owner !== userId && isActuallyAvailable
+    };
+  });
 
   // Apply text search filter
   if (search) {
@@ -592,16 +592,6 @@ app.get('/parking-spots', (req, res) => {
     filteredSpots.sort((a, b) => a.distance - b.distance);
   }
 
-  console.log('Sending filtered spots:', filteredSpots.length);
-  // Log some sample spots for debugging
-  if (filteredSpots.length > 0) {
-    console.log('Sample spot:', {
-      location: filteredSpots[0].location,
-      owner: filteredSpots[0].ownerName,
-      isOwner: filteredSpots[0].isOwner,
-      canBook: filteredSpots[0].canBook
-    });
-  }
   res.json(filteredSpots);
 });
 
@@ -610,29 +600,28 @@ app.get('/parking-spots/:spotId', (req, res) => {
   const { spotId } = req.params;
   const { userId } = req.query;
   
-  console.log('Fetching spot details for spotId:', spotId, 'UserID:', userId);
-  
   const spot = parkingSpots.find(s => s.id === spotId);
   
   if (!spot) {
-    console.log('Spot not found:', spotId);
     return res.status(404).json({ message: 'Parking spot not found' });
   }
+  
+  // Check if spot has any active (non-cancelled) bookings
+  const activeBookings = bookings.filter(b => 
+    b.spotId === spot.id && 
+    b.status !== 'cancelled'
+  );
+  
+  // Spot is available if it has no active bookings
+  const isActuallyAvailable = activeBookings.length === 0;
   
   // Add owner information and booking permissions
   const spotWithDetails = {
     ...spot,
     isOwner: spot.owner === userId,
-    canBook: userId && spot.owner !== userId && spot.available
+    available: isActuallyAvailable,
+    canBook: userId && spot.owner !== userId && isActuallyAvailable
   };
-  
-  console.log('Sending spot details:', {
-    id: spotWithDetails.id,
-    location: spotWithDetails.location,
-    owner: spotWithDetails.ownerName,
-    isOwner: spotWithDetails.isOwner,
-    canBook: spotWithDetails.canBook
-  });
   
   res.json(spotWithDetails);
 });
@@ -707,7 +696,7 @@ app.get('/realtime/spot-watchers/:spotId', (req, res) => {
 // Enhanced booking endpoint with real-time features
 app.post('/parking-spots/:spotId/book', (req, res) => {
   const { spotId } = req.params;
-  const { startTime, endTime, userId } = req.body;
+  const { startTime, endTime, userId, userName, userEmail, hours, totalPrice, hourlyRate } = req.body;
 
   if (!startTime || !endTime || !userId) {
     return res.status(400).send({ message: 'Start time, end time, and user ID are required' });
@@ -715,6 +704,10 @@ app.post('/parking-spots/:spotId/book', (req, res) => {
 
   const spot = parkingSpots.find(s => s.id === spotId);
   
+  if (!spot) {
+    return res.status(404).send({ message: 'Parking spot not found' });
+  }
+
   // Check if user is trying to book their own spot
   if (spot.owner === userId) {
     return res.status(400).send({ message: 'Cannot book your own parking spot' });
@@ -723,9 +716,6 @@ app.post('/parking-spots/:spotId/book', (req, res) => {
   // Check if spot is available for booking
   if (!spot.available) {
     return res.status(400).send({ message: 'This spot is not available for booking' });
-  }
-  if (!spot) {
-    return res.status(404).send({ message: 'Parking spot not found' });
   }
 
   // Check if the spot is available for the requested time
@@ -737,20 +727,34 @@ app.post('/parking-spots/:spotId/book', (req, res) => {
 
   const user = users.find(u => u.uid === userId);
   const booking = {
-    id: Date.now().toString(),
+    id: `booking_${Date.now()}`,
     spotId,
     userId,
-    userName: user?.username || 'Unknown User',
+    userName: userName || user?.username || 'Unknown User',
+    userEmail: userEmail || user?.email,
     startTime,
     endTime,
+    hours: hours || 1,
+    totalPrice: totalPrice || 0,
+    hourlyRate: hourlyRate || spot.hourlyRate,
     status: 'confirmed',
-    createdAt: new Date(),
+    createdAt: new Date().toISOString(),
     spotOwner: spot.owner,
     spotOwnerName: spot.ownerName,
-    location: spot.location
+    location: spot.location,
+    spotDetails: {
+      location: spot.location,
+      hourlyRate: spot.hourlyRate,
+      coordinates: spot.coordinates
+    }
   };
 
   bookings.push(booking);
+  
+  // Add booking to spot's bookings array
+  if (!spot.bookings) {
+    spot.bookings = [];
+  }
   spot.bookings.push(booking.id);
 
   // Add the booking information to the spot's history
@@ -763,6 +767,10 @@ app.post('/parking-spots/:spotId/book', (req, res) => {
     endTime,
     userId
   });
+
+  // Save data to files
+  saveData(SPOTS_FILE, parkingSpots);
+  saveData(BOOKINGS_FILE, bookings);
 
   // Enhanced real-time notifications
   const bookingNotification = {
@@ -801,6 +809,8 @@ app.post('/parking-spots/:spotId/book', (req, res) => {
     spot.pendingNotifications.push(bookingNotification);
   }
 
+  console.log(`Booking created: ${booking.id} for spot ${spotId} by user ${userId}`);
+
   res.status(201).send({ message: 'Booking confirmed', booking });
 });
 
@@ -808,7 +818,6 @@ app.post('/parking-spots/:spotId/book', (req, res) => {
 app.get('/users/:userId/listings', (req, res) => {
   const { userId } = req.params;
   const userListings = parkingSpots.filter(spot => spot.owner === userId);
-  console.log('User listings found:', userListings.length, 'for user:', userId);
   res.json(userListings);
 });
 
@@ -867,26 +876,70 @@ app.post('/bookings/:bookingId/cancel', async (req, res) => {
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
-    booking.status = 'cancelled';
     
-    // Emit real-time cancellation notification
-    io.to(`user-${booking.spotOwner}`).emit('booking-cancelled', {
-      bookingId,
-      spotId: booking.spotId,
-      userName: booking.userName
-    });
-
-    // Emit spot availability update
+    // Update booking status
+    booking.status = 'cancelled';
+    booking.cancelledAt = new Date().toISOString();
+    
+    // Find the spot and update its availability
     const spot = parkingSpots.find(s => s.id === booking.spotId);
     if (spot) {
+      // Remove the cancelled booking from spot's bookings array (stores booking IDs)
+      if (spot.bookings) {
+        spot.bookings = spot.bookings.filter(bookingIdInSpot => bookingIdInSpot !== bookingId);
+      }
+      
+      // Check if there are any other active bookings for this spot
+      const activeBookings = bookings.filter(b => 
+        b.spotId === booking.spotId && 
+        b.status !== 'cancelled' && 
+        b.id !== bookingId
+      );
+      
+      // If no active bookings, mark spot as available
+      if (activeBookings.length === 0) {
+        spot.available = true;
+        spot.lastUpdated = new Date().toISOString();
+      }
+      
+      // Save updated data
+      saveData(SPOTS_FILE, parkingSpots);
+      saveData(BOOKINGS_FILE, bookings);
+      
+      // Emit real-time updates
       io.to(`spot-${booking.spotId}`).emit('spot-availability-updated', {
         spotId: booking.spotId,
-        available: true
+        available: spot.available,
+        lastUpdated: spot.lastUpdated
       });
+      
+      // Emit cancellation notification to spot owner
+      if (booking.spotOwner) {
+        io.to(`user-${booking.spotOwner}`).emit('booking-cancelled', {
+          bookingId,
+          spotId: booking.spotId,
+          userName: booking.userName,
+          spotName: spot.title || spot.location
+        });
+      }
+      
+      // Emit cancellation notification to user
+      io.to(`user-${booking.userId}`).emit('booking-cancelled', {
+        bookingId,
+        spotId: booking.spotId,
+        spotName: spot.title || spot.location,
+        message: 'Your booking has been cancelled successfully'
+      });
+      
+      console.log(`Booking ${bookingId} cancelled. Spot ${booking.spotId} is now ${spot.available ? 'available' : 'unavailable'}`);
     }
 
-    res.json({ message: 'Booking cancelled successfully' });
+    res.json({ 
+      message: 'Booking cancelled successfully',
+      spotAvailable: spot ? spot.available : false
+    });
   } catch (error) {
+    console.error('Error cancelling booking:', error);
     res.status(500).json({ message: 'Failed to cancel booking' });
   }
 });

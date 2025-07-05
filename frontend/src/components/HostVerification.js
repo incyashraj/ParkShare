@@ -1,36 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Card,
-  CardContent,
-  Typography,
-  TextField,
-  Button,
-  Stepper,
-  Step,
-  StepLabel,
-  Alert,
-  CircularProgress,
-  Chip,
-  Divider,
-  Paper,
-  Grid,
-  IconButton,
-  InputAdornment,
-  Menu,
-  MenuItem,
-  Container
-} from '@mui/material';
-import {
-  Email,
-  Phone,
-  VerifiedUser,
-  CheckCircle,
-  Send,
-  Visibility,
-  VisibilityOff
-} from '@mui/icons-material';
+import { Box, Card, CardContent, Typography, TextField, Button, Stepper, Step, StepLabel, Alert, CircularProgress, Chip, Divider, Paper, Grid, IconButton, InputAdornment, Menu, MenuItem, Container } from '@mui/material';
+import { Email, Phone, VerifiedUser, CheckCircle, Send, Visibility, VisibilityOff } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { useState, useEffect } from 'react';
 
 const steps = ['Email Verification', 'Mobile Verification', 'Verification Complete'];
 
@@ -481,4 +452,4 @@ const HostVerification = () => {
   );
 };
 
-export default HostVerification; 
+export default HostVerification;

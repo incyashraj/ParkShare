@@ -1,34 +1,7 @@
-import React, { useState } from 'react';
-import {
-  Box,
-  Paper,
-  Typography,
-  Rating,
-  TextField,
-  Button,
-  Avatar,
-  Divider,
-  Chip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  IconButton,
-  Grid,
-  Card,
-  CardContent,
-  Alert,
-} from '@mui/material';
-import {
-  Star as StarIcon,
-  ThumbUp as ThumbUpIcon,
-  ThumbDown as ThumbDownIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Add as AddIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Box, Paper, Typography, Rating, TextField, Button, Avatar, Divider, Chip, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Grid, Card, CardContent, Alert,  } from '@mui/material';
+import { Star as StarIcon, ThumbUp as ThumbUpIcon, ThumbDown as ThumbDownIcon, Edit as EditIcon, Delete as DeleteIcon, Add as AddIcon, Close as CloseIcon,  } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { useState } from 'react';
 
 const ReviewsAndRatings = ({ spotId, reviews = [], onAddReview, onUpdateReview, onDeleteReview, user }) => {
   const [openDialog, setOpenDialog] = useState(false);
@@ -363,4 +336,4 @@ const ReviewsAndRatings = ({ spotId, reviews = [], onAddReview, onUpdateReview, 
   );
 };
 
-export default ReviewsAndRatings; 
+export default ReviewsAndRatings;

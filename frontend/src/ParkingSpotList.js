@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import BookingModal from './components/BookingModal';
+import { useNavigate } from 'react-router-dom';
 import AdvancedSearch from './components/AdvancedSearch';
 import {
   Box,
@@ -62,6 +62,7 @@ import {
   Add as AddIcon,
 } from '@mui/icons-material';
 import { auth } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import MapComponent from './components/MapComponent';
 import LoadingSpinner from './components/LoadingSpinner';
 import FloatingActionButton from './components/FloatingActionButton';
@@ -71,6 +72,7 @@ import { useRealtime } from './contexts/RealtimeContext';
 const initialCenter = [19.0760, 72.8777]; // Mumbai coordinates
 
 const ParkingSpotList = () => {
+  const navigate = useNavigate();
   const { joinSpotRoom, leaveSpotRoom, isConnected } = useRealtime();
   const [spots, setSpots] = useState([]);
   const [filteredSpots, setFilteredSpots] = useState([]);
@@ -180,7 +182,7 @@ const ParkingSpotList = () => {
   }, [fetchParkingSpots]);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
     });
 
@@ -200,49 +202,13 @@ const ParkingSpotList = () => {
     };
   }, [spots, joinSpotRoom, leaveSpotRoom]);
 
-  const checkAvailability = useCallback(async (spotId, startTime, endTime) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3001/parking-spots/${spotId}/availability?startTime=${startTime}&endTime=${endTime}`
-      );
-      const data = await response.json();
-      return data.available;
-    } catch (error) {
-      console.error('Error checking availability:', error);
-      return false;
-    }
-  }, []);
 
-  const [selectedSpotForBooking, setSelectedSpotForBooking] = useState(null);
-  const [showBookingModal, setShowBookingModal] = useState(false);
 
-  const handleBooking = async (spot) => {
-    // If the BookingModal is open with selected dates, check availability first
-    if (selectedSpotForBooking && selectedSpotForBooking.startTime && selectedSpotForBooking.endTime) {
-      const isAvailable = await checkAvailability(
-        spot.id,
-        selectedSpotForBooking.startTime,
-        selectedSpotForBooking.endTime
-      );
 
-      if (!isAvailable) {
-        setError('This spot is not available for the selected time period');
-        setOpenSnackbar(true);
-        return;
-      }
-    }
 
-    setSelectedSpotForBooking(spot);
-    setShowBookingModal(true);
-  };
 
-  const handleBookingComplete = (success) => {
-    setShowBookingModal(false);
-    if (success) {
-      // Refresh the spots list
-      fetchParkingSpots();
-    }
-  };
+
+
 
   const applyLocationUpdates = useCallback((position) => {
     const { latitude, longitude } = position.coords;
@@ -335,25 +301,7 @@ const ParkingSpotList = () => {
     return filteredAndSortedSpots.slice(startIndex, endIndex);
   };
 
-  const handleBook = async (bookingData) => {
-    try {
-      console.log('Booking completed:', bookingData);
-      
-      // Show success message
-      setSnackbarMessage(`Successfully booked ${bookingData.spotName} for ${bookingData.hours} hours!`);
-      setSnackbarSeverity('success');
-      setOpenSnackbar(true);
-      
-      // Refresh the spots to get updated availability
-      await fetchParkingSpots();
-      
-    } catch (error) {
-      console.error('Booking error:', error);
-      setSnackbarMessage('Failed to book parking spot. Please try again.');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
-    }
-  };
+
 
   const handleFavorite = (spotId, isFavorite) => {
     setSpots(prevSpots =>
@@ -571,10 +519,14 @@ const ParkingSpotList = () => {
                           <Button
                             variant="contained"
                             size="small"
-                            onClick={() => handleBooking(spot)}
-                            sx={{ mt: 1 }}
+                            onClick={() => navigate(`/spot/${spot.id}`)}
+                            sx={{ 
+                              mt: 1,
+                              bgcolor: '#22C55E',
+                              '&:hover': { bgcolor: '#16A34A' }
+                            }}
                           >
-                            Book Now
+                            View Details
                           </Button>
                         </Box>
                       )
@@ -585,7 +537,7 @@ const ParkingSpotList = () => {
                         s.coordinates[1] === marker.position[1]
                       );
                       if (spot) {
-                        handleBooking(spot);
+                        navigate(`/spot/${spot.id}`);
                       }
                     }}
                   />
@@ -614,7 +566,6 @@ const ParkingSpotList = () => {
                   <Grid item xs={12} sm={6} lg={4} key={spot.id || index}>
                     <ParkingSpotCard
                       spot={spot}
-                      onBook={handleBook}
                       onFavorite={handleFavorite}
                       user={user}
                       isFavorite={favorites.includes(spot.id)}
@@ -628,11 +579,7 @@ const ParkingSpotList = () => {
         </Grid>
       </Grid>
 
-      <BookingModal
-        open={showBookingModal}
-        onClose={handleBookingComplete}
-        spot={selectedSpotForBooking}
-      />
+
 
       {/* Error Snackbar */}
       <Snackbar

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { useRealtime } from '../contexts/RealtimeContext';
 import {
   Dialog,
@@ -16,7 +17,6 @@ import {
   Divider,
   Snackbar,
 } from '@mui/material';
-import PaymentModal from './PaymentModal';
 import ReceiptDownload from './ReceiptDownload';
 
 function BookingModal({ open, onClose, spot }) {
@@ -30,12 +30,11 @@ function BookingModal({ open, onClose, spot }) {
   const [success, setSuccess] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [showPayment, setShowPayment] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged(user => {
+    const unsubscribe = onAuthStateChanged(auth, user => {
       setCurrentUser(user);
     });
     return () => unsubscribe();
@@ -108,56 +107,74 @@ function BookingModal({ open, onClose, spot }) {
     setError('');
     setSuccess(false);
 
-    // Create booking data for payment modal
-    const booking = {
-      spotId: spot.id,
-      userId: currentUser?.uid,
-      userName: currentUser?.displayName || currentUser?.email,
-      userEmail: currentUser?.email,
-      spotTitle: spot.title || spot.location,
-      spotLocation: spot.location,
-      startTime: startDateTime.toISOString(),
-      endTime: endDateTime.toISOString(),
-      hours: hours,
-      totalPrice: calculateTotalPrice(),
-      hourlyRate: spot.hourlyRate
-    };
-    
-    console.log('Created booking data:', booking);
-    setBookingData(booking);
-    setShowPayment(true);
-    setIsProcessing(false);
+    try {
+      // Create booking data
+      const bookingData = {
+        spotId: spot.id,
+        userId: currentUser?.uid,
+        userName: currentUser?.displayName || currentUser?.email,
+        userEmail: currentUser?.email,
+        spotTitle: spot.title || spot.location,
+        spotLocation: spot.location,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        hours: hours,
+        totalPrice: calculateTotalPrice(),
+        hourlyRate: spot.hourlyRate
+      };
+      
+      console.log('Creating booking with data:', bookingData);
+
+      // Call the backend to create the booking
+      const response = await fetch(`http://localhost:3001/parking-spots/${spot.id}/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create booking');
+      }
+
+      const result = await response.json();
+      console.log('Booking created successfully:', result);
+      
+      setSuccess(true);
+      setBookingData(result.booking);
+      
+      // Show success notification
+      setShowSuccessSnackbar(true);
+      
+      // Add notification to the notification center
+      const notification = {
+        id: Date.now(),
+        type: 'booking',
+        title: 'Booking Confirmed! 🎉',
+        message: `Your booking for ${result.booking.spotTitle || result.booking.spotLocation} has been confirmed.`,
+        data: {
+          bookingId: result.booking.id,
+          spotId: result.booking.spotId,
+          type: 'booking-confirmation'
+        },
+        timestamp: new Date(),
+        read: false
+      };
+      
+      // Add to notifications context
+      addNotification(notification);
+      
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      setError(error.message || 'Failed to create booking. Please try again.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  const handlePaymentSuccess = (result) => {
-    console.log('Payment success:', result);
-    setSuccess(true);
-    setShowPayment(false);
-    setBookingData(result.booking);
-    
-    // Show success notification
-    setShowSuccessSnackbar(true);
-    
-    // Add notification to the notification center
-    const notification = {
-      id: Date.now(),
-      type: 'booking',
-      title: 'Booking Confirmed! 🎉',
-      message: `Your booking for ${result.booking.spotTitle || result.booking.spotLocation} has been confirmed.`,
-      data: {
-        bookingId: result.booking.id,
-        spotId: result.booking.spotId,
-        type: 'booking-confirmation'
-      },
-      timestamp: new Date(),
-      read: false
-    };
-    
-    // Add to notifications context
-    addNotification(notification);
-    
-    // Don't auto-close, let user download receipt first
-  };
+
 
 
 
@@ -320,7 +337,7 @@ function BookingModal({ open, onClose, spot }) {
                 },
               }}
             >
-              {isProcessing ? 'Processing...' : 'Proceed to Payment'}
+              {isProcessing ? 'Processing...' : 'Confirm Booking'}
             </Button>
           ) : (
             <Button
@@ -339,13 +356,7 @@ function BookingModal({ open, onClose, spot }) {
         </DialogActions>
       </Dialog>
 
-      {/* Payment Modal */}
-      <PaymentModal
-        open={showPayment}
-        onClose={() => setShowPayment(false)}
-        bookingData={bookingData}
-        onSuccess={handlePaymentSuccess}
-      />
+
 
       {/* Success Snackbar */}
       <Snackbar
