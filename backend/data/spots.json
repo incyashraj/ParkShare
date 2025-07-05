@@ -74,7 +74,7 @@
       }
     ],
     "available": true,
-    "lastUpdated": "2025-07-05T10:42:09.468Z"
+    "lastUpdated": "2025-07-05T14:28:49.823Z"
   },
   {
     "id": "spot_downtown_001",
@@ -144,7 +144,7 @@
     "hourlyRate": "$20",
     "price": 20,
     "description": "Convenient parking near airport with shuttle service",
-    "available": true,
+    "available": false,
     "owner": "user_jane_456",
     "ownerName": "Jane Smith",
     "images": [
@@ -172,7 +172,23 @@
     ],
     "createdAt": "2025-07-04T21:54:49.373Z",
     "bookings": [
-      "booking_1751710463129"
+      "booking_1751710463129",
+      {
+        "id": "booking_1751735049809",
+        "spotId": "spot_airport_002",
+        "userId": "test-user-123",
+        "userName": "Test User",
+        "startTime": "2025-07-06T17:04:09.781Z",
+        "endTime": "2025-07-06T19:04:09.782Z",
+        "totalPrice": 40,
+        "hours": 2,
+        "createdAt": "2025-07-05T17:04:09.809Z",
+        "status": "paid",
+        "paymentId": "test_1751735049809",
+        "paidAt": "2025-07-05T17:04:09.809Z",
+        "paymentAmount": 40,
+        "isTestBooking": true
+      }
     ],
     "bookingHistory": [
       {
@@ -398,6 +414,28 @@
     "owner": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
     "ownerName": "123",
     "createdAt": "2025-07-05T09:37:18.335Z",
+    "bookings": [],
+    "available": true
+  },
+  {
+    "id": "1751725467397",
+    "location": "123, 123, 123 123",
+    "coordinates": [
+      19.076,
+      72.8777
+    ],
+    "hourlyRate": "INR 123133",
+    "maxDuration": "1323",
+    "securityFeatures": [
+      "patrol"
+    ],
+    "termsAndConditions": "Standard parking terms and conditions apply. Users must follow parking rules and respect the property.",
+    "images": [],
+    "rating": 0,
+    "reviews": [],
+    "owner": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "ownerName": "123",
+    "createdAt": "2025-07-05T14:24:27.397Z",
     "bookings": [],
     "available": true
   }

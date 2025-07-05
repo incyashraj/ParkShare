@@ -21,8 +21,11 @@ function BookingManagement() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [openModifyDialog, setOpenModifyDialog] = useState(false);
+  const [openCancelDialog, setOpenCancelDialog] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [bookingToCancel, setBookingToCancel] = useState(null);
   const [newStartTime, setNewStartTime] = useState(null);
   const [newEndTime, setNewEndTime] = useState(null);
 
@@ -58,9 +61,14 @@ function BookingManagement() {
     setOpenModifyDialog(true);
   };
 
-  const handleCancelBooking = async (bookingId) => {
+  const handleCancelBooking = (booking) => {
+    setBookingToCancel(booking);
+    setOpenCancelDialog(true);
+  };
+
+  const confirmCancelBooking = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/bookings/${bookingId}/cancel`, {
+      const response = await fetch(`http://localhost:3001/bookings/${bookingToCancel.id}/cancel`, {
         method: 'POST'
       });
 
@@ -68,7 +76,13 @@ function BookingManagement() {
         throw new Error('Failed to cancel booking');
       }
 
+      setOpenCancelDialog(false);
+      setBookingToCancel(null);
+      setSuccessMessage('Booking cancelled successfully!');
       fetchBookings(); // Refresh bookings
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
       setError(err.message);
     }
@@ -76,23 +90,49 @@ function BookingManagement() {
 
   const handleSaveModification = async () => {
     try {
+      // Validate dates
+      if (!newStartTime || !newEndTime) {
+        setError('Please select both start and end times');
+        return;
+      }
+
+      if (newEndTime <= newStartTime) {
+        setError('End time must be after start time');
+        return;
+      }
+
+      // Check if the new time is in the future
+      if (newStartTime <= new Date()) {
+        setError('Start time must be in the future');
+        return;
+      }
+
       const response = await fetch(`http://localhost:3001/bookings/${selectedBooking.id}/modify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          startTime: newStartTime,
-          endTime: newEndTime
+          startTime: newStartTime.toISOString(),
+          endTime: newEndTime.toISOString()
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to modify booking');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to modify booking');
       }
 
+      const result = await response.json();
       setOpenModifyDialog(false);
+      setError(null);
+      setSuccessMessage('Booking modified successfully!');
       fetchBookings(); // Refresh bookings
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000);
+      
+      console.log('Booking modified successfully:', result);
     } catch (err) {
       setError(err.message);
     }
@@ -165,6 +205,12 @@ function BookingManagement() {
         <Typography variant="h4" gutterBottom color="primary">
           Booking Management
         </Typography>
+        
+        {successMessage && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setSuccessMessage(null)}>
+            {successMessage}
+          </Alert>
+        )}
 
         <Paper sx={{ mt: 3 }}>
           <Tabs
@@ -214,6 +260,11 @@ function BookingManagement() {
           <DialogTitle>Modify Booking</DialogTitle>
           <DialogContent>
             <Box py={2}>
+              {selectedBooking && (
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  Modifying booking for: <strong>{selectedBooking.spotDetails?.location || selectedBooking.spotLocation}</strong>
+                </Typography>
+              )}
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <Grid container spacing={3}>
                   <Grid item xs={12} sm={6}>
@@ -222,6 +273,7 @@ function BookingManagement() {
                       value={newStartTime}
                       onChange={setNewStartTime}
                       renderInput={(props) => <TextField {...props} fullWidth />}
+                      minDateTime={new Date()}
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
@@ -230,16 +282,49 @@ function BookingManagement() {
                       value={newEndTime}
                       onChange={setNewEndTime}
                       renderInput={(props) => <TextField {...props} fullWidth />}
+                      minDateTime={newStartTime || new Date()}
                     />
                   </Grid>
                 </Grid>
               </LocalizationProvider>
+              {error && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {error}
+                </Alert>
+              )}
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenModifyDialog(false)}>Cancel</Button>
+            <Button onClick={() => {
+              setOpenModifyDialog(false);
+              setError(null);
+            }}>
+              Cancel
+            </Button>
             <Button onClick={handleSaveModification} variant="contained" color="primary">
               Save Changes
+            </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Cancel Confirmation Dialog */}
+        <Dialog open={openCancelDialog} onClose={() => setOpenCancelDialog(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Cancel Booking</DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to cancel your booking for{' '}
+              <strong>{bookingToCancel?.spotDetails?.location || bookingToCancel?.spotLocation}</strong>?
+            </Typography>
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+              This action cannot be undone.
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenCancelDialog(false)}>
+              Keep Booking
+            </Button>
+            <Button onClick={confirmCancelBooking} variant="contained" color="error">
+              Cancel Booking
             </Button>
           </DialogActions>
         </Dialog>
@@ -303,18 +388,27 @@ function BookingsList({ bookings, onModify, onCancel, onDownload, type }) {
                     />
                   </Grid>
                   <Grid item xs={12} sm={6}>
-                    <Box display="flex" justifyContent="flex-end" gap={1}>
+                    <Box display="flex" justifyContent="flex-end" gap={1} alignItems="center">
+                      <Typography variant="body2" color="textSecondary" sx={{ mr: 1 }}>
+                        ${booking.totalPrice || 'N/A'}
+                      </Typography>
                       {type !== 'past' && (
                         <>
-                          <IconButton onClick={() => onModify(booking)} color="primary">
-                            <EditIcon />
-                          </IconButton>
-                          <IconButton onClick={() => onCancel(booking.id)} color="error">
+                          <Button
+                            startIcon={<EditIcon />}
+                            onClick={() => onModify(booking)}
+                            variant="outlined"
+                            size="small"
+                            color="primary"
+                          >
+                            Edit
+                          </Button>
+                          <IconButton onClick={() => onCancel(booking)} color="error" size="small">
                             <CancelIcon />
                           </IconButton>
                         </>
                       )}
-                      <IconButton onClick={() => handleDownloadClick(booking)}>
+                      <IconButton onClick={() => handleDownloadClick(booking)} size="small">
                         <DownloadIcon />
                       </IconButton>
                     </Box>

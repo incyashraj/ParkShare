@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../firebase';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, updateProfile } from 'firebase/auth';
 import {
   Container,
   Typography,
@@ -14,7 +14,6 @@ import {
   Chip,
   CircularProgress,
   Button,
-  Divider,
   Avatar,
   Tab,
   Tabs,
@@ -24,7 +23,18 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogActions
+  DialogActions,
+  TextField,
+  Alert,
+  LinearProgress,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  Badge,
+  Tooltip,
+  Fab
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
@@ -32,9 +42,26 @@ import {
   Edit as EditIcon,
   VerifiedUser,
   Email,
-  Phone
+  Phone,
+  Add as AddIcon,
+  Search as SearchIcon,
+  BookOnline as BookingsIcon,
+  Star as StarIcon,
+  TrendingUp as TrendingUpIcon,
+  Person as PersonIcon,
+  LocationOn as LocationIcon,
+  AttachMoney as MoneyIcon,
+  Schedule as ScheduleIcon,
+  CheckCircle as CheckCircleIcon,
+  Warning as WarningIcon,
+  Info as InfoIcon,
+  Close as CloseIcon,
+  Save as SaveIcon,
+  Cancel as CancelIcon
 } from '@mui/icons-material';
-import { format } from 'date-fns';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import BookingCard from './BookingCard';
 
 function TabPanel({ children, value, index }) {
@@ -67,6 +94,27 @@ function Profile() {
   const [successMessage, setSuccessMessage] = useState('');
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [bookingToCancel, setBookingToCancel] = useState(null);
+  const [openEditDialog, setOpenEditDialog] = useState(false);
+  const [selectedBookingForEdit, setSelectedBookingForEdit] = useState(null);
+  const [newStartTime, setNewStartTime] = useState(null);
+  const [newEndTime, setNewEndTime] = useState(null);
+  
+  // New state for enhanced functionality
+  const [editProfileDialog, setEditProfileDialog] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({
+    displayName: '',
+    email: '',
+    phone: ''
+  });
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [stats, setStats] = useState({
+    totalBookings: 0,
+    activeBookings: 0,
+    totalEarnings: 0,
+    totalListings: 0,
+    averageRating: 0,
+    completionPercentage: 0
+  });
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -84,6 +132,71 @@ function Profile() {
       setError('Failed to log out');
     }
     handleMenuClose();
+  };
+
+  const handleEditProfile = () => {
+    setEditProfileData({
+      displayName: currentUser?.displayName || '',
+      email: currentUser?.email || '',
+      phone: currentUser?.phoneNumber || ''
+    });
+    setEditProfileDialog(true);
+  };
+
+  const handleSaveProfile = async () => {
+    setProfileLoading(true);
+    try {
+      await updateProfile(auth.currentUser, {
+        displayName: editProfileData.displayName
+      });
+      
+      setCurrentUser(prev => ({
+        ...prev,
+        displayName: editProfileData.displayName
+      }));
+      
+      setSuccessMessage('Profile updated successfully!');
+      setEditProfileDialog(false);
+      
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (error) {
+      setError('Failed to update profile: ' + error.message);
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const calculateStats = () => {
+    const totalBookings = bookings.length;
+    const activeBookings = bookings.filter(b => 
+      new Date(b.endTime) > new Date() && b.status !== 'cancelled'
+    ).length;
+    const totalEarnings = bookings
+      .filter(b => b.status === 'completed')
+      .reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    const totalListings = listings.length;
+    const averageRating = bookings.length > 0 ? 
+      bookings.reduce((sum, b) => sum + (b.rating || 0), 0) / bookings.length : 0;
+    
+    // Calculate profile completion percentage
+    const profileFields = [
+      currentUser?.displayName,
+      currentUser?.email,
+      verificationStatus.emailVerified,
+      verificationStatus.mobileVerified,
+      listings.length > 0
+    ];
+    const completedFields = profileFields.filter(Boolean).length;
+    const completionPercentage = (completedFields / profileFields.length) * 100;
+
+    setStats({
+      totalBookings,
+      activeBookings,
+      totalEarnings,
+      totalListings,
+      averageRating,
+      completionPercentage
+    });
   };
 
   const handleCancelBooking = async (bookingId) => {
@@ -144,76 +257,133 @@ function Profile() {
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, user => {
-      if (!user) {
-        navigate('/login');
+  const handleEditBooking = (booking) => {
+    setSelectedBookingForEdit(booking);
+    setNewStartTime(new Date(booking.startTime));
+    setNewEndTime(new Date(booking.endTime));
+    setOpenEditDialog(true);
+  };
+
+  const handleSaveBookingEdit = async () => {
+    try {
+      // Validate dates
+      if (!newStartTime || !newEndTime) {
+        setError('Please select both start and end times');
         return;
       }
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, [navigate]);
+
+      if (newEndTime <= newStartTime) {
+        setError('End time must be after start time');
+        return;
+      }
+
+      // Check if the new time is in the future
+      if (newStartTime <= new Date()) {
+        setError('Start time must be in the future');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:3001/bookings/${selectedBookingForEdit.id}/modify`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          startTime: newStartTime.toISOString(),
+          endTime: newEndTime.toISOString()
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to modify booking');
+      }
+
+      const result = await response.json();
+      
+      // Update the bookings list
+      setBookings(prevBookings => 
+        prevBookings.map(booking => 
+          booking.id === selectedBookingForEdit.id 
+            ? { ...booking, startTime: newStartTime.toISOString(), endTime: newEndTime.toISOString() }
+            : booking
+        )
+      );
+
+      setSuccessMessage('Booking updated successfully!');
+      setOpenEditDialog(false);
+      setError(null);
+      
+      setTimeout(() => setSuccessMessage(''), 5000);
+      
+    } catch (error) {
+      console.error('Error updating booking:', error);
+      setError(error.message);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async (userId) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user);
+      if (user) {
+        fetchData(user.uid);
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (currentUser && bookings.length > 0) {
+      calculateStats();
+    }
+  }, [currentUser, bookings, listings, verificationStatus]);
+
+  const fetchData = async (userId) => {
+    try {
       setBookingsLoading(true);
-      try {
-        const bookingsResponse = await fetch(`http://localhost:3001/users/${userId}/bookings`);
-        if (!bookingsResponse.ok) {
-          throw new Error('Failed to fetch bookings');
-        }
-        const bookingsData = await bookingsResponse.json();
-        setBookings(bookingsData);
-      } catch (err) {
-        setNetworkError('Failed to fetch bookings');
-        console.error('Bookings fetch error:', err);
-      } finally {
-        setBookingsLoading(false);
-      }
-    };
-
-    const fetchListings = async (userId) => {
       setListingsLoading(true);
-      try {
-        const listingsResponse = await fetch(`http://localhost:3001/users/${userId}/listings`);
-        if (!listingsResponse.ok) {
-          throw new Error('Failed to fetch listings');
-        }
-        const listingsData = await listingsResponse.json();
-        setListings(listingsData);
-      } catch (err) {
-        setNetworkError('Failed to fetch listings');
-        console.error('Listings fetch error:', err);
-      } finally {
-        setListingsLoading(false);
-      }
-    };
+      setError(null);
+      setNetworkError(null);
 
-    const fetchVerificationStatus = async (userId) => {
-      try {
-        const response = await fetch(`http://localhost:3001/verify/status/${userId}`);
-        if (response.ok) {
-          const status = await response.json();
-          setVerificationStatus(status);
-        }
-      } catch (err) {
-        console.error('Verification status fetch error:', err);
-      }
-    };
-
-    const fetchData = async () => {
-      if (!currentUser) return;
-      const userId = currentUser.uid;
-      await Promise.all([
-        fetchBookings(userId),
-        fetchListings(userId),
-        fetchVerificationStatus(userId)
+      const [bookingsResponse, listingsResponse, verificationResponse] = await Promise.allSettled([
+        fetch(`http://localhost:3001/bookings/user/${userId}`),
+        fetch(`http://localhost:3001/spots/user/${userId}`),
+        fetch(`http://localhost:3001/users/${userId}/verification`)
       ]);
-    };
 
-    fetchData();
-  }, [currentUser]);
+      // Handle bookings
+      if (bookingsResponse.status === 'fulfilled' && bookingsResponse.value.ok) {
+        const bookingsData = await bookingsResponse.value.json();
+        setBookings(bookingsData);
+      } else {
+        console.error('Failed to fetch bookings');
+      }
+
+      // Handle listings
+      if (listingsResponse.status === 'fulfilled' && listingsResponse.value.ok) {
+        const listingsData = await listingsResponse.value.json();
+        setListings(listingsData);
+      } else {
+        console.error('Failed to fetch listings');
+      }
+
+      // Handle verification status
+      if (verificationResponse.status === 'fulfilled' && verificationResponse.value.ok) {
+        const verificationData = await verificationResponse.value.json();
+        setVerificationStatus(verificationData);
+      } else {
+        console.error('Failed to fetch verification status');
+      }
+
+    } catch (error) {
+      console.error('Network error:', error);
+      setNetworkError('Failed to connect to server. Please check your internet connection.');
+    } finally {
+      setBookingsLoading(false);
+      setListingsLoading(false);
+    }
+  };
 
   const renderUserInfo = () => (
     <Paper elevation={0} sx={{ p: 3, mb: 4, bgcolor: 'background.default' }}>
@@ -250,49 +420,233 @@ function Profile() {
             </Box>
           </Box>
         </Box>
-        <IconButton onClick={handleMenuClick}>
-          <SettingsIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            startIcon={<EditIcon />}
+            variant="outlined"
+            onClick={handleEditProfile}
+          >
+            Edit Profile
+          </Button>
+          <IconButton onClick={handleMenuClick}>
+            <SettingsIcon />
+          </IconButton>
+        </Box>
       </Box>
+      
+      {/* Profile Completion Progress */}
+      <Box sx={{ mt: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+          <Typography variant="body2" color="text.secondary">
+            Profile Completion
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            {Math.round(stats.completionPercentage)}%
+          </Typography>
+        </Box>
+        <LinearProgress 
+          variant="determinate" 
+          value={stats.completionPercentage} 
+          sx={{ height: 8, borderRadius: 4 }}
+        />
+      </Box>
+    </Paper>
+  );
+
+  const renderQuickStats = () => (
+    <Grid container spacing={3} sx={{ mb: 4 }}>
+      <Grid item xs={12} sm={6} md={3}>
+        <Card sx={{ textAlign: 'center', p: 2 }}>
+          <BookingsIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
+          <Typography variant="h4" color="primary.main">
+            {stats.totalBookings}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Total Bookings
+          </Typography>
+        </Card>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <Card sx={{ textAlign: 'center', p: 2 }}>
+          <TrendingUpIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
+          <Typography variant="h4" color="success.main">
+            {stats.activeBookings}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Active Bookings
+          </Typography>
+        </Card>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <Card sx={{ textAlign: 'center', p: 2 }}>
+          <MoneyIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
+          <Typography variant="h4" color="warning.main">
+            ${stats.totalEarnings}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Total Earnings
+          </Typography>
+        </Card>
+      </Grid>
+      <Grid item xs={12} sm={6} md={3}>
+        <Card sx={{ textAlign: 'center', p: 2 }}>
+          <LocationIcon sx={{ fontSize: 40, color: 'info.main', mb: 1 }} />
+          <Typography variant="h4" color="info.main">
+            {stats.totalListings}
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            My Listings
+          </Typography>
+        </Card>
+      </Grid>
+    </Grid>
+  );
+
+  const renderQuickActions = () => (
+    <Paper elevation={0} sx={{ p: 3, mb: 4, bgcolor: 'background.default' }}>
+      <Typography variant="h6" gutterBottom>
+        Quick Actions
+      </Typography>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6} md={3}>
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => navigate('/list')}
+            sx={{ py: 2 }}
+          >
+            Add Parking Spot
+          </Button>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<SearchIcon />}
+            onClick={() => navigate('/search')}
+            sx={{ py: 2 }}
+          >
+            Find Parking
+          </Button>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<BookingsIcon />}
+            onClick={() => setTabValue(0)}
+            sx={{ py: 2 }}
+          >
+            View Bookings
+          </Button>
+        </Grid>
+        <Grid item xs={12} sm={6} md={3}>
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<VerifiedUser />}
+            onClick={() => navigate('/verify')}
+            sx={{ py: 2 }}
+          >
+            Verify Account
+          </Button>
+        </Grid>
+      </Grid>
     </Paper>
   );
 
   const renderListings = () => (
     <Grid container spacing={3}>
-      {listings.map((listing) => (
-        <Grid item xs={12} sm={6} key={listing.id}>
-          <Card>
-            <CardMedia
-              component="img"
-              height="140"
-              image={listing.images?.[0] || 'https://via.placeholder.com/400x200?text=No+Image'}
-              alt={listing.location}
-            />
-            <CardContent>
-              <Typography variant="h6" gutterBottom>
-                {listing.location}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" gutterBottom>
-                Rate: {listing.hourlyRate}/hour
-              </Typography>
-              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'space-between' }}>
-                <Chip
-                  label={listing.available ? 'Available' : 'Not Available'}
-                  color={listing.available ? 'success' : 'default'}
-                  size="small"
-                />
-                <Button
-                  startIcon={<EditIcon />}
-                  size="small"
-                  onClick={() => {/* TODO: Add edit functionality */}}
-                >
-                  Edit
-                </Button>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      ))}
+      {listings.map((listing) => {
+        // Get bookings for this listing
+        const listingBookings = bookings.filter(booking => booking.spotId === listing.id);
+        
+        return (
+          <Grid item xs={12} key={listing.id}>
+            <Card sx={{ mb: 2 }}>
+              <CardMedia
+                component="img"
+                height="140"
+                image={listing.images?.[0] || 'https://via.placeholder.com/400x200?text=No+Image'}
+                alt={listing.location}
+              />
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                  <Box>
+                    <Typography variant="h6" gutterBottom>
+                      {listing.location}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      Rate: {listing.hourlyRate}/hour
+                    </Typography>
+                    <Chip
+                      label={listing.available ? 'Available' : 'Not Available'}
+                      color={listing.available ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </Box>
+                  <Button
+                    startIcon={<EditIcon />}
+                    size="small"
+                    onClick={() => {/* TODO: Add edit listing functionality */}}
+                  >
+                    Edit Spot
+                  </Button>
+                </Box>
+
+                {/* Bookings for this listing */}
+                <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>
+                  Bookings ({listingBookings.length})
+                </Typography>
+                
+                {listingBookings.length === 0 ? (
+                  <Typography color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                    No bookings for this spot yet.
+                  </Typography>
+                ) : (
+                  <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
+                    {listingBookings.map((booking) => (
+                      <Card key={booking.id} sx={{ mb: 1, bgcolor: 'background.default' }}>
+                        <CardContent sx={{ py: 1.5 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Box>
+                              <Typography variant="body2" fontWeight="medium">
+                                {booking.userName || 'Unknown User'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {new Date(booking.startTime).toLocaleDateString()} - {new Date(booking.endTime).toLocaleDateString()}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                                ${booking.totalPrice || 'N/A'}
+                              </Typography>
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1 }}>
+                              <Chip
+                                label={booking.status || 'confirmed'}
+                                color={booking.status === 'confirmed' ? 'success' : 'default'}
+                                size="small"
+                              />
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<EditIcon />}
+                                onClick={() => handleEditBooking(booking)}
+                              >
+                                Edit
+                              </Button>
+                            </Box>
+                          </Box>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </Box>
+                )}
+              </CardContent>
+            </Card>
+          </Grid>
+        );
+      })}
       {listings.length === 0 && (
         <Grid item xs={12}>
           <Typography color="text.secondary" textAlign="center">
@@ -417,6 +771,12 @@ function Profile() {
           </MenuItem>
         </Menu>
 
+        {/* Quick Stats Dashboard */}
+        {renderQuickStats()}
+        
+        {/* Quick Actions */}
+        {renderQuickActions()}
+
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <Tabs 
             value={tabValue} 
@@ -426,6 +786,7 @@ function Profile() {
             <Tab label="My Bookings" />
             <Tab label="My Listings" />
             <Tab label="Verification" />
+            <Tab label="Analytics" />
           </Tabs>
         </Box>
 
@@ -532,6 +893,125 @@ function Profile() {
             )}
           </Paper>
         </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
+          <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.default' }}>
+            <Typography variant="h6" gutterBottom>
+              Analytics & Insights
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Booking Performance
+                    </Typography>
+                    <List>
+                      <ListItem>
+                        <ListItemIcon>
+                          <BookingsIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={`${stats.totalBookings} Total Bookings`}
+                          secondary="All time bookings"
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon>
+                          <TrendingUpIcon color="success" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={`${stats.activeBookings} Active Bookings`}
+                          secondary="Currently active"
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon>
+                          <StarIcon color="warning" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={`${stats.averageRating.toFixed(1)} Average Rating`}
+                          secondary="From all bookings"
+                        />
+                      </ListItem>
+                    </List>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Financial Summary
+                    </Typography>
+                    <List>
+                      <ListItem>
+                        <ListItemIcon>
+                          <MoneyIcon color="success" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={`$${stats.totalEarnings} Total Earnings`}
+                          secondary="From completed bookings"
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon>
+                          <LocationIcon color="info" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={`${stats.totalListings} Active Listings`}
+                          secondary="Your parking spots"
+                        />
+                      </ListItem>
+                      <ListItem>
+                        <ListItemIcon>
+                          <CheckCircleIcon color="primary" />
+                        </ListItemIcon>
+                        <ListItemText 
+                          primary={`${Math.round(stats.completionPercentage)}% Profile Complete`}
+                          secondary="Profile completion status"
+                        />
+                      </ListItem>
+                    </List>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12}>
+                <Card>
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      Recent Activity
+                    </Typography>
+                    {bookings.length > 0 ? (
+                      <List>
+                        {bookings.slice(0, 5).map((booking, index) => (
+                          <ListItem key={booking.id} divider={index < 4}>
+                            <ListItemIcon>
+                              <ScheduleIcon color="primary" />
+                            </ListItemIcon>
+                            <ListItemText 
+                              primary={`Booking for ${booking.spotDetails?.location || 'Parking Spot'}`}
+                              secondary={`${new Date(booking.startTime).toLocaleDateString()} - ${booking.status}`}
+                            />
+                            <Chip 
+                              label={booking.status} 
+                              color={booking.status === 'confirmed' ? 'success' : 'default'}
+                              size="small"
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : (
+                      <Typography color="text.secondary" textAlign="center">
+                        No recent activity
+                      </Typography>
+                    )}
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+          </Paper>
+        </TabPanel>
       </Box>
       
       {/* Cancellation Confirmation Dialog */}
@@ -569,6 +1049,104 @@ function Profile() {
             disabled={cancellingBooking}
           >
             {cancellingBooking ? 'Cancelling...' : 'Cancel Booking'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Booking Dialog */}
+      <Dialog open={openEditDialog} onClose={() => setOpenEditDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Booking</DialogTitle>
+        <DialogContent>
+          <Box py={2}>
+            {selectedBookingForEdit && (
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                Editing booking for: <strong>{selectedBookingForEdit.userName || 'Unknown User'}</strong>
+              </Typography>
+            )}
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} sm={6}>
+                  <DateTimePicker
+                    label="New Start Time"
+                    value={newStartTime}
+                    onChange={setNewStartTime}
+                    renderInput={(props) => <TextField {...props} fullWidth />}
+                    minDateTime={new Date()}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <DateTimePicker
+                    label="New End Time"
+                    value={newEndTime}
+                    onChange={setNewEndTime}
+                    renderInput={(props) => <TextField {...props} fullWidth />}
+                    minDateTime={newStartTime || new Date()}
+                  />
+                </Grid>
+              </Grid>
+            </LocalizationProvider>
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOpenEditDialog(false);
+            setError(null);
+          }}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveBookingEdit} variant="contained" color="primary">
+            Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={editProfileDialog} onClose={() => setEditProfileDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Profile</DialogTitle>
+        <DialogContent>
+          <Box py={2}>
+            <TextField
+              label="Display Name"
+              value={editProfileData.displayName}
+              onChange={(e) => setEditProfileData({ ...editProfileData, displayName: e.target.value })}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Email"
+              value={editProfileData.email}
+              onChange={(e) => setEditProfileData({ ...editProfileData, email: e.target.value })}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            <TextField
+              label="Phone"
+              value={editProfileData.phone}
+              onChange={(e) => setEditProfileData({ ...editProfileData, phone: e.target.value })}
+              fullWidth
+              sx={{ mb: 2 }}
+            />
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setEditProfileDialog(false);
+            setError(null);
+          }}>
+            Cancel
+          </Button>
+          <Button onClick={handleSaveProfile} variant="contained" color="primary">
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>

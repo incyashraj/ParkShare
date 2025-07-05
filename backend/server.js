@@ -2008,6 +2008,46 @@ app.post('/bookings/test', async (req, res) => {
   });
 });
 
+// Get all users (for admin purposes)
+app.get('/users', (req, res) => {
+  try {
+    // Return users without sensitive information
+    const safeUsers = users.map(user => ({
+      uid: user.uid,
+      username: user.username,
+      email: user.email,
+      createdAt: user.createdAt || new Date().toISOString()
+    }));
+    res.json(safeUsers);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all bookings (for admin purposes)
+app.get('/bookings/all', (req, res) => {
+  try {
+    const bookingsWithDetails = bookings.map(booking => {
+      const spot = parkingSpots.find(s => s.id === booking.spotId);
+      return {
+        ...booking,
+        spotDetails: spot ? {
+          location: spot.location,
+          hourlyRate: spot.hourlyRate,
+          coordinates: spot.coordinates
+        } : null
+      };
+    });
+    res.json(bookingsWithDetails);
+  } catch (error) {
+    console.error('Error fetching all bookings:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+
+
 server.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });

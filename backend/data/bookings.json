@@ -1,17 +1,5 @@
 [
   {
-    "id": "1751665727661",
-    "spotId": "1751665437464",
-    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "userName": "123@gmail.com",
-    "startTime": "00:12",
-    "endTime": null,
-    "totalPrice": 12,
-    "createdAt": "2025-07-04T21:48:47.661Z",
-    "status": "cancelled",
-    "cancelledAt": "2025-07-05T10:41:54.511Z"
-  },
-  {
     "id": "booking_1751667846191",
     "spotId": "1751665094276",
     "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
@@ -42,33 +30,6 @@
     "isProxyPayment": true
   },
   {
-    "id": "temp_1751696394937",
-    "spotId": "test_spot",
-    "userId": "test_user",
-    "userName": "Test User",
-    "startTime": "2025-07-05T06:19:54.937Z",
-    "endTime": "2025-07-05T08:19:54.937Z",
-    "totalPrice": 25,
-    "createdAt": "2025-07-05T06:19:54.937Z",
-    "status": "pending_payment",
-    "isTemporary": true
-  },
-  {
-    "id": "booking_1751696414252",
-    "spotId": "test_spot_123",
-    "userId": "test_user_123",
-    "userName": "Test User",
-    "startTime": "2025-07-05T06:20:14.252Z",
-    "endTime": "2025-07-05T08:20:14.252Z",
-    "totalPrice": 30,
-    "createdAt": "2025-07-05T06:20:14.252Z",
-    "status": "paid",
-    "paymentId": "proxy_1751696414252",
-    "paidAt": "2025-07-05T06:20:14.252Z",
-    "paymentAmount": 30,
-    "isProxyPayment": true
-  },
-  {
     "id": "booking_1751705627513",
     "spotId": "1751665437464",
     "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
@@ -84,7 +45,7 @@
     "paymentAmount": 24,
     "paymentMethod": "Test Mode",
     "isTestBooking": true,
-    "cancelledAt": "2025-07-05T10:42:09.468Z"
+    "cancelledAt": "2025-07-05T14:28:49.823Z"
   },
   {
     "id": "booking_1751705677885",
@@ -203,5 +164,21 @@
         72.8898
       ]
     }
+  },
+  {
+    "id": "booking_1751735049809",
+    "spotId": "spot_airport_002",
+    "userId": "test-user-123",
+    "userName": "Test User",
+    "startTime": "2025-07-06T17:04:09.781Z",
+    "endTime": "2025-07-06T19:04:09.782Z",
+    "totalPrice": 40,
+    "hours": 2,
+    "createdAt": "2025-07-05T17:04:09.809Z",
+    "status": "paid",
+    "paymentId": "test_1751735049809",
+    "paidAt": "2025-07-05T17:04:09.809Z",
+    "paymentAmount": 40,
+    "isTestBooking": true
   }
 ]
