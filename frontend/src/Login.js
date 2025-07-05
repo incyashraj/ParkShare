@@ -33,7 +33,7 @@ const SocialButton = styled(Button)(({ theme }) => ({
   borderRadius: theme.spacing(1),
 }));
 
-function Login({ onLogin }) {
+function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -61,7 +61,6 @@ function Login({ onLogin }) {
       setOpenSnackbar(true);
       
       setTimeout(() => {
-        onLogin();
         navigate('/');
       }, 1500);
     } catch (error) {

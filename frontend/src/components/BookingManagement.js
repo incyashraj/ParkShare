@@ -31,6 +31,7 @@ import { format } from 'date-fns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
+import ReceiptDownload from './ReceiptDownload';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -131,17 +132,37 @@ function BookingManagement() {
     const now = new Date();
     switch (type) {
       case 'active':
-        return bookings.filter(booking => 
-          new Date(booking.startTime) <= now && new Date(booking.endTime) >= now
-        );
+        return bookings.filter(booking => {
+          try {
+            const startTime = new Date(booking.startTime);
+            const endTime = new Date(booking.endTime);
+            return !isNaN(startTime.getTime()) && !isNaN(endTime.getTime()) &&
+                   startTime <= now && endTime >= now;
+          } catch (error) {
+            console.error('Error filtering active bookings:', error);
+            return false;
+          }
+        });
       case 'upcoming':
-        return bookings.filter(booking => 
-          new Date(booking.startTime) > now
-        );
+        return bookings.filter(booking => {
+          try {
+            const startTime = new Date(booking.startTime);
+            return !isNaN(startTime.getTime()) && startTime > now;
+          } catch (error) {
+            console.error('Error filtering upcoming bookings:', error);
+            return false;
+          }
+        });
       case 'past':
-        return bookings.filter(booking => 
-          new Date(booking.endTime) < now
-        );
+        return bookings.filter(booking => {
+          try {
+            const endTime = new Date(booking.endTime);
+            return !isNaN(endTime.getTime()) && endTime < now;
+          } catch (error) {
+            console.error('Error filtering past bookings:', error);
+            return false;
+          }
+        });
       default:
         return [];
     }
@@ -253,6 +274,14 @@ function BookingManagement() {
 }
 
 function BookingsList({ bookings, onModify, onCancel, onDownload, type }) {
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [receiptDialogOpen, setReceiptDialogOpen] = useState(false);
+
+  const handleDownloadClick = (booking) => {
+    setSelectedBooking(booking);
+    setReceiptDialogOpen(true);
+  };
+
   if (!bookings.length) {
     return (
       <Typography color="textSecondary" align="center">
@@ -262,52 +291,90 @@ function BookingsList({ bookings, onModify, onCancel, onDownload, type }) {
   }
 
   return (
-    <Grid container spacing={3}>
-      {bookings.map((booking) => (
-        <Grid item xs={12} key={booking.id}>
-          <Card>
-            <CardContent>
-              <Grid container spacing={2} alignItems="center">
-                <Grid item xs={12} sm={6}>
-                  <Typography variant="h6">
-                    {booking.spotDetails.location}
-                  </Typography>
-                  <Box display="flex" alignItems="center" mt={1}>
-                    <AccessTimeIcon sx={{ mr: 1, fontSize: 'small', color: 'text.secondary' }} />
-                    <Typography variant="body2" color="textSecondary">
-                      {format(new Date(booking.startTime), 'PPp')} - {format(new Date(booking.endTime), 'PPp')}
+    <>
+      <Grid container spacing={3}>
+        {bookings.map((booking) => (
+          <Grid item xs={12} key={booking.id}>
+            <Card>
+              <CardContent>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid item xs={12} sm={6}>
+                    <Typography variant="h6">
+                      {booking.spotDetails?.location || booking.spotLocation || 'Unknown Location'}
                     </Typography>
-                  </Box>
-                  <Chip
-                    label={booking.status}
-                    color={booking.status === 'confirmed' ? 'success' : 'default'}
-                    size="small"
-                    sx={{ mt: 1 }}
-                  />
+                    <Box display="flex" alignItems="center" mt={1}>
+                      <AccessTimeIcon sx={{ mr: 1, fontSize: 'small', color: 'text.secondary' }} />
+                      <Typography variant="body2" color="textSecondary">
+                        {(() => {
+                          try {
+                            const startTime = new Date(booking.startTime);
+                            const endTime = new Date(booking.endTime);
+                            if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
+                              return 'Invalid date';
+                            }
+                            return `${format(startTime, 'PPp')} - ${format(endTime, 'PPp')}`;
+                          } catch (error) {
+                            console.error('Error formatting booking dates:', error);
+                            return 'Invalid date';
+                          }
+                        })()}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={booking.status || 'confirmed'}
+                      color={booking.status === 'confirmed' ? 'success' : 'default'}
+                      size="small"
+                      sx={{ mt: 1 }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Box display="flex" justifyContent="flex-end" gap={1}>
+                      {type !== 'past' && (
+                        <>
+                          <IconButton onClick={() => onModify(booking)} color="primary">
+                            <EditIcon />
+                          </IconButton>
+                          <IconButton onClick={() => onCancel(booking.id)} color="error">
+                            <CancelIcon />
+                          </IconButton>
+                        </>
+                      )}
+                      <IconButton onClick={() => handleDownloadClick(booking)}>
+                        <DownloadIcon />
+                      </IconButton>
+                    </Box>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} sm={6}>
-                  <Box display="flex" justifyContent="flex-end" gap={1}>
-                    {type !== 'past' && (
-                      <>
-                        <IconButton onClick={() => onModify(booking)} color="primary">
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton onClick={() => onCancel(booking.id)} color="error">
-                          <CancelIcon />
-                        </IconButton>
-                      </>
-                    )}
-                    <IconButton onClick={() => onDownload(booking)}>
-                      <DownloadIcon />
-                    </IconButton>
-                  </Box>
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
-      ))}
-    </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+
+      {/* Receipt Download Dialog */}
+      <Dialog 
+        open={receiptDialogOpen} 
+        onClose={() => setReceiptDialogOpen(false)} 
+        maxWidth="md" 
+        fullWidth
+      >
+        <DialogTitle>Download Receipt</DialogTitle>
+        <DialogContent>
+          {selectedBooking && (
+            <ReceiptDownload 
+              booking={selectedBooking}
+              spot={selectedBooking.spotDetails}
+              user={auth.currentUser}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setReceiptDialogOpen(false)}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 }
 

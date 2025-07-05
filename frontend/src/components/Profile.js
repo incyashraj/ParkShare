@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { auth } from '../firebase';
 import {
   Container,
@@ -24,9 +24,13 @@ import {
 import {
   Settings as SettingsIcon,
   ExitToApp as LogoutIcon,
-  Edit as EditIcon
+  Edit as EditIcon,
+  VerifiedUser,
+  Email,
+  Phone
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import PaymentStatus from './PaymentStatus';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -47,6 +51,13 @@ function Profile() {
   const [networkError, setNetworkError] = useState(null);
   const [tabValue, setTabValue] = useState(0);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [verificationStatus, setVerificationStatus] = useState({
+    emailVerified: false,
+    mobileVerified: false,
+    isVerifiedHost: false,
+    verifiedEmail: '',
+    verifiedMobile: ''
+  });
 
   const handleMenuClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -81,7 +92,7 @@ function Profile() {
     const fetchBookings = async (userId) => {
       setBookingsLoading(true);
       try {
-        const bookingsResponse = await fetch(`http://localhost:3001/users/${userId}/bookings`);
+        const bookingsResponse = await fetch(`http://localhost:3001/bookings?userId=${userId}`);
         if (!bookingsResponse.ok) {
           throw new Error('Failed to fetch bookings');
         }
@@ -112,12 +123,25 @@ function Profile() {
       }
     };
 
+    const fetchVerificationStatus = async (userId) => {
+      try {
+        const response = await fetch(`http://localhost:3001/verify/status/${userId}`);
+        if (response.ok) {
+          const status = await response.json();
+          setVerificationStatus(status);
+        }
+      } catch (err) {
+        console.error('Verification status fetch error:', err);
+      }
+    };
+
     const fetchData = async () => {
       if (!currentUser) return;
       const userId = currentUser.uid;
       await Promise.all([
         fetchBookings(userId),
-        fetchListings(userId)
+        fetchListings(userId),
+        fetchVerificationStatus(userId)
       ]);
     };
 
@@ -141,6 +165,22 @@ function Profile() {
             <Typography color="text.secondary">
               Member since {new Date(currentUser?.metadata?.creationTime).toLocaleDateString()}
             </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+              {verificationStatus.isVerifiedHost ? (
+                <Chip
+                  icon={<VerifiedUser />}
+                  label="Verified Host"
+                  color="success"
+                  size="small"
+                />
+              ) : (
+                <Chip
+                  label="Unverified"
+                  color="default"
+                  size="small"
+                />
+              )}
+            </Box>
           </Box>
         </Box>
         <IconButton onClick={handleMenuClick}>
@@ -210,80 +250,7 @@ function Profile() {
       ) : (
         bookings.map((booking) => (
           <Grid item xs={12} key={booking.id}>
-            <Card>
-              <CardContent>
-                <Box display="flex" justifyContent="space-between" alignItems="flex-start">
-                  <Box>
-                    <Typography variant="h6" component="div" gutterBottom>
-                      {booking.spotDetails.location}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                      Booked on: {format(new Date(booking.createdAt), 'PPp')}
-                    </Typography>
-                  </Box>
-                  <Box display="flex" flexDirection="column" alignItems="flex-end">
-                    <Chip
-                      label={booking.status}
-                      color={booking.status === 'confirmed' ? 'success' : 'default'}
-                      size="small"
-                      sx={{ mb: 1 }}
-                    />
-                    <Typography variant="body2" color="text.secondary">
-                      Total: {booking.spotDetails.hourlyRate}/hour
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Divider sx={{ my: 2 }} />
-
-                <Grid container spacing={2}>
-                  <Grid item xs={12}>
-                    <Typography color="text.secondary" gutterBottom>
-                      Duration
-                    </Typography>
-                    <Box display="flex" alignItems="center" flexWrap="wrap">
-                      <Typography variant="body2">
-                        From: {(() => {
-                          try {
-                            return format(new Date(booking.startTime), 'PPp');
-                          } catch (err) {
-                            return 'Invalid date';
-                          }
-                        })()}
-                      </Typography>
-                      <Typography variant="body2" sx={{ mx: 1 }}>→</Typography>
-                      <Typography variant="body2">
-                        Until: {(() => {
-                          try {
-                            return format(new Date(booking.endTime), 'PPp');
-                          } catch (err) {
-                            return 'Invalid date';
-                          }
-                        })()}
-                      </Typography>
-                    </Box>
-                  </Grid>
-
-                  <Grid item xs={12} sm={6}>
-                    <Typography color="text.secondary" gutterBottom>
-                      Owner Details
-                    </Typography>
-                    <Typography variant="body2">
-                      Listed by: {booking.spotDetails.ownerName}
-                    </Typography>
-                  </Grid>
-                  
-                  <Grid item xs={12} sm={6}>
-                    <Typography color="text.secondary" gutterBottom>
-                      Rate
-                    </Typography>
-                    <Typography variant="body2">
-                      {booking.spotDetails.hourlyRate}/hour
-                    </Typography>
-                  </Grid>
-                </Grid>
-              </CardContent>
-            </Card>
+            <PaymentStatus booking={booking} />
           </Grid>
         ))
       )}
@@ -330,6 +297,7 @@ function Profile() {
           >
             <Tab label="My Bookings" />
             <Tab label="My Listings" />
+            <Tab label="Verification" />
           </Tabs>
         </Box>
 
@@ -351,6 +319,90 @@ function Profile() {
           ) : (
             renderListings()
           )}
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={2}>
+          <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.default' }}>
+            <Typography variant="h6" gutterBottom>
+              Verification Status
+            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Email sx={{ mr: 1, color: verificationStatus.emailVerified ? 'success.main' : 'text.secondary' }} />
+                      <Typography variant="h6">Email Verification</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      {verificationStatus.emailVerified ? 
+                        `Verified: ${verificationStatus.verifiedEmail}` : 
+                        'Email not verified yet'
+                      }
+                    </Typography>
+                    <Chip
+                      label={verificationStatus.emailVerified ? 'Verified' : 'Not Verified'}
+                      color={verificationStatus.emailVerified ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Card>
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                      <Phone sx={{ mr: 1, color: verificationStatus.mobileVerified ? 'success.main' : 'text.secondary' }} />
+                      <Typography variant="h6">Mobile Verification</Typography>
+                    </Box>
+                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                      {verificationStatus.mobileVerified ? 
+                        `Verified: ${verificationStatus.verifiedMobile}` : 
+                        'Mobile number not verified yet'
+                      }
+                    </Typography>
+                    <Chip
+                      label={verificationStatus.mobileVerified ? 'Verified' : 'Not Verified'}
+                      color={verificationStatus.mobileVerified ? 'success' : 'default'}
+                      size="small"
+                    />
+                  </CardContent>
+                </Card>
+              </Grid>
+            </Grid>
+            
+            {!verificationStatus.isVerifiedHost && (
+              <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Typography variant="body1" color="text.secondary" gutterBottom>
+                  Become a verified host to build trust with renters
+                </Typography>
+                <Button
+                  variant="contained"
+                  component={Link}
+                  to="/verify"
+                  startIcon={<VerifiedUser />}
+                  sx={{ mt: 2 }}
+                >
+                  Verify My Account
+                </Button>
+              </Box>
+            )}
+            
+            {verificationStatus.isVerifiedHost && (
+              <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Chip
+                  icon={<VerifiedUser />}
+                  label="Verified Host"
+                  color="success"
+                  size="large"
+                  sx={{ fontSize: '1.1rem', py: 1 }}
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                  Congratulations! You are a verified host. Your listings will be marked with a verified badge.
+                </Typography>
+              </Box>
+            )}
+          </Paper>
         </TabPanel>
       </Box>
     </Container>

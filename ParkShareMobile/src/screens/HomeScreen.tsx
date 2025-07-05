@@ -1,407 +1,594 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  StyleSheet,
   ScrollView,
+  StyleSheet,
   RefreshControl,
-  TouchableOpacity,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import {
   Text,
   Card,
   Button,
-  useTheme,
-  Surface,
-  Avatar,
   Chip,
+  Avatar,
   FAB,
+  Divider,
+  List,
+  Surface,
+  useTheme,
+  ActivityIndicator,
 } from 'react-native-paper';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
+import { NavigationProp } from '../types/navigation';
+
+const { width } = Dimensions.get('window');
 
 interface ParkingSpot {
   id: string;
-  location: string;
-  hourlyRate: string;
+  title: string;
+  address: string;
+  price: number;
   rating: number;
+  distance: number;
   available: boolean;
-  distance?: number;
+  image?: string;
+  features: string[];
 }
 
 const HomeScreen: React.FC = () => {
-  const [refreshing, setRefreshing] = useState(false);
-  const [nearbySpots, setNearbySpots] = useState<ParkingSpot[]>([]);
-  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const navigation = useNavigation<NavigationProp>();
   const theme = useTheme();
   const { user } = useAuth();
+  const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [nearbySpots, setNearbySpots] = useState<ParkingSpot[]>([]);
+  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    totalSpots: 0,
+    activeBookings: 0,
+    totalSpent: 0,
+  });
 
-  // Mock data for demo
+  // Mock data for demonstration
   useEffect(() => {
     loadData();
   }, []);
 
-  const loadData = () => {
-    // Mock nearby spots
+  const loadData = async () => {
+    setLoading(true);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     setNearbySpots([
       {
         id: '1',
-        location: 'Downtown Parking Garage',
-        hourlyRate: '$5/hour',
-        rating: 4.5,
+        title: 'Downtown Premium Parking',
+        address: '123 Main St, Downtown',
+        price: 15,
+        rating: 4.8,
+        distance: 0.5,
         available: true,
-        distance: 0.2,
+        features: ['Covered', 'Security', '24/7'],
       },
       {
         id: '2',
-        location: 'Central Mall Parking',
-        hourlyRate: '$3/hour',
+        title: 'Mall Parking Garage',
+        address: '456 Shopping Ave',
+        price: 8,
         rating: 4.2,
+        distance: 1.2,
         available: true,
-        distance: 0.8,
+        features: ['Covered', 'Easy Access'],
       },
       {
         id: '3',
-        location: 'Street Parking - Main St',
-        hourlyRate: '$2/hour',
-        rating: 3.8,
+        title: 'Airport Long-term',
+        address: '789 Airport Blvd',
+        price: 25,
+        rating: 4.6,
+        distance: 5.0,
         available: false,
-        distance: 1.2,
+        features: ['Shuttle', 'Security'],
       },
     ]);
 
-    // Mock recent bookings
     setRecentBookings([
       {
         id: '1',
-        location: 'Downtown Parking Garage',
+        spotTitle: 'Downtown Premium Parking',
         date: '2024-01-15',
         duration: '2 hours',
-        amount: '$10',
+        amount: 30,
         status: 'completed',
       },
       {
         id: '2',
-        location: 'Central Mall Parking',
+        spotTitle: 'Mall Parking Garage',
         date: '2024-01-14',
-        duration: '1 hour',
-        amount: '$3',
-        status: 'completed',
+        duration: '4 hours',
+        amount: 32,
+        status: 'active',
       },
     ]);
+
+    setStats({
+      totalSpots: 156,
+      activeBookings: 2,
+      totalSpent: 245,
+    });
+
+    setLoading(false);
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      loadData();
-      setRefreshing(false);
-    }, 1000);
+    await loadData();
+    setRefreshing(false);
   };
 
   const renderSpotCard = (spot: ParkingSpot) => (
-    <Card key={spot.id} style={styles.spotCard}>
-      <Card.Content>
+    <Card key={spot.id} style={styles.spotCard} mode="elevated">
+      <Card.Cover 
+        source={{ uri: spot.image || 'https://via.placeholder.com/300x200/1E3A8A/FFFFFF?text=Parking+Spot' }}
+        style={styles.spotImage}
+      />
+      <Card.Content style={styles.spotContent}>
         <View style={styles.spotHeader}>
-          <View style={styles.spotInfo}>
-            <Text style={[styles.spotLocation, { color: theme.colors.onSurface }]}>
-              {spot.location}
-            </Text>
-            <Text style={[styles.spotRate, { color: theme.colors.primary }]}>
-              {spot.hourlyRate}
-            </Text>
-          </View>
-          <View style={styles.spotMeta}>
-            <Chip
-              icon="star"
-              mode="outlined"
-              style={styles.ratingChip}
-            >
+          <Text variant="titleMedium" style={styles.spotTitle}>
+            {spot.title}
+          </Text>
+          <View style={styles.ratingContainer}>
+            <Ionicons name="star" size={16} color={theme.colors.primary} />
+            <Text variant="bodySmall" style={styles.rating}>
               {spot.rating}
-            </Chip>
-            {spot.distance && (
-              <Text style={[styles.distance, { color: theme.colors.onSurfaceVariant }]}>
-                {spot.distance}km away
-              </Text>
-            )}
+            </Text>
           </View>
         </View>
-        <View style={styles.spotFooter}>
-          <Chip
-            mode={spot.available ? 'flat' : 'outlined'}
-            style={[
-              styles.availabilityChip,
-              spot.available && { backgroundColor: theme.colors.primary }
-            ]}
+        
+        <Text variant="bodySmall" style={styles.spotAddress}>
+          <Ionicons name="location" size={14} color="#9CA3AF" />
+          {' '}{spot.address}
+        </Text>
+        
+        <View style={styles.spotDetails}>
+          <Text variant="bodySmall" style={styles.distance}>
+            <Ionicons name="navigate" size={14} color="#9CA3AF" />
+            {' '}{spot.distance} km away
+          </Text>
+          <Text variant="titleMedium" style={styles.price}>
+            ${spot.price}/hr
+          </Text>
+        </View>
+
+        <View style={styles.featuresContainer}>
+          {spot.features.map((feature, index) => (
+            <Chip 
+              key={index} 
+              compact 
+              style={styles.featureChip}
+              textStyle={styles.featureText}
+            >
+              {feature}
+            </Chip>
+          ))}
+        </View>
+
+        <View style={styles.spotActions}>
+          <Button
+            mode="outlined"
+            onPress={() => navigation.navigate('SpotDetail', { spotId: spot.id })}
+            style={styles.viewButton}
           >
-            {spot.available ? 'Available' : 'Occupied'}
-          </Chip>
+            View Details
+          </Button>
           <Button
             mode="contained"
-            compact
+            onPress={() => navigation.navigate('Booking', { spotId: spot.id })}
             disabled={!spot.available}
             style={styles.bookButton}
           >
-            Book Now
+            {spot.available ? 'Book Now' : 'Unavailable'}
           </Button>
         </View>
       </Card.Content>
     </Card>
   );
 
-  const renderBookingCard = (booking: any) => (
-    <Card key={booking.id} style={styles.bookingCard}>
-      <Card.Content>
-        <View style={styles.bookingHeader}>
-          <Text style={[styles.bookingLocation, { color: theme.colors.onSurface }]}>
-            {booking.location}
+  const renderStatsCard = () => (
+    <Surface style={styles.statsCard} elevation={2}>
+      <Text variant="titleMedium" style={styles.statsTitle}>
+        Your Parking Stats
+      </Text>
+      <View style={styles.statsGrid}>
+        <View style={styles.statItem}>
+          <Text variant="headlineSmall" style={styles.statNumber}>
+            {stats.totalSpots}
           </Text>
-          <Chip
-            mode="outlined"
-            style={styles.statusChip}
-          >
-            {booking.status}
-          </Chip>
-        </View>
-        <View style={styles.bookingDetails}>
-          <Text style={[styles.bookingDate, { color: theme.colors.onSurfaceVariant }]}>
-            {booking.date} • {booking.duration}
-          </Text>
-          <Text style={[styles.bookingAmount, { color: theme.colors.primary }]}>
-            {booking.amount}
+          <Text variant="bodySmall" style={styles.statLabel}>
+            Spots Used
           </Text>
         </View>
-      </Card.Content>
-    </Card>
+        <View style={styles.statItem}>
+          <Text variant="headlineSmall" style={styles.statNumber}>
+            {stats.activeBookings}
+          </Text>
+          <Text variant="bodySmall" style={styles.statLabel}>
+            Active Bookings
+          </Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text variant="headlineSmall" style={styles.statNumber}>
+            ${stats.totalSpent}
+          </Text>
+          <Text variant="bodySmall" style={styles.statLabel}>
+            Total Spent
+          </Text>
+        </View>
+      </View>
+    </Surface>
   );
 
+  const renderRecentBookings = () => (
+    <Surface style={styles.bookingsCard} elevation={2}>
+      <View style={styles.sectionHeader}>
+        <Text variant="titleMedium" style={styles.sectionTitle}>
+          Recent Bookings
+        </Text>
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('Bookings')}
+          compact
+        >
+          View All
+        </Button>
+      </View>
+      
+      {recentBookings.map((booking) => (
+        <List.Item
+          key={booking.id}
+          title={booking.spotTitle}
+          description={`${booking.date} • ${booking.duration}`}
+                       left={(props) => (
+               <List.Icon 
+                 {...props} 
+                 icon={booking.status === 'active' ? 'clock' : 'check-circle'} 
+                 color={booking.status === 'active' ? theme.colors.primary : '#10B981'}
+               />
+             )}
+          right={() => (
+            <Text variant="bodyMedium" style={styles.bookingAmount}>
+              ${booking.amount}
+            </Text>
+          )}
+          style={styles.bookingItem}
+        />
+      ))}
+    </Surface>
+  );
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={styles.loadingText}>Loading your parking data...</Text>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <View style={styles.container}>
       <ScrollView
         style={styles.scrollView}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
+        showsVerticalScrollIndicator={false}
       >
-        {/* Header */}
-        <Surface style={[styles.header, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.headerContent}>
+        {/* Welcome Section */}
+        <View style={styles.welcomeSection}>
+          <View style={styles.welcomeHeader}>
             <View>
-              <Text style={[styles.greeting, { color: theme.colors.onSurface }]}>
-                Welcome back,
+              <Text variant="headlineSmall" style={styles.welcomeTitle}>
+                Welcome back, {user?.username || 'User'}!
               </Text>
-              <Text style={[styles.userName, { color: theme.colors.primary }]}>
-                {user?.username || 'User'}
+              <Text variant="bodyMedium" style={styles.welcomeSubtitle}>
+                Find the perfect parking spot near you
               </Text>
             </View>
-            <Avatar.Text
-              size={50}
-              label={user?.username?.charAt(0).toUpperCase() || 'U'}
-              style={{ backgroundColor: theme.colors.primary }}
+            <Avatar.Text 
+              size={50} 
+              label={user?.username?.charAt(0).toUpperCase() || 'U'} 
+              style={styles.userAvatar}
             />
+          </View>
+        </View>
+
+        {/* Stats Card */}
+        {renderStatsCard()}
+
+        {/* Quick Actions */}
+        <Surface style={styles.quickActionsCard} elevation={2}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>
+            Quick Actions
+          </Text>
+          <View style={styles.quickActionsGrid}>
+            <Button
+              mode="contained-tonal"
+              icon="map-marker"
+              onPress={() => navigation.navigate('Map')}
+              style={styles.quickActionButton}
+              contentStyle={styles.quickActionContent}
+            >
+              Find Nearby
+            </Button>
+            <Button
+              mode="contained-tonal"
+              icon="plus"
+              onPress={() => navigation.navigate('AddSpot')}
+              style={styles.quickActionButton}
+              contentStyle={styles.quickActionContent}
+            >
+              Add Spot
+            </Button>
+            <Button
+              mode="contained-tonal"
+              icon="calendar"
+              onPress={() => navigation.navigate('Bookings')}
+              style={styles.quickActionButton}
+              contentStyle={styles.quickActionContent}
+            >
+              My Bookings
+            </Button>
+            <Button
+              mode="contained-tonal"
+              icon="settings"
+              onPress={() => navigation.navigate('Settings')}
+              style={styles.quickActionButton}
+              contentStyle={styles.quickActionContent}
+            >
+              Settings
+            </Button>
           </View>
         </Surface>
 
-        {/* Quick Stats */}
-        <View style={styles.statsContainer}>
-          <Card style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
-            <Card.Content style={styles.statContent}>
-              <Ionicons name="car" size={24} color={theme.colors.primary} />
-              <Text style={[styles.statNumber, { color: theme.colors.onSurface }]}>5</Text>
-              <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
-                Active Bookings
-              </Text>
-            </Card.Content>
-          </Card>
-
-          <Card style={[styles.statCard, { backgroundColor: theme.colors.surface }]}>
-            <Card.Content style={styles.statContent}>
-              <Ionicons name="wallet" size={24} color={theme.colors.primary} />
-              <Text style={[styles.statNumber, { color: theme.colors.onSurface }]}>$45</Text>
-              <Text style={[styles.statLabel, { color: theme.colors.onSurfaceVariant }]}>
-                Saved This Month
-              </Text>
-            </Card.Content>
-          </Card>
-        </View>
+        {/* Recent Bookings */}
+        {renderRecentBookings()}
 
         {/* Nearby Spots */}
-        <View style={styles.section}>
+        <View style={styles.nearbySection}>
           <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-              Nearby Spots
+            <Text variant="titleMedium" style={styles.sectionTitle}>
+              Nearby Parking Spots
             </Text>
-            <Button mode="text" compact>
+            <Button
+              mode="text"
+              onPress={() => navigation.navigate('Search')}
+              compact
+            >
               View All
             </Button>
           </View>
+          
           {nearbySpots.map(renderSpotCard)}
         </View>
 
-        {/* Recent Bookings */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.sectionTitle, { color: theme.colors.onSurface }]}>
-              Recent Bookings
-            </Text>
-            <Button mode="text" compact>
-              View All
-            </Button>
-          </View>
-          {recentBookings.map(renderBookingCard)}
-        </View>
+        <View style={styles.bottomSpacer} />
       </ScrollView>
 
       {/* Floating Action Button */}
       <FAB
         icon="plus"
         style={[styles.fab, { backgroundColor: theme.colors.primary }]}
-        onPress={() => {/* Navigate to Add Spot */}}
+        onPress={() => navigation.navigate('AddSpot')}
+        label="Add Spot"
       />
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#F8FAFC',
   },
   scrollView: {
     flex: 1,
   },
-  header: {
-    padding: 20,
-    marginBottom: 16,
-    elevation: 2,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
   },
-  headerContent: {
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#6B7280',
+  },
+  welcomeSection: {
+    padding: 20,
+    paddingTop: Platform.OS === 'android' ? 40 : 20,
+  },
+  welcomeHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  greeting: {
-    fontSize: 16,
-    opacity: 0.7,
-  },
-  userName: {
-    fontSize: 24,
+  welcomeTitle: {
     fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 4,
   },
-  statsContainer: {
+  welcomeSubtitle: {
+    color: '#6B7280',
+  },
+  userAvatar: {
+    backgroundColor: '#1E3A8A',
+  },
+  statsCard: {
+    margin: 20,
+    marginTop: 0,
+    padding: 20,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  statsTitle: {
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#1F2937',
+  },
+  statsGrid: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 24,
-    gap: 12,
+    justifyContent: 'space-between',
   },
-  statCard: {
-    flex: 1,
-    elevation: 1,
-  },
-  statContent: {
+  statItem: {
     alignItems: 'center',
-    paddingVertical: 16,
+    flex: 1,
   },
   statNumber: {
-    fontSize: 24,
     fontWeight: 'bold',
-    marginTop: 8,
+    color: '#1E3A8A',
   },
   statLabel: {
-    fontSize: 12,
-    textAlign: 'center',
+    color: '#6B7280',
     marginTop: 4,
   },
-  section: {
-    paddingHorizontal: 16,
-    marginBottom: 24,
+  quickActionsCard: {
+    margin: 20,
+    marginTop: 0,
+    padding: 20,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  sectionTitle: {
+    fontWeight: 'bold',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  quickActionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  quickActionButton: {
+    width: (width - 80) / 2,
+    marginBottom: 12,
+  },
+  quickActionContent: {
+    height: 48,
+  },
+  bookingsCard: {
+    margin: 20,
+    marginTop: 0,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    padding: 20,
+    paddingBottom: 0,
   },
-  sectionTitle: {
-    fontSize: 20,
+  bookingItem: {
+    paddingHorizontal: 20,
+  },
+  bookingAmount: {
     fontWeight: 'bold',
+    color: '#1E3A8A',
+  },
+  nearbySection: {
+    margin: 20,
+    marginTop: 0,
   },
   spotCard: {
-    marginBottom: 12,
-    elevation: 2,
+    marginBottom: 16,
+    borderRadius: 12,
+    backgroundColor: '#FFFFFF',
+  },
+  spotImage: {
+    height: 160,
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  spotContent: {
+    padding: 16,
   },
   spotHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  spotTitle: {
+    fontWeight: 'bold',
+    flex: 1,
+    color: '#1F2937',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rating: {
+    marginLeft: 4,
+    color: '#1E3A8A',
+    fontWeight: 'bold',
+  },
+  spotAddress: {
+    color: '#6B7280',
     marginBottom: 12,
   },
-  spotInfo: {
-    flex: 1,
-  },
-  spotLocation: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  spotRate: {
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  spotMeta: {
-    alignItems: 'flex-end',
-  },
-  ratingChip: {
-    marginBottom: 4,
-  },
-  distance: {
-    fontSize: 12,
-  },
-  spotFooter: {
+  spotDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
   },
-  availabilityChip: {
+  distance: {
+    color: '#6B7280',
+  },
+  price: {
+    fontWeight: 'bold',
+    color: '#1E3A8A',
+  },
+  featuresContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 16,
+  },
+  featureChip: {
+    marginRight: 8,
+    marginBottom: 8,
+    backgroundColor: '#F3F4F6',
+  },
+  featureText: {
+    fontSize: 12,
+    color: '#374151',
+  },
+  spotActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  viewButton: {
+    flex: 1,
     marginRight: 8,
   },
   bookButton: {
-    borderRadius: 20,
-  },
-  bookingCard: {
-    marginBottom: 8,
-    elevation: 1,
-  },
-  bookingHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  bookingLocation: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  statusChip: {
-    height: 24,
-  },
-  bookingDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  bookingDate: {
-    fontSize: 14,
-  },
-  bookingAmount: {
-    fontSize: 16,
-    fontWeight: '600',
+    flex: 1,
+    marginLeft: 8,
   },
   fab: {
     position: 'absolute',
     margin: 16,
     right: 0,
     bottom: 0,
+  },
+  bottomSpacer: {
+    height: 80,
   },
 });
 

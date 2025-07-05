@@ -1,56 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
-  Box,
   Container,
   Grid,
   Card,
   CardContent,
   Typography,
-  Button,
+  Box,
   Avatar,
-  Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  ListItemAvatar,
-  Divider,
-  LinearProgress,
-  IconButton,
-  Paper,
-  Badge,
-  Tabs,
-  Tab,
-  Alert,
+  Button
 } from '@mui/material';
 import {
-  LocalParking as ParkingIcon,
-  AttachMoney as MoneyIcon,
-  Star as StarIcon,
-  TrendingUp as TrendingUpIcon,
-  AccessTime as TimeIcon,
-  LocationOn as LocationIcon,
-  Bookmark as BookmarkIcon,
-  Assessment as AnalyticsIcon,
-  Add as AddIcon,
-  Search as SearchIcon,
-  CalendarToday as CalendarIcon,
-  Notifications as NotificationsIcon,
-  Security as SecurityIcon,
-  Speed as SpeedIcon,
-  EmojiNature as EmojiNatureIcon,
-  Favorite as FavoriteIcon,
-  History as HistoryIcon,
-  Settings as SettingsIcon,
+  LocalParking,
+  AttachMoney,
+  TrendingUp,
+  Person
 } from '@mui/icons-material';
-import { format, subDays } from 'date-fns';
-import { auth } from '../firebase';
+import { useAuth } from '../contexts/AuthContext';
+import './Dashboard.css';
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState(0);
+  const { currentUser } = useAuth();
   const [dashboardData, setDashboardData] = useState({
     totalBookings: 0,
     totalSpent: 0,
@@ -58,134 +27,142 @@ const Dashboard = () => {
     favoriteSpots: 0,
     recentActivity: [],
     upcomingBookings: [],
-    quickStats: {},
+    quickStats: {
+      monthlySavings: 0,
+      environmentalImpact: 0,
+      efficiencyScore: 0,
+      parkingTime: 0,
+    },
+    platformStats: {
+      totalSpots: 0,
+      availableSpots: 0,
+      totalUsers: 0,
+      totalRevenue: 0,
+      averageRating: 0,
+      occupancyRate: 0,
+      recentBookings: 0,
+    }
   });
 
-  useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      setUser(user);
-      if (user) {
-        fetchDashboardData();
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const fetchDashboardData = async () => {
-    // Mock data - replace with actual API calls
-    const mockData = {
-      totalBookings: 47,
-      totalSpent: 342.50,
-      averageRating: 4.6,
-      favoriteSpots: 8,
-      recentActivity: [
-        {
-          id: 1,
-          type: 'booking',
-          title: 'Booked Downtown Premium Parking',
-          description: '2 hours • ₹30',
-          timestamp: new Date(),
-          icon: ParkingIcon,
+  const fetchDashboardData = useCallback(async () => {
+    try {
+      // Fetch real statistics from backend
+      const statsResponse = await fetch('http://localhost:3001/stats');
+      const stats = await statsResponse.json();
+      
+      // Fetch user's bookings
+      const bookingsResponse = await fetch(`http://localhost:3001/bookings?userId=${currentUser?.uid}`);
+      const userBookings = await bookingsResponse.json();
+      
+      // Calculate user-specific stats
+      const userTotalSpent = userBookings.reduce((sum, booking) => sum + (booking.totalPrice || 0), 0);
+      const userAverageRating = userBookings.length > 0 
+        ? userBookings.reduce((sum, booking) => sum + (booking.rating || 0), 0) / userBookings.length 
+        : 0;
+      
+      // Recent activity from bookings
+      const recentActivity = userBookings.slice(0, 5).map(booking => ({
+        id: booking.id,
+        type: 'booking',
+        title: `Booked ${booking.spotName || 'Parking Spot'}`,
+        description: `${booking.hours || 1} hours • $${booking.totalPrice || 0}`,
+        timestamp: new Date(booking.createdAt),
+        icon: LocalParking,
+      }));
+      
+      // Upcoming bookings (mock for now - would need date filtering)
+      const upcomingBookings = userBookings.slice(0, 3).map(booking => ({
+        id: booking.id,
+        location: booking.spotName || 'Parking Spot',
+        date: new Date(booking.createdAt).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: '2-digit', 
+          year: 'numeric' 
+        }),
+        time: `${booking.startTime || '10:00 AM'} - ${booking.endTime || '12:00 PM'}`,
+        price: booking.totalPrice || 0,
+      }));
+      
+      const dashboardData = {
+        totalBookings: userBookings.length,
+        totalSpent: Math.round(userTotalSpent * 100) / 100,
+        averageRating: Math.round(userAverageRating * 10) / 10,
+        favoriteSpots: 0, // Would need favorites API
+        recentActivity,
+        upcomingBookings,
+        quickStats: {
+          monthlySavings: Math.round((userTotalSpent * 0.2) * 100) / 100, // 20% savings estimate
+          environmentalImpact: userBookings.length * 2.5, // CO2 saved per booking
+          efficiencyScore: Math.min(100, Math.round((userBookings.length / 10) * 100)),
+          parkingTime: userBookings.length * 2, // Average 2 hours per booking
         },
-        {
-          id: 2,
-          type: 'review',
-          title: 'Left a 5-star review',
-          description: 'Mall Parking Garage',
-          timestamp: subDays(new Date(), 1),
-          icon: StarIcon,
+        // Platform stats
+        platformStats: {
+          totalSpots: stats.totalSpots,
+          availableSpots: stats.availableSpots,
+          totalUsers: stats.totalUsers,
+          totalRevenue: stats.totalRevenue,
+          averageRating: stats.averageRating,
+          occupancyRate: stats.occupancyRate,
+          recentBookings: stats.recentBookings,
+        }
+      };
+      
+      setDashboardData(dashboardData);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      // Fallback to mock data if API fails
+      const mockData = {
+        totalBookings: 47,
+        totalSpent: 342.50,
+        averageRating: 4.6,
+        favoriteSpots: 8,
+        recentActivity: [
+          {
+            id: 1,
+            type: 'booking',
+            title: 'Booked Downtown Premium Parking',
+            description: '2 hours • ₹30',
+            timestamp: new Date(),
+            icon: LocalParking,
+          },
+        ],
+        upcomingBookings: [
+          {
+            id: 1,
+            location: 'Downtown Premium Parking',
+            date: new Date().toLocaleDateString('en-US', { 
+              month: 'short', 
+              day: '2-digit', 
+              year: 'numeric' 
+            }),
+            time: '10:00 AM - 12:00 PM',
+            price: 30,
+          },
+        ],
+        quickStats: {
+          monthlySavings: 45.20,
+          environmentalImpact: 156.7,
+          efficiencyScore: 87,
+          parkingTime: 23.4,
         },
-        {
-          id: 3,
-          type: 'favorite',
-          title: 'Added to favorites',
-          description: 'Airport Long-term Parking',
-          timestamp: subDays(new Date(), 2),
-          icon: FavoriteIcon,
-        },
-      ],
-      upcomingBookings: [
-        {
-          id: 1,
-          location: 'Downtown Premium Parking',
-          date: format(subDays(new Date(), -1), 'MMM dd, yyyy'),
-          time: '10:00 AM - 12:00 PM',
-          price: 30,
-        },
-        {
-          id: 2,
-          location: 'Mall Parking Garage',
-          date: format(subDays(new Date(), -3), 'MMM dd, yyyy'),
-          time: '2:00 PM - 4:00 PM',
-          price: 16,
-        },
-      ],
-      quickStats: {
-        monthlySavings: 45.20,
-        environmentalImpact: 156.7,
-        efficiencyScore: 87,
-        parkingTime: 23.4,
-      },
-    };
-    setDashboardData(mockData);
-  };
-
-  const quickActions = [
-    {
-      title: 'Find Parking',
-      description: 'Search for available spots',
-      icon: SearchIcon,
-      color: '#3B82F6',
-      action: () => navigate('/search'),
-    },
-    {
-      title: 'List Your Spot',
-      description: 'Earn money by sharing',
-      icon: AddIcon,
-      color: '#10B981',
-      action: () => navigate('/list'),
-    },
-    {
-      title: 'My Favorites',
-      description: 'View saved spots',
-      icon: BookmarkIcon,
-      color: '#F59E0B',
-      action: () => navigate('/favorites'),
-    },
-    {
-      title: 'Analytics',
-      description: 'View your stats',
-      icon: AnalyticsIcon,
-      color: '#8B5CF6',
-      action: () => navigate('/analytics'),
-    },
-  ];
-
-  const getActivityIcon = (activity) => {
-    const IconComponent = activity.icon;
-    return <IconComponent sx={{ fontSize: 20 }} />;
-  };
-
-  const getActivityColor = (type) => {
-    switch (type) {
-      case 'booking':
-        return 'primary';
-      case 'review':
-        return 'warning';
-      case 'favorite':
-        return 'error';
-      default:
-        return 'default';
+      };
+      setDashboardData(mockData);
     }
-  };
+  }, [currentUser?.uid]);
+
+  useEffect(() => {
+    if (currentUser) {
+      fetchDashboardData();
+    }
+  }, [currentUser, fetchDashboardData]);
 
   return (
     <Container maxWidth="xl" sx={{ mt: 4, mb: 8 }}>
-      {/* Welcome Header */}
+      {/* Header */}
       <Box sx={{ mb: 4 }}>
         <Typography variant="h3" fontWeight="bold" color="primary" gutterBottom>
-          Welcome back, {user?.displayName || user?.email?.split('@')[0]}! 👋
+          Welcome back, {currentUser?.displayName || currentUser?.email}!
         </Typography>
         <Typography variant="h6" color="text.secondary">
           Here's what's happening with your parking today
@@ -199,7 +176,7 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: 'primary.main' }}>
-                  <ParkingIcon />
+                  <LocalParking />
                 </Avatar>
                 <Box>
                   <Typography variant="h4" fontWeight="bold">
@@ -219,11 +196,11 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: 'success.main' }}>
-                  <MoneyIcon />
+                  <AttachMoney />
                 </Avatar>
                 <Box>
                   <Typography variant="h4" fontWeight="bold">
-                    ₹{dashboardData.totalSpent}
+                    ${dashboardData.totalSpent}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Total Spent
@@ -239,14 +216,14 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: 'warning.main' }}>
-                  <StarIcon />
+                  <TrendingUp />
                 </Avatar>
                 <Box>
                   <Typography variant="h4" fontWeight="bold">
                     {dashboardData.averageRating}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Avg Rating
+                    Average Rating
                   </Typography>
                 </Box>
               </Box>
@@ -259,7 +236,7 @@ const Dashboard = () => {
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                 <Avatar sx={{ bgcolor: 'error.main' }}>
-                  <FavoriteIcon />
+                  <Person />
                 </Avatar>
                 <Box>
                   <Typography variant="h4" fontWeight="bold">
@@ -275,208 +252,172 @@ const Dashboard = () => {
         </Grid>
       </Grid>
 
-      {/* Main Content */}
-      <Grid container spacing={4}>
-        {/* Left Column */}
-        <Grid item xs={12} lg={8}>
-          {/* Quick Actions */}
-          <Card sx={{ mb: 4 }}>
+      {/* Platform Statistics */}
+      {dashboardData.platformStats && (
+        <Grid container spacing={3} sx={{ mb: 4 }}>
+          <Grid item xs={12}>
+            <Card>
+              <CardContent>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Platform Overview
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center">
+                      <Typography variant="h4" color="primary" fontWeight="bold">
+                        {dashboardData.platformStats.totalSpots || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Total Spots
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center">
+                      <Typography variant="h4" color="success.main" fontWeight="bold">
+                        {dashboardData.platformStats.totalUsers || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Active Users
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center">
+                      <Typography variant="h4" color="warning.main" fontWeight="bold">
+                        ${dashboardData.platformStats.totalRevenue || 0}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Total Revenue
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={6} sm={3}>
+                    <Box textAlign="center">
+                      <Typography variant="h4" color="info.main" fontWeight="bold">
+                        {dashboardData.platformStats.occupancyRate || 0}%
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Occupancy Rate
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
+
+      {/* Quick Actions */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        <Grid item xs={12}>
+          <Card>
             <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
                 Quick Actions
               </Typography>
               <Grid container spacing={2}>
-                {quickActions.map((action, index) => (
-                  <Grid item xs={12} sm={6} key={index}>
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      startIcon={<action.icon />}
-                      onClick={action.action}
-                      sx={{
-                        p: 2,
-                        height: 'auto',
-                        flexDirection: 'column',
-                        alignItems: 'flex-start',
-                        textAlign: 'left',
-                        borderColor: action.color,
-                        color: action.color,
-                        '&:hover': {
-                          borderColor: action.color,
-                          backgroundColor: `${action.color}10`,
-                        },
-                      }}
-                    >
-                      <Typography variant="subtitle1" fontWeight="bold">
-                        {action.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {action.description}
-                      </Typography>
-                    </Button>
-                  </Grid>
-                ))}
+                <Grid item xs={12} sm={6} md={3}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    sx={{ py: 2 }}
+                    href="/search"
+                  >
+                    Find Parking
+                  </Button>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    sx={{ py: 2 }}
+                    href="/list"
+                  >
+                    List Your Spot
+                  </Button>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    sx={{ py: 2 }}
+                    href="/bookings"
+                  >
+                    View Bookings
+                  </Button>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Button
+                    variant="outlined"
+                    fullWidth
+                    sx={{ py: 2 }}
+                    href="/profile"
+                  >
+                    My Profile
+                  </Button>
+                </Grid>
               </Grid>
-            </CardContent>
-          </Card>
-
-          {/* Recent Activity */}
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Recent Activity
-              </Typography>
-              <List>
-                {dashboardData.recentActivity.map((activity, index) => (
-                  <React.Fragment key={activity.id}>
-                    <ListItem>
-                      <ListItemAvatar>
-                        <Avatar sx={{ bgcolor: `${getActivityColor(activity.type)}.light` }}>
-                          {getActivityIcon(activity)}
-                        </Avatar>
-                      </ListItemAvatar>
-                      <ListItemText
-                        primary={activity.title}
-                        secondary={
-                          <Box>
-                            <Typography variant="body2" color="text.secondary">
-                              {activity.description}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {format(activity.timestamp, 'MMM dd, h:mm a')}
-                            </Typography>
-                          </Box>
-                        }
-                      />
-                    </ListItem>
-                    {index < dashboardData.recentActivity.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        {/* Right Column */}
-        <Grid item xs={12} lg={4}>
-          {/* Upcoming Bookings */}
-          <Card sx={{ mb: 4 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Upcoming Bookings
-              </Typography>
-              {dashboardData.upcomingBookings.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 3 }}>
-                  <CalendarIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="body2" color="text.secondary">
-                    No upcoming bookings
-                  </Typography>
-                </Box>
-              ) : (
-                <List>
-                  {dashboardData.upcomingBookings.map((booking, index) => (
-                    <React.Fragment key={booking.id}>
-                      <ListItem>
-                        <ListItemIcon>
-                          <ParkingIcon color="primary" />
-                        </ListItemIcon>
-                        <ListItemText
-                          primary={booking.location}
-                          secondary={
-                            <Box>
-                              <Typography variant="body2" color="text.secondary">
-                                {booking.date} • {booking.time}
-                              </Typography>
-                              <Typography variant="body2" color="primary" fontWeight="bold">
-                                ₹{booking.price}
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                      </ListItem>
-                      {index < dashboardData.upcomingBookings.length - 1 && <Divider />}
-                    </React.Fragment>
-                  ))}
-                </List>
-              )}
-              <Button
-                fullWidth
-                variant="outlined"
-                onClick={() => navigate('/bookings')}
-                sx={{ mt: 2 }}
-              >
-                View All Bookings
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Quick Stats */}
-          <Card>
-            <CardContent>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                This Month
-              </Typography>
-              
-              <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">Monthly Savings</Typography>
-                  <Typography variant="body2" fontWeight="bold" color="success.main">
-                    ₹{dashboardData.quickStats.monthlySavings}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={75}
-                  sx={{ height: 8, borderRadius: 4, bgcolor: 'success.light' }}
-                />
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">Efficiency Score</Typography>
-                  <Typography variant="body2" fontWeight="bold" color="primary.main">
-                    {dashboardData.quickStats.efficiencyScore}%
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={dashboardData.quickStats.efficiencyScore}
-                  sx={{ height: 8, borderRadius: 4 }}
-                />
-              </Box>
-
-              <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2">CO₂ Saved</Typography>
-                  <Typography variant="body2" fontWeight="bold" color="success.main">
-                    {dashboardData.quickStats.environmentalImpact}kg
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={60}
-                  sx={{ height: 8, borderRadius: 4, bgcolor: 'success.light' }}
-                />
-              </Box>
-
-              <Box sx={{ display: 'flex', gap: 1, mt: 3 }}>
-                <Chip
-                  icon={<EmojiNatureIcon />}
-                  label="Eco-friendly"
-                  color="success"
-                  size="small"
-                />
-                <Chip
-                  icon={<SpeedIcon />}
-                  label="Efficient"
-                  color="primary"
-                  size="small"
-                />
-              </Box>
             </CardContent>
           </Card>
         </Grid>
       </Grid>
+
+      {/* Recent Activity */}
+      {dashboardData.recentActivity.length > 0 && (
+        <Grid container spacing={3}>
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Recent Activity
+                </Typography>
+                <Box>
+                  {dashboardData.recentActivity.map((activity) => (
+                    <Box key={activity.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {activity.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {activity.description}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {activity.timestamp.toLocaleDateString()}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+
+          <Grid item xs={12} md={6}>
+            <Card>
+              <CardContent>
+                <Typography variant="h5" fontWeight="bold" gutterBottom>
+                  Upcoming Bookings
+                </Typography>
+                <Box>
+                  {dashboardData.upcomingBookings.map((booking) => (
+                    <Box key={booking.id} sx={{ mb: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                      <Typography variant="subtitle2" fontWeight="bold">
+                        {booking.location}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {booking.date} • {booking.time}
+                      </Typography>
+                      <Typography variant="body2" fontWeight="bold" color="primary">
+                        ${booking.price}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        </Grid>
+      )}
     </Container>
   );
 };

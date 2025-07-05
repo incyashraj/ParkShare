@@ -1,0 +1,40 @@
+[
+  {
+    "username": "test",
+    "email": "test@test.com",
+    "password": "",
+    "uid": "test123"
+  },
+  {
+    "username": "123",
+    "email": "123@gmail.com",
+    "password": "",
+    "uid": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+  },
+  {
+    "username": "john_doe",
+    "email": "john@example.com",
+    "uid": "user_john_123"
+  },
+  {
+    "username": "jane_smith",
+    "email": "jane@example.com",
+    "uid": "user_jane_456"
+  },
+  {
+    "username": "mike_wilson",
+    "email": "mike@example.com",
+    "uid": "user_mike_789"
+  },
+  {
+    "username": "sarah_jones",
+    "email": "sarah@example.com",
+    "uid": "user_sarah_101"
+  },
+  {
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password123",
+    "uid": "test-user-123"
+  }
+]

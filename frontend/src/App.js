@@ -16,13 +16,28 @@ import {
   Menu,
   MenuItem,
   IconButton,
-  Badge,
+  Avatar,
+  Divider,
 } from '@mui/material';
+import {
+  AccountCircle,
+  Dashboard as DashboardIcon,
+  Search,
+  Add,
+  BookOnline,
+  Favorite,
+  Analytics,
+  Settings as SettingsIcon,
+  MoreVert,
+  VerifiedUser,
+} from '@mui/icons-material';
 import Login from './Login';
 import Register from './Register';
 import HomePage from './HomePage';
 import ParkingSpotList from './ParkingSpotList';
 import ParkingSpotForm from './ParkingSpotForm';
+import ParkingSpotDetail from './components/ParkingSpotDetail';
+import HostVerification from './components/HostVerification';
 import Profile from './components/Profile';
 import BookingManagement from './components/BookingManagement';
 import Settings from './components/Settings';
@@ -33,6 +48,7 @@ import FavoritesManager from './components/FavoritesManager';
 import ParkingAnalytics from './components/ParkingAnalytics';
 import Dashboard from './components/Dashboard';
 import { RealtimeProvider } from './contexts/RealtimeContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 
 const theme = createTheme({
@@ -94,21 +110,25 @@ const theme = createTheme({
   },
 });
 
-function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+function AppContent() {
+  const { currentUser } = useAuth();
+  const [anchorEl, setAnchorEl] = useState(null);
 
-  const handleLogin = useCallback(() => {
-    setIsLoggedIn(true);
-  }, []);
+  const handleMenuClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   return (
-    <RealtimeProvider>
-      <ThemeProvider theme={theme} className="app-container">
-        <React.Suspense fallback={
-          <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <CircularProgress />
-          </Box>
-        }>
+    <ThemeProvider theme={theme} className="app-container">
+      <React.Suspense fallback={
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <CircularProgress />
+        </Box>
+      }>
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
           <Router>
@@ -129,16 +149,16 @@ function App() {
                     >
                       ParkShare
                     </Typography>
-                    <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                      <Button
-                        component={Link}
-                        to="/"
-                        sx={{ color: 'primary.main' }}
-                      >
-                        Home
-                      </Button>
-                      {!isLoggedIn && (
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                      {!currentUser && (
                         <>
+                          <Button
+                            component={Link}
+                            to="/"
+                            sx={{ color: 'primary.main' }}
+                          >
+                            Home
+                          </Button>
                           <Button
                             component={Link}
                             to="/login"
@@ -161,11 +181,13 @@ function App() {
                           </Button>
                         </>
                       )}
-                      {isLoggedIn && (
+                      {currentUser && (
                         <>
+                          {/* Primary Navigation */}
                           <Button
                             component={Link}
                             to="/"
+                            startIcon={<DashboardIcon />}
                             sx={{ color: 'primary.main' }}
                           >
                             Dashboard
@@ -173,21 +195,16 @@ function App() {
                           <Button
                             component={Link}
                             to="/search"
+                            startIcon={<Search />}
                             sx={{ color: 'primary.main' }}
                           >
                             Search
                           </Button>
                           <Button
                             component={Link}
-                            to="/advanced-search"
-                            sx={{ color: 'primary.main' }}
-                          >
-                            Advanced
-                          </Button>
-                          <Button
-                            component={Link}
                             to="/list"
                             variant="contained"
+                            startIcon={<Add />}
                             sx={{
                               color: 'white',
                               '&:hover': {
@@ -200,39 +217,90 @@ function App() {
                           <Button
                             component={Link}
                             to="/bookings"
+                            startIcon={<BookOnline />}
                             sx={{ color: 'primary.main' }}
                           >
                             Bookings
                           </Button>
-                          <Button
-                            component={Link}
-                            to="/favorites"
+                          
+                          {/* Notification Center */}
+                          <NotificationCenter />
+                          
+                          {/* More Options Menu */}
+                          <IconButton
+                            onClick={handleMenuClick}
                             sx={{ color: 'primary.main' }}
                           >
-                            Favorites
-                          </Button>
-                          <Button
-                            component={Link}
-                            to="/analytics"
-                            sx={{ color: 'primary.main' }}
-                          >
-                            Analytics
-                          </Button>
-                          <Button
+                            <MoreVert />
+                          </IconButton>
+                          
+                          {/* User Avatar */}
+                          <IconButton
                             component={Link}
                             to="/profile"
                             sx={{ color: 'primary.main' }}
                           >
-                            Profile
-                          </Button>
-                          <Button
-                            component={Link}
-                            to="/settings"
-                            sx={{ color: 'primary.main' }}
+                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                              <AccountCircle />
+                            </Avatar>
+                          </IconButton>
+                          
+                          {/* More Options Dropdown */}
+                          <Menu
+                            anchorEl={anchorEl}
+                            open={Boolean(anchorEl)}
+                            onClose={handleMenuClose}
+                            PaperProps={{
+                              sx: {
+                                mt: 1,
+                                minWidth: 200,
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
+                                borderRadius: 2,
+                              }
+                            }}
                           >
-                            Settings
-                          </Button>
-                          <NotificationCenter />
+                            <MenuItem 
+                              component={Link} 
+                              to="/advanced-search"
+                              onClick={handleMenuClose}
+                            >
+                              <Search sx={{ mr: 2 }} />
+                              Advanced Search
+                            </MenuItem>
+                            <MenuItem 
+                              component={Link} 
+                              to="/favorites"
+                              onClick={handleMenuClose}
+                            >
+                              <Favorite sx={{ mr: 2 }} />
+                              Favorites
+                            </MenuItem>
+                            <MenuItem 
+                              component={Link} 
+                              to="/analytics"
+                              onClick={handleMenuClose}
+                            >
+                              <Analytics sx={{ mr: 2 }} />
+                              Analytics
+                            </MenuItem>
+                            <MenuItem 
+                              component={Link} 
+                              to="/verify"
+                              onClick={handleMenuClose}
+                            >
+                              <VerifiedUser sx={{ mr: 2 }} />
+                              Verify Host
+                            </MenuItem>
+                            <Divider />
+                            <MenuItem 
+                              component={Link} 
+                              to="/settings"
+                              onClick={handleMenuClose}
+                            >
+                              <SettingsIcon sx={{ mr: 2 }} />
+                              Settings
+                            </MenuItem>
+                          </Menu>
                         </>
                       )}
                     </Box>
@@ -240,48 +308,47 @@ function App() {
                 </Container>
               </AppBar>
 
-            <Container component="main" sx={{ mt: 4 }}>
-              <Routes>
-                <Route
-                  path="/"
-                  element={
-                    isLoggedIn ? (
-                      <HomePage />
-                    ) : (
-                      <Box sx={{ textAlign: 'center', mt: 8 }}>
-                        <Typography variant="h2" color="primary.main" gutterBottom>
-                          ParkShare
-                        </Typography>
-                        <Typography variant="h5" color="text.secondary" sx={{ mb: 4 }}>
-                          Find and book parking spots near you
-                        </Typography>
-                        <Login onLogin={handleLogin} />
-                      </Box>
-                    )
-                  }
-                />
-                <Route path="/search" element={<ParkingSpotList />} />
-                <Route path="/advanced-search" element={<AdvancedSearch />} />
-                <Route path="/list" element={<ParkingSpotForm />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/login" element={<Login onLogin={handleLogin} />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/bookings" element={<BookingManagement />} />
-                <Route path="/favorites" element={<FavoritesManager />} />
-                <Route path="/analytics" element={<ParkingAnalytics />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/reviews/:spotId" element={<ReviewsAndRatings />} />
-                <Route path="/dashboard" element={<Dashboard />} />
-              </Routes>
-            </Container>
-            <Footer />
-          </Box>
-        </Router>
-      </LocalizationProvider>
+              <Container component="main" sx={{ mt: 2, pt: { xs: 8, md: 10 } }}>
+                <Routes>
+                  <Route
+                    path="/"
+                    element={
+                      currentUser ? (
+                        <Dashboard />
+                      ) : (
+                        <HomePage />
+                      )
+                    }
+                  />
+                  <Route path="/search" element={<ParkingSpotList />} />
+                  <Route path="/advanced-search" element={<AdvancedSearch />} />
+                  <Route path="/list" element={<ParkingSpotForm />} />
+                  <Route path="/spot/:spotId" element={<ParkingSpotDetail />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/settings" element={<Settings />} />
+                  <Route path="/bookings" element={<BookingManagement />} />
+                  <Route path="/verify" element={<HostVerification />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/register" element={<Register />} />
+                </Routes>
+              </Container>
+              <Footer />
+            </Box>
+          </Router>
+        </LocalizationProvider>
       </React.Suspense>
     </ThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <RealtimeProvider>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </RealtimeProvider>
   );
 }
 
-export default App;
+export default App; 

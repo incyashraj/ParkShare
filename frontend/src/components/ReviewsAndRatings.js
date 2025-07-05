@@ -198,7 +198,17 @@ const ReviewsAndRatings = ({ spotId, reviews = [], onAddReview, onUpdateReview, 
                         {review.userName}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
-                        {format(new Date(review.timestamp), 'MMM dd, yyyy')}
+                        {(() => {
+                          try {
+                            const reviewDate = new Date(review.timestamp);
+                            if (isNaN(reviewDate.getTime())) {
+                              return 'Date not available';
+                            }
+                            return format(reviewDate, 'MMM dd, yyyy');
+                          } catch (error) {
+                            return 'Date not available';
+                          }
+                        })()}
                       </Typography>
                     </Box>
                   </Box>

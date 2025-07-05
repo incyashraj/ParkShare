@@ -1,0 +1,243 @@
+[
+  {
+    "id": "1751665094276",
+    "location": "Test Location",
+    "coordinates": [
+      19.076,
+      72.8777
+    ],
+    "hourlyRate": "$10",
+    "termsAndConditions": "Test terms",
+    "images": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+    ],
+    "rating": 0,
+    "reviews": [],
+    "owner": "test123",
+    "ownerName": "test",
+    "createdAt": "2025-07-04T21:38:14.276Z",
+    "bookings": [
+      {
+        "id": "booking_1751667846191",
+        "spotId": "1751665094276",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "userName": "123@gmail.com",
+        "startTime": "2025-07-04T22:24:06.191Z",
+        "endTime": "2025-07-05T01:24:06.191Z",
+        "totalPrice": 30,
+        "createdAt": "2025-07-04T22:24:06.191Z",
+        "status": "paid",
+        "paymentId": "proxy_1751667846191",
+        "paidAt": "2025-07-04T22:24:06.191Z",
+        "paymentAmount": 30,
+        "isProxyPayment": true
+      }
+    ],
+    "available": false
+  },
+  {
+    "id": "1751665437464",
+    "location": "12, 12,",
+    "coordinates": [
+      19.076,
+      72.8777
+    ],
+    "hourlyRate": "INR 12",
+    "maxDuration": "24 hours",
+    "securityFeatures": [],
+    "termsAndConditions": "Standard parking terms and conditions apply. Users must follow parking rules and respect the property.",
+    "images": [
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop"
+    ],
+    "rating": 0,
+    "reviews": [],
+    "owner": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "ownerName": "123",
+    "createdAt": "2025-07-04T21:43:57.464Z",
+    "bookings": [
+      {
+        "id": "booking_1751705627513",
+        "spotId": "1751665437464",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "userName": "Test User",
+        "startTime": "2025-07-06T10:00:00.000Z",
+        "endTime": "2025-07-06T12:00:00.000Z",
+        "totalPrice": 24,
+        "hours": 2,
+        "createdAt": "2025-07-05T08:53:47.513Z",
+        "status": "paid",
+        "paymentId": "test_1751705627513",
+        "paidAt": "2025-07-05T08:53:47.513Z",
+        "paymentAmount": 24,
+        "paymentMethod": "Test Mode",
+        "isTestBooking": true
+      }
+    ],
+    "available": false
+  },
+  {
+    "id": "spot_downtown_001",
+    "title": "Downtown Premium Parking",
+    "location": "123 Main Street, Downtown",
+    "coordinates": [
+      19.076,
+      72.8777
+    ],
+    "hourlyRate": "$15",
+    "price": 15,
+    "description": "Premium parking in the heart of downtown with 24/7 security",
+    "available": false,
+    "owner": "user_john_123",
+    "ownerName": "John Doe",
+    "images": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "security_guard"
+    ],
+    "amenities": [
+      "covered",
+      "ev_charging",
+      "car_wash"
+    ],
+    "rating": 4.5,
+    "reviewCount": 12,
+    "parkingType": "lot",
+    "available24h": true,
+    "advanceBooking": 24,
+    "vehicleTypes": [
+      "car",
+      "suv"
+    ],
+    "createdAt": "2025-07-04T21:54:49.372Z",
+    "bookings": [
+      {
+        "id": "booking_1751705677885",
+        "spotId": "spot_downtown_001",
+        "userId": "any-user-id",
+        "userName": "Any User",
+        "startTime": "2025-07-06T14:00:00.000Z",
+        "endTime": "2025-07-06T16:00:00.000Z",
+        "totalPrice": 30,
+        "hours": 2,
+        "createdAt": "2025-07-05T08:54:37.885Z",
+        "status": "paid",
+        "paymentId": "test_1751705677885",
+        "paidAt": "2025-07-05T08:54:37.885Z",
+        "paymentAmount": 30,
+        "paymentMethod": "Test Mode",
+        "isTestBooking": true
+      }
+    ]
+  },
+  {
+    "id": "spot_airport_002",
+    "title": "Airport Express Parking",
+    "location": "456 Airport Road, Near Terminal 1",
+    "coordinates": [
+      19.0896,
+      72.8656
+    ],
+    "hourlyRate": "$20",
+    "price": 20,
+    "description": "Convenient parking near airport with shuttle service",
+    "available": true,
+    "owner": "user_jane_456",
+    "ownerName": "Jane Smith",
+    "images": [
+      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "fenced"
+    ],
+    "amenities": [
+      "shuttle_service",
+      "covered",
+      "accessible"
+    ],
+    "rating": 4.8,
+    "reviewCount": 25,
+    "parkingType": "lot",
+    "available24h": true,
+    "advanceBooking": 48,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "truck"
+    ],
+    "createdAt": "2025-07-04T21:54:49.373Z"
+  },
+  {
+    "id": "spot_mall_003",
+    "title": "Shopping Mall Parking",
+    "location": "789 Mall Drive, Shopping District",
+    "coordinates": [
+      19.0624,
+      72.8898
+    ],
+    "hourlyRate": "$10",
+    "price": 10,
+    "description": "Affordable parking near popular shopping mall",
+    "available": true,
+    "owner": "user_mike_789",
+    "ownerName": "Mike Wilson",
+    "images": [
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv"
+    ],
+    "amenities": [
+      "restroom",
+      "bike_racks"
+    ],
+    "rating": 4.2,
+    "reviewCount": 8,
+    "parkingType": "lot",
+    "available24h": false,
+    "advanceBooking": 12,
+    "vehicleTypes": [
+      "car"
+    ],
+    "createdAt": "2025-07-04T21:54:49.373Z"
+  },
+  {
+    "id": "spot_residential_004",
+    "title": "Residential Street Parking",
+    "location": "321 Oak Street, Residential Area",
+    "coordinates": [
+      19.0736,
+      72.8816
+    ],
+    "hourlyRate": "$8",
+    "price": 8,
+    "description": "Quiet residential parking with easy access",
+    "available": true,
+    "owner": "user_sarah_101",
+    "ownerName": "Sarah Jones",
+    "images": [
+      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "well_lit"
+    ],
+    "amenities": [
+      "accessible"
+    ],
+    "rating": 4,
+    "reviewCount": 5,
+    "parkingType": "street",
+    "available24h": true,
+    "advanceBooking": 6,
+    "vehicleTypes": [
+      "car"
+    ],
+    "createdAt": "2025-07-04T21:54:49.373Z"
+  }
+]

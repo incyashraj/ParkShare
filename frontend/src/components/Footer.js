@@ -15,51 +15,37 @@ import {
   Twitter,
   Instagram,
   LinkedIn,
-  YouTube,
   Language,
   CurrencyRupee,
 } from '@mui/icons-material';
 
 function Footer() {
   const footerSections = {
+    company: {
+      title: 'Company',
+      links: [
+        { text: 'About Us', href: '/about' },
+        { text: 'Contact', href: '/contact' },
+        { text: 'Careers', href: '/careers' },
+        { text: 'Blog', href: '/blog' }
+      ]
+    },
     support: {
       title: 'Support',
       links: [
         { text: 'Help Center', href: '/help' },
         { text: 'Safety Guidelines', href: '/safety' },
-        { text: 'Cancellation Options', href: '/cancellation' },
-        { text: 'Report Concerns', href: '/report' },
-        { text: 'Contact Us', href: '/contact' }
+        { text: 'Terms of Service', href: '/terms' },
+        { text: 'Privacy Policy', href: '/privacy' }
       ]
     },
     community: {
       title: 'Community',
       links: [
-        { text: 'Community Forum', href: '/forum' },
         { text: 'Host Parking Spots', href: '/host' },
         { text: 'Partner with Us', href: '/partner' },
-        { text: 'Affiliate Program', href: '/affiliate' },
+        { text: 'Community Forum', href: '/forum' },
         { text: 'Business Program', href: '/business' }
-      ]
-    },
-    company: {
-      title: 'Company',
-      links: [
-        { text: 'About Us', href: '/about' },
-        { text: 'Careers', href: '/careers' },
-        { text: 'Press', href: '/press' },
-        { text: 'Blog', href: '/blog' },
-        { text: 'Investors', href: '/investors' }
-      ]
-    },
-    legal: {
-      title: 'Legal',
-      links: [
-        { text: 'Privacy Policy', href: '/privacy' },
-        { text: 'Terms of Service', href: '/terms' },
-        { text: 'Cookie Policy', href: '/cookies' },
-        { text: 'Parking Guidelines', href: '/guidelines' },
-        { text: 'Dispute Resolution', href: '/disputes' }
       ]
     }
   };
@@ -68,8 +54,7 @@ function Footer() {
     { Icon: Facebook, href: 'https://facebook.com' },
     { Icon: Twitter, href: 'https://twitter.com' },
     { Icon: Instagram, href: 'https://instagram.com' },
-    { Icon: LinkedIn, href: 'https://linkedin.com' },
-    { Icon: YouTube, href: 'https://youtube.com' }
+    { Icon: LinkedIn, href: 'https://linkedin.com' }
   ];
 
   return (
@@ -77,7 +62,7 @@ function Footer() {
       component="footer"
       sx={{
         backgroundColor: 'white',
-        py: 6,
+        py: 4,
         mt: 'auto',
         borderTop: '1px solid',
         borderColor: 'divider'
@@ -86,7 +71,7 @@ function Footer() {
       <Container maxWidth="lg">
         <Grid container spacing={4} justifyContent="space-between">
           {Object.entries(footerSections).map(([key, section]) => (
-            <Grid item xs={12} sm={6} md={3} key={key}>
+            <Grid item xs={12} sm={6} md={4} key={key}>
               <Typography
                 variant="subtitle1"
                 color="text.primary"
@@ -113,25 +98,23 @@ function Footer() {
           ))}
         </Grid>
 
-        <Divider sx={{ my: 4 }} />
+        <Divider sx={{ my: 3 }} />
 
         <Box sx={{ py: 2 }}>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={6}>
-              <Stack direction="row" spacing={1} alignItems="center">
+              <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
                 <Typography variant="body2" color="text.secondary">
                   © {new Date().getFullYear()} ParkShare. All rights reserved.
                 </Typography>
-                <Divider orientation="vertical" flexItem />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Language sx={{ fontSize: 20, mr: 0.5, color: 'text.secondary' }} />
+                  <Language sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
                     English (IN)
                   </Typography>
                 </Box>
-                <Divider orientation="vertical" flexItem />
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <CurrencyRupee sx={{ fontSize: 20, mr: 0.5, color: 'text.secondary' }} />
+                  <CurrencyRupee sx={{ fontSize: 16, mr: 0.5, color: 'text.secondary' }} />
                   <Typography variant="body2" color="text.secondary">
                     INR
                   </Typography>
@@ -168,8 +151,7 @@ function Footer() {
             align="center"
             display="block"
           >
-            ParkShare is committed to providing safe and reliable parking solutions. 
-            By using our services, you agree to our terms and conditions.
+            ParkShare is committed to providing safe and reliable parking solutions.
           </Typography>
         </Box>
       </Container>
