@@ -75,6 +75,7 @@ const UserProfile = () => {
   const [reportReason, setReportReason] = useState('');
   const [reportDescription, setReportDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
     if (userId) {
@@ -147,27 +148,47 @@ const UserProfile = () => {
   };
 
   const handleSendMessage = () => {
+    // Check if user is blocked
+    if (userProfile.blocked) {
+      setError('Cannot send message to blocked user. Unblock them in your profile to send messages.');
+      return;
+    }
+    
+    // Check if current user is blocked by this user
+    if (currentUser?.blockedUsers && currentUser.blockedUsers.includes(userId)) {
+      setError('Cannot send message - you have been blocked by this user.');
+      return;
+    }
+    
     navigate(`/messages?recipient=${userId}&subject=Hello from ParkShare`);
   };
 
   const handleBlockUser = async () => {
     try {
+      const isCurrentlyBlocked = userProfile.blocked;
       const response = await fetch(`http://localhost:3001/api/users/${userId}/block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser?.uid}`
         },
-        body: JSON.stringify({ blocked: true })
+        body: JSON.stringify({ blocked: !isCurrentlyBlocked })
       });
       
       if (response.ok) {
-        setUserProfile(prev => ({ ...prev, blocked: true }));
-        console.log('User blocked successfully');
+        setUserProfile(prev => ({ ...prev, blocked: !isCurrentlyBlocked }));
+        console.log(`User ${isCurrentlyBlocked ? 'unblocked' : 'blocked'} successfully`);
+        
+        // Show success message
+        setSuccessMessage(`User ${isCurrentlyBlocked ? 'unblocked' : 'blocked'} successfully`);
+        setTimeout(() => setSuccessMessage(''), 3000);
+      } else {
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to update block status');
       }
     } catch (error) {
-      console.error('Error blocking user:', error);
-      setError('Failed to block user');
+      console.error('Error updating block status:', error);
+      setError('Failed to update block status');
     }
   };
 
@@ -246,6 +267,20 @@ const UserProfile = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
+      {/* Success Message */}
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {successMessage}
+        </Alert>
+      )}
+
+      {/* Error Message */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       {/* Header */}
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
         <IconButton onClick={() => navigate(-1)} sx={{ color: 'primary.main' }}>
@@ -341,9 +376,9 @@ const UserProfile = () => {
                   fullWidth
                   startIcon={<BlockIcon />}
                   onClick={handleBlockUser}
-                  disabled={userProfile.blocked}
+                  color={userProfile.blocked ? "success" : "warning"}
                 >
-                  {userProfile.blocked ? 'Blocked' : 'Block User'}
+                  {userProfile.blocked ? 'Unblock User' : 'Block User'}
                 </Button>
                 <Button
                   variant="outlined"

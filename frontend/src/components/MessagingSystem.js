@@ -360,11 +360,23 @@ const MessagingSystem = () => {
         setSuccessMessage('Message sent successfully');
         setTimeout(() => setSuccessMessage(null), 2000);
       } else {
+        const errorData = await response.json();
         // If failed, mark message as failed
         setMessages(prev => prev.map(msg => 
           msg.id === tempMessageId ? { ...msg, status: 'failed' } : msg
         ));
-        setError('Failed to send message');
+        
+        if (response.status === 403) {
+          if (errorData.message.includes('blocked users')) {
+            setError(`Cannot send message - ${errorData.blockedUsers?.join(', ')} are blocked. Unblock them in your profile to send messages.`);
+          } else if (errorData.message.includes('been blocked')) {
+            setError('Cannot send message - you have been blocked by one or more participants.');
+          } else {
+            setError(errorData.message || 'Cannot send message to this conversation.');
+          }
+        } else {
+          setError(errorData.message || 'Failed to send message');
+        }
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -415,7 +427,18 @@ const MessagingSystem = () => {
         setSuccessMessage('Message sent successfully');
         setTimeout(() => setSuccessMessage(null), 2000);
       } else {
-        setError('Failed to retry message');
+        const errorData = await response.json();
+        if (response.status === 403) {
+          if (errorData.message.includes('blocked users')) {
+            setError(`Cannot send message - ${errorData.blockedUsers?.join(', ')} are blocked. Unblock them in your profile to send messages.`);
+          } else if (errorData.message.includes('been blocked')) {
+            setError('Cannot send message - you have been blocked by one or more participants.');
+          } else {
+            setError(errorData.message || 'Cannot send message to this conversation.');
+          }
+        } else {
+          setError(errorData.message || 'Failed to retry message');
+        }
       }
     } catch (error) {
       console.error('Error retrying message:', error);
@@ -459,6 +482,19 @@ const MessagingSystem = () => {
         // Navigate to the new conversation
         if (data.conversation) {
           navigate(`/messages/${data.conversation.id}`);
+        }
+      } else {
+        const errorData = await response.json();
+        if (response.status === 403) {
+          if (errorData.message.includes('blocked user')) {
+            setError(`Cannot message ${errorData.blockedUser || 'this user'} - they are blocked. Unblock them in your profile to send messages.`);
+          } else if (errorData.message.includes('been blocked')) {
+            setError('Cannot create conversation - you have been blocked by this user.');
+          } else {
+            setError(errorData.message || 'Cannot create conversation with this user.');
+          }
+        } else {
+          setError(errorData.message || 'Failed to create conversation');
         }
       }
     } catch (error) {

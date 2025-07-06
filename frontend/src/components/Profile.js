@@ -60,12 +60,14 @@ import {
   Info as InfoIcon,
   Close as CloseIcon,
   Save as SaveIcon,
-  Cancel as CancelIcon
+  Cancel as CancelIcon,
+  Block as BlockIcon
 } from '@mui/icons-material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import BookingCard from './BookingCard';
+import BlockedUsersManager from './BlockedUsersManager';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -587,8 +589,6 @@ function Profile() {
     </Grid>
   );
 
-
-
   const renderListings = () => (
     <Grid container spacing={3}>
       {listings.map((listing) => {
@@ -817,6 +817,7 @@ function Profile() {
             <Tab label="My Listings" />
             <Tab label="Verification" />
             <Tab label="Analytics" />
+            <Tab label="Blocked Users" />
           </Tabs>
         </Box>
 
@@ -1040,6 +1041,12 @@ function Profile() {
                 </Card>
               </Grid>
             </Grid>
+          </Paper>
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={4}>
+          <Paper elevation={0} sx={{ p: 3, bgcolor: 'background.default' }}>
+            <BlockedUsersManager />
           </Paper>
         </TabPanel>
       </Box>

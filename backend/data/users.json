@@ -147,10 +147,7 @@
     "hostSince": "2024-01-01",
     "totalSpots": 0,
     "rating": 0,
-    "blockedUsers": [
-      "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-      "user_powai_host"
-    ]
+    "blockedUsers": []
   },
   {
     "username": "Yashraj Pardeshi",

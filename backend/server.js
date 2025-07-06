@@ -2260,7 +2260,7 @@ app.get('/api/conversations/:conversationId/messages', (req, res) => {
   }
 });
 
-// Create a new conversation
+// Create a new conversation or find existing one
 app.post('/api/conversations', (req, res) => {
   try {
     const { participants, subject, initialMessage } = req.body;
@@ -2285,16 +2285,59 @@ app.post('/api/conversations', (req, res) => {
       };
     });
 
-    const conversation = {
-      id: `conv_${Date.now()}`,
-      participants: participantDetails,
-      subject: subject || 'New Conversation',
-      createdAt: new Date().toISOString(),
-      lastActivity: new Date().toISOString()
-    };
+    // Check for blocked users
+    const currentUser = users.find(u => u.uid === userId);
+    if (currentUser && currentUser.blockedUsers) {
+      const otherParticipant = participantDetails.find(p => p.id !== userId);
+      if (otherParticipant && currentUser.blockedUsers.includes(otherParticipant.id)) {
+        return res.status(403).json({ 
+          message: 'Cannot create conversation with blocked user',
+          blockedUser: otherParticipant.username
+        });
+      }
+    }
 
-    conversations.push(conversation);
-    saveData(CONVERSATIONS_FILE, conversations);
+    // Check if other participant has blocked the current user
+    const otherParticipant = participantDetails.find(p => p.id !== userId);
+    if (otherParticipant) {
+      const otherUser = users.find(u => u.uid === otherParticipant.id);
+      if (otherUser && otherUser.blockedUsers && otherUser.blockedUsers.includes(userId)) {
+        return res.status(403).json({ 
+          message: 'Cannot create conversation - you have been blocked by this user'
+        });
+      }
+    }
+
+    // Check if a conversation already exists between these participants
+    const existingConversation = conversations.find(conv => {
+      const convParticipantIds = conv.participants.map(p => p.id || p.uid);
+      const requestParticipantIds = participantDetails.map(p => p.id || p.uid);
+      
+      // Check if both participants match (order doesn't matter)
+      return convParticipantIds.length === requestParticipantIds.length &&
+             convParticipantIds.every(id => requestParticipantIds.includes(id)) &&
+             requestParticipantIds.every(id => convParticipantIds.includes(id));
+    });
+
+    let conversation;
+    if (existingConversation) {
+      // Use existing conversation
+      conversation = existingConversation;
+      console.log(`Using existing conversation: ${conversation.id} between ${participantDetails.map(p => p.username).join(' and ')}`);
+    } else {
+      // Create new conversation
+      conversation = {
+        id: `conv_${Date.now()}`,
+        participants: participantDetails,
+        subject: subject || 'New Conversation',
+        createdAt: new Date().toISOString(),
+        lastActivity: new Date().toISOString()
+      };
+
+      conversations.push(conversation);
+      saveData(CONVERSATIONS_FILE, conversations);
+      console.log(`Created new conversation: ${conversation.id} between ${participantDetails.map(p => p.username).join(' and ')}`);
+    }
 
     // Create initial message if provided
     if (initialMessage) {
@@ -2310,8 +2353,11 @@ app.post('/api/conversations', (req, res) => {
       messages.push(message);
       saveData(MESSAGES_FILE, messages);
 
+      // Update conversation last activity
+      conversation.lastActivity = new Date().toISOString();
+      saveData(CONVERSATIONS_FILE, conversations);
+
       // Emit real-time notification to other participant
-      const otherParticipant = participantDetails.find(p => p.id !== userId);
       if (otherParticipant) {
         io.to(`user-${otherParticipant.id}`).emit('new-message', {
           conversationId: conversation.id,
@@ -2349,6 +2395,33 @@ app.post('/api/messages', (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
+    // Check for blocked users in conversation
+    const currentUser = users.find(u => u.uid === userId);
+    const otherParticipants = conversation.participants.filter(p => p.id !== userId);
+    
+    if (currentUser && currentUser.blockedUsers) {
+      const blockedParticipants = otherParticipants.filter(p => 
+        currentUser.blockedUsers.includes(p.id)
+      );
+      
+      if (blockedParticipants.length > 0) {
+        return res.status(403).json({ 
+          message: 'Cannot send message to blocked users',
+          blockedUsers: blockedParticipants.map(p => p.username)
+        });
+      }
+    }
+
+    // Check if current user is blocked by other participants
+    for (const participant of otherParticipants) {
+      const participantUser = users.find(u => u.uid === participant.id);
+      if (participantUser && participantUser.blockedUsers && participantUser.blockedUsers.includes(userId)) {
+        return res.status(403).json({ 
+          message: 'Cannot send message - you have been blocked by one or more participants'
+        });
+      }
+    }
+
     const message = {
       id: `msg_${Date.now()}`,
       conversationId,
@@ -2366,7 +2439,6 @@ app.post('/api/messages', (req, res) => {
     saveData(CONVERSATIONS_FILE, conversations);
 
     // Emit real-time notification to other participants
-    const otherParticipants = conversation.participants.filter(p => p.id !== userId);
     otherParticipants.forEach(participant => {
       io.to(`user-${participant.id}`).emit('new-message', {
         conversationId,
@@ -2421,9 +2493,25 @@ app.get('/api/users', (req, res) => {
       return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    // Return users without sensitive information, excluding current user
+    const currentUser = users.find(u => u.uid === userId);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Return users without sensitive information, excluding current user and blocked users
     const safeUsers = users
-      .filter(user => user.uid !== userId)
+      .filter(user => {
+        // Exclude current user
+        if (user.uid === userId) return false;
+        
+        // Exclude users that current user has blocked
+        if (currentUser.blockedUsers && currentUser.blockedUsers.includes(user.uid)) return false;
+        
+        // Exclude users who have blocked current user
+        if (user.blockedUsers && user.blockedUsers.includes(userId)) return false;
+        
+        return true;
+      })
       .map(user => ({
         uid: user.uid,
         username: user.username,
@@ -2638,8 +2726,14 @@ app.post('/api/users/:userId/block', (req, res) => {
     }
 
     const currentUser = users.find(u => u.uid === currentUserId);
+    const userToBlock = users.find(u => u.uid === userId);
+    
     if (!currentUser) {
       return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (!userToBlock) {
+      return res.status(404).json({ message: 'User to block not found' });
     }
 
     // Initialize blocked users array if it doesn't exist
@@ -2651,10 +2745,19 @@ app.post('/api/users/:userId/block', (req, res) => {
       // Add to blocked users if not already blocked
       if (!currentUser.blockedUsers.includes(userId)) {
         currentUser.blockedUsers.push(userId);
+        // Store timestamp when user was blocked
+        if (!userToBlock.blockedAt) {
+          userToBlock.blockedAt = {};
+        }
+        userToBlock.blockedAt[currentUserId] = new Date().toISOString();
       }
     } else {
       // Remove from blocked users
       currentUser.blockedUsers = currentUser.blockedUsers.filter(id => id !== userId);
+      // Remove timestamp
+      if (userToBlock.blockedAt) {
+        delete userToBlock.blockedAt[currentUserId];
+      }
     }
     
     saveData(USERS_FILE, users);
@@ -2876,6 +2979,44 @@ app.post('/api/support/reports/:reportId/:action', (req, res) => {
     });
   } catch (error) {
     console.error('Error updating report:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get blocked users for a user
+app.get('/api/users/:userId/blocked', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!currentUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (userId !== currentUserId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const currentUser = users.find(u => u.uid === currentUserId);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get blocked users with their details
+    const blockedUsers = (currentUser.blockedUsers || []).map(blockedUserId => {
+      const blockedUser = users.find(u => u.uid === blockedUserId);
+      return blockedUser ? {
+        uid: blockedUser.uid,
+        username: blockedUser.username,
+        email: blockedUser.email,
+        fullName: blockedUser.fullName || blockedUser.username,
+        blockedAt: blockedUser.blockedAt || new Date().toISOString()
+      } : null;
+    }).filter(Boolean);
+
+    res.json({ blockedUsers });
+  } catch (error) {
+    console.error('Error getting blocked users:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

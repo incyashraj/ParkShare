@@ -88,9 +88,6 @@ const ParkingSpotList = () => {
   const navigate = useNavigate();
   const { joinSpotRoom, leaveSpotRoom, isConnected } = useRealtime();
   const [spots, setSpots] = useState([]);
-  const [filteredSpots, setFilteredSpots] = useState([]);
-  const [error, setError] = useState('');
-
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
@@ -119,6 +116,31 @@ const ParkingSpotList = () => {
   const [parkingType, setParkingType] = useState('all');
   const [instantBooking, setInstantBooking] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in kilometers
+    return distance;
+  }, []);
+
+  // Calculate distances for all spots
+  const calculateDistances = useCallback((spots, userLat, userLon) => {
+    return spots.map(spot => {
+      if (spot.coordinates && spot.coordinates.length === 2 && userLat && userLon) {
+        const distance = calculateDistance(userLat, userLon, spot.coordinates[0], spot.coordinates[1]);
+        return { ...spot, distance };
+      }
+      return { ...spot, distance: null };
+    });
+  }, [calculateDistance]);
 
   const sortOptions = [
     { value: 'distance', label: 'Distance', icon: LocationIcon },
@@ -201,7 +223,6 @@ const ParkingSpotList = () => {
         }));
 
         setSpots(transformedSpots);
-        setFilteredSpots(transformedSpots);
 
         // Calculate maximum price from all spots
         const prices = transformedSpots.map(spot => 
@@ -227,28 +248,30 @@ const ParkingSpotList = () => {
               // Calculate distances for all spots
               const spotsWithDistances = calculateDistances(transformedSpots, latitude, longitude);
               setSpots(spotsWithDistances);
-              setFilteredSpots(spotsWithDistances);
             },
             (error) => {
               console.error('Error getting location:', error);
-              setError('Could not get your location. Using default location.');
+              setSnackbarMessage('Could not get your location. Using default location.');
+              setSnackbarSeverity('error');
               setOpenSnackbar(true);
             }
           );
         }
       } else {
         console.error('Invalid data format received:', data);
-        setError('Failed to load parking spots');
+        setSnackbarMessage('Failed to load parking spots');
+        setSnackbarSeverity('error');
         setOpenSnackbar(true);
       }
     } catch (error) {
       console.error('Error fetching parking spots:', error);
-      setError('Failed to fetch parking spots');
+      setSnackbarMessage('Failed to fetch parking spots');
+      setSnackbarSeverity('error');
       setOpenSnackbar(true);
     } finally {
       setLoading(false);
     }
-  }, [priceRange, ratingFilter, searchTerm]);
+  }, [priceRange, ratingFilter, searchTerm, calculateDistances]);
 
   useEffect(() => {
     fetchParkingSpots();
@@ -259,7 +282,7 @@ const ParkingSpotList = () => {
     if (priceRange[1] < maxPrice) {
       setPriceRange([0, maxPrice]);
     }
-  }, [maxPrice]);
+  }, [maxPrice, priceRange]);
 
   // Recalculate distances when user location changes
   useEffect(() => {
@@ -267,9 +290,8 @@ const ParkingSpotList = () => {
       const [latitude, longitude] = userLocation;
       const spotsWithDistances = calculateDistances(spots, latitude, longitude);
       setSpots(spotsWithDistances);
-      setFilteredSpots(spotsWithDistances);
     }
-  }, [userLocation]);
+  }, [userLocation, spots, calculateDistances]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -293,7 +315,7 @@ const ParkingSpotList = () => {
   }, [spots, joinSpotRoom, leaveSpotRoom]);
 
   // Apply filters and sorting
-  const sortSpots = (spotsToSort) => {
+  const sortSpots = useCallback((spotsToSort) => {
     // Always sort by availability first (available spots first)
     const sortedByAvailability = [...spotsToSort].sort((a, b) => {
       if (a.available && !b.available) return -1;
@@ -320,7 +342,7 @@ const ParkingSpotList = () => {
       default:
         return sortedByAvailability.sort((a, b) => (a.distance || 0) - (b.distance || 0));
     }
-  };
+  }, [sortBy]);
 
   const filteredAndSortedSpots = useCallback(() => {
     let filtered = [...spots];
@@ -381,7 +403,7 @@ const ParkingSpotList = () => {
     // Sort spots
     const sorted = sortSpots(filtered);
     return sorted;
-  }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking, sortBy, sortSpots]);
+  }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking, sortSpots]);
 
   const handleLocationClick = () => {
     if (navigator.geolocation) {
@@ -487,31 +509,6 @@ const ParkingSpotList = () => {
         ? prev.filter(id => id !== amenityId)
         : [...prev, amenityId]
     );
-  };
-
-  // Calculate distance between two coordinates using Haversine formula
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the Earth in kilometers
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-    const distance = R * c; // Distance in kilometers
-    return distance;
-  };
-
-  // Calculate distances for all spots
-  const calculateDistances = (spots, userLat, userLon) => {
-    return spots.map(spot => {
-      if (spot.coordinates && spot.coordinates.length === 2 && userLat && userLon) {
-        const distance = calculateDistance(userLat, userLon, spot.coordinates[0], spot.coordinates[1]);
-        return { ...spot, distance };
-      }
-      return { ...spot, distance: null };
-    });
   };
 
   if (loading) {

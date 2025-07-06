@@ -106,6 +106,11 @@ const ParkingSpotDetail = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState('');
 
+  const [contactMessage, setContactMessage] = useState('');
+  const [contactLoading, setContactLoading] = useState(false);
+  const [contactSuccess, setContactSuccess] = useState(false);
+  const [contactError, setContactError] = useState('');
+
   // Check if current user is the owner of this spot
   const isOwner = currentUser && spot && spot.owner === currentUser.uid;
 
@@ -189,8 +194,51 @@ const ParkingSpotDetail = () => {
       navigate('/login');
       return;
     }
-    // Navigate to messaging system with the host
-    navigate(`/messages?recipient=${spot?.owner}&subject=Inquiry about ${spot?.title}`);
+    setShowContactDialog(true);
+  };
+
+  const handleSendContactMessage = async () => {
+    if (!contactMessage.trim()) {
+      setContactError('Message cannot be empty');
+      return;
+    }
+    setContactLoading(true);
+    setContactError('');
+    try {
+      // First, create a conversation
+      const conversationResponse = await fetch('http://localhost:3001/api/conversations', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.uid}`
+        },
+        body: JSON.stringify({
+          participants: [currentUser.uid, spot.owner],
+          subject: `Inquiry about ${spot.title}`,
+          initialMessage: contactMessage
+        })
+      });
+
+      if (!conversationResponse.ok) {
+        const errorData = await conversationResponse.json();
+        throw new Error(errorData.message || 'Failed to create conversation');
+      }
+
+      const { conversation } = await conversationResponse.json();
+      
+      setContactSuccess(true);
+      setTimeout(() => {
+        setShowContactDialog(false);
+        setContactSuccess(false);
+        setContactMessage('');
+        navigate(`/messages/${conversation.id}`);
+      }, 1500);
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setContactError(err.message || 'Failed to send message. Please try again.');
+    } finally {
+      setContactLoading(false);
+    }
   };
 
   const handleBookingComplete = (success) => {
@@ -541,7 +589,7 @@ const ParkingSpotDetail = () => {
                       variant="outlined"
                       size="small"
                       startIcon={<Message />}
-                      onClick={() => setShowContactDialog(true)}
+                      onClick={handleContactHost}
                     >
                       Contact Owner
                     </Button>
@@ -710,27 +758,18 @@ const ParkingSpotDetail = () => {
                       console.log('Book Now button clicked!');
                       handleBooking();
                     }}
-                    sx={{ mb: 2, py: 1.5, bgcolor: '#22C55E', '&:hover': { bgcolor: '#16A34A' } }}
+                    sx={{ mb: 2, py: 1.5, fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: 0.5, borderRadius: 2 }}
                   >
                     Book Now
                   </Button>
-                  
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     size="large"
                     fullWidth
+                    color="secondary"
                     startIcon={<Message />}
                     onClick={handleContactHost}
-                    sx={{ 
-                      mb: 2, 
-                      py: 1.5, 
-                      borderColor: '#007A87', 
-                      color: '#007A87', 
-                      '&:hover': { 
-                        borderColor: '#005F6B', 
-                        backgroundColor: 'rgba(0, 122, 135, 0.05)' 
-                      } 
-                    }}
+                    sx={{ mb: 2, py: 1.5, fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: 0.5, borderRadius: 2 }}
                   >
                     Contact Host
                   </Button>
@@ -806,46 +845,102 @@ const ParkingSpotDetail = () => {
       </Grid>
 
       {/* Contact Owner Dialog */}
-      <Dialog
-        open={showContactDialog}
+      <Dialog 
+        open={showContactDialog} 
         onClose={() => setShowContactDialog(false)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
-        <DialogTitle>
-          Contact {spot.ownerName || 'Owner'}
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box display="flex" alignItems="center" gap={2}>
+            <Message color="primary" />
+            <Typography variant="h6">Contact Host</Typography>
+          </Box>
         </DialogTitle>
         <DialogContent>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Send a message to the owner about this parking spot.
+          {/* Spot Information */}
+          <Box sx={{ mb: 3, p: 2, bgcolor: 'grey.50', borderRadius: 2 }}>
+            <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+              About this spot
+            </Typography>
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Spot:</strong> {spot.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Location:</strong> {spot.location}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Rate:</strong> {spot.hourlyRate}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Status:</strong> 
+                  <Chip 
+                    label={spot.available ? 'Available' : 'Occupied'} 
+                    color={spot.available ? 'success' : 'error'} 
+                    size="small" 
+                    sx={{ ml: 1 }}
+                  />
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Type:</strong> {spot.parkingType || 'Parking Lot'}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>Rating:</strong> {spot.rating ? `${spot.rating}/5` : 'No ratings yet'}
+                </Typography>
+              </Grid>
+            </Grid>
+          </Box>
+
+          {/* Message Section */}
+          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
+            Your Message
           </Typography>
           <TextField
-            label="Subject"
+            autoFocus
+            margin="dense"
+            label="Write your message to the host..."
+            type="text"
             fullWidth
-            defaultValue={`Inquiry about ${spot.title || spot.location}`}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            label="Message"
             multiline
-            rows={4}
-            fullWidth
-            placeholder="Hi! I'm interested in your parking spot..."
+            minRows={4}
+            maxRows={8}
+            value={contactMessage}
+            onChange={e => setContactMessage(e.target.value)}
+            disabled={contactLoading}
+            error={!!contactError}
+            helperText={contactError || "Introduce yourself and ask about availability, pricing, or any other questions you have about this parking spot."}
+            placeholder="Hi! I'm interested in your parking spot. Could you tell me more about availability and any special requirements?"
           />
+          
+          {contactSuccess && (
+            <Alert severity="success" sx={{ mt: 2 }}>
+              <Typography variant="body2">
+                <strong>Message sent successfully!</strong><br />
+                You'll be redirected to the messages page to continue the conversation.
+              </Typography>
+            </Alert>
+          )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setShowContactDialog(false)}>
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button 
+            onClick={() => setShowContactDialog(false)} 
+            disabled={contactLoading}
+            variant="outlined"
+          >
             Cancel
           </Button>
           <Button 
-            variant="contained"
-            onClick={() => {
-              // TODO: Implement message sending
-              console.log('Sending message to owner');
-              setShowContactDialog(false);
-            }}
+            onClick={handleSendContactMessage} 
+            disabled={contactLoading || !contactMessage.trim()} 
+            variant="contained" 
+            color="primary"
+            startIcon={contactLoading ? <CircularProgress size={16} /> : <Message />}
           >
-            Send Message
+            {contactLoading ? 'Sending...' : 'Send Message'}
           </Button>
         </DialogActions>
       </Dialog>

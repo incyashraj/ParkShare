@@ -57,7 +57,7 @@
     ],
     "subject": "check",
     "createdAt": "2025-07-06T19:53:35.525Z",
-    "lastActivity": "2025-07-06T19:53:35.525Z",
+    "lastActivity": "2025-07-06T20:52:16.662Z",
     "starred": {
       "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
     },
@@ -67,5 +67,45 @@
     "muted": {
       "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
     }
+  },
+  {
+    "id": "conv_1751834571742",
+    "participants": [
+      {
+        "id": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "uid": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "username": "Mblue",
+        "email": "123@gmail.com"
+      },
+      {
+        "id": "user_sarah_101",
+        "uid": "user_sarah_101",
+        "username": "sarah_jones",
+        "email": "sarah@example.com"
+      }
+    ],
+    "subject": "Inquiry about Residential Street Parking",
+    "createdAt": "2025-07-06T20:42:51.742Z",
+    "lastActivity": "2025-07-06T20:51:09.823Z"
+  },
+  {
+    "id": "conv_1751834777535",
+    "participants": [
+      {
+        "id": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "uid": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "username": "Mblue",
+        "email": "123@gmail.com"
+      },
+      {
+        "id": "user_sarah_101",
+        "uid": "user_sarah_101",
+        "username": "sarah_jones",
+        "email": "sarah@example.com"
+      }
+    ],
+    "subject": "Inquiry about Residential Street Parking",
+    "createdAt": "2025-07-06T20:46:17.535Z",
+    "lastActivity": "2025-07-06T20:46:17.535Z"
   }
 ]
