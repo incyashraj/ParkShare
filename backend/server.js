@@ -2548,7 +2548,6 @@ app.post('/api/conversations/:conversationId/star', (req, res) => {
 app.post('/api/conversations/:conversationId/mute', (req, res) => {
   try {
     const { conversationId } = req.params;
-    const { muted } = req.body;
     const userId = req.headers.authorization?.replace('Bearer ', '');
     
     if (!userId) {
@@ -2566,11 +2565,11 @@ app.post('/api/conversations/:conversationId/mute', (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    // Set muted status
+    // Toggle muted status
     if (!conversation.muted) {
       conversation.muted = {};
     }
-    conversation.muted[userId] = muted;
+    conversation.muted[userId] = !conversation.muted[userId];
     
     saveData(CONVERSATIONS_FILE, conversations);
     
@@ -2588,7 +2587,6 @@ app.post('/api/conversations/:conversationId/mute', (req, res) => {
 app.post('/api/conversations/:conversationId/archive', (req, res) => {
   try {
     const { conversationId } = req.params;
-    const { archived } = req.body;
     const userId = req.headers.authorization?.replace('Bearer ', '');
     
     if (!userId) {
@@ -2606,11 +2604,11 @@ app.post('/api/conversations/:conversationId/archive', (req, res) => {
       return res.status(403).json({ message: 'Access denied' });
     }
 
-    // Set archived status
+    // Toggle archived status
     if (!conversation.archived) {
       conversation.archived = {};
     }
-    conversation.archived[userId] = archived;
+    conversation.archived[userId] = !conversation.archived[userId];
     
     saveData(CONVERSATIONS_FILE, conversations);
     
@@ -2748,6 +2746,136 @@ app.delete('/api/conversations/:conversationId', (req, res) => {
     res.json({ message: 'Conversation deleted successfully' });
   } catch (error) {
     console.error('Error deleting conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Support Panel Endpoints
+
+// Get all reports
+app.get('/api/support/reports', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Check if user is admin (you can implement proper admin check)
+    const currentUser = users.find(u => u.uid === userId);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Initialize reports if not exists
+    if (!global.reports) {
+      global.reports = [];
+    }
+
+    // Enrich reports with user information
+    const enrichedReports = global.reports.map(report => {
+      const reportedUser = users.find(u => u.uid === report.reportedUserId);
+      const reporter = users.find(u => u.uid === report.reporterId);
+      
+      return {
+        ...report,
+        reportedUser: reportedUser ? {
+          uid: reportedUser.uid,
+          username: reportedUser.username,
+          email: reportedUser.email
+        } : null,
+        reporter: reporter ? {
+          uid: reporter.uid,
+          username: reporter.username,
+          email: reporter.email
+        } : null,
+        createdAt: report.timestamp,
+        priority: report.priority || 'medium'
+      };
+    });
+
+    res.json({ reports: enrichedReports });
+  } catch (error) {
+    console.error('Error getting reports:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get support stats
+app.get('/api/support/stats', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Initialize reports if not exists
+    if (!global.reports) {
+      global.reports = [];
+    }
+
+    const stats = {
+      total: global.reports.length,
+      pending: global.reports.filter(r => r.status === 'pending').length,
+      resolved: global.reports.filter(r => r.status === 'resolved').length,
+      urgent: global.reports.filter(r => r.status === 'urgent').length
+    };
+
+    res.json({ stats });
+  } catch (error) {
+    console.error('Error getting stats:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Update report status
+app.post('/api/support/reports/:reportId/:action', (req, res) => {
+  try {
+    const { reportId, action } = req.params;
+    const { response } = req.body;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Initialize reports if not exists
+    if (!global.reports) {
+      global.reports = [];
+    }
+
+    const report = global.reports.find(r => r.id === reportId);
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    // Update report based on action
+    if (action === 'resolve') {
+      report.status = 'resolved';
+      report.resolvedAt = new Date().toISOString();
+      report.resolvedBy = userId;
+    } else if (action === 'urgent') {
+      report.status = 'urgent';
+      report.priority = 'high';
+    }
+
+    if (response) {
+      report.response = response;
+      report.responseAt = new Date().toISOString();
+      report.respondedBy = userId;
+    }
+
+    // Save reports to file
+    const REPORTS_FILE = path.join(DATA_DIR, 'reports.json');
+    saveData(REPORTS_FILE, global.reports);
+    
+    res.json({ 
+      message: 'Report updated successfully',
+      report
+    });
+  } catch (error) {
+    console.error('Error updating report:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

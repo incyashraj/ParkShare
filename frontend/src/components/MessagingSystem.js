@@ -94,6 +94,8 @@ const MessagingSystem = () => {
     reason: '',
     description: ''
   });
+  const [showArchived, setShowArchived] = useState(false);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const messagesEndRef = useRef(null);
 
@@ -264,14 +266,48 @@ const MessagingSystem = () => {
     }
   }, [currentUser?.uid, isConnected, socket, loadConversations, loadAvailableUsers, selectedConversation]);
 
-  // Filter conversations based on search term
+  // Handle conversationId parameter from URL
+  useEffect(() => {
+    if (conversationId && conversations.length > 0) {
+      const conversation = conversations.find(conv => conv.id === conversationId);
+      if (conversation && (!selectedConversation || selectedConversation.id !== conversationId)) {
+        handleSelectConversation(conversation);
+      }
+    }
+  }, [conversationId, conversations, selectedConversation]);
+
+  // Helper functions to check conversation status for current user
+  const isConversationStarred = (conversation) => {
+    if (!conversation || !conversation.starred || !currentUser?.uid) return false;
+    return conversation.starred[currentUser.uid] === true;
+  };
+
+  const isConversationMuted = (conversation) => {
+    if (!conversation || !conversation.muted || !currentUser?.uid) return false;
+    return conversation.muted[currentUser.uid] === true;
+  };
+
+  const isConversationArchived = (conversation) => {
+    if (!conversation || !conversation.archived || !currentUser?.uid) return false;
+    return conversation.archived[currentUser.uid] === true;
+  };
+
+  // Filter conversations based on search term and archive status
   const filteredConversations = conversations.filter(conv => {
+    // Skip null or undefined conversations
+    if (!conv) return false;
+    
     const otherUser = conv.participants ? getOtherUser(conv.participants) : null;
     const searchLower = searchTerm.toLowerCase();
-    return otherUser?.username?.toLowerCase().includes(searchLower) ||
+    const matchesSearch = otherUser?.username?.toLowerCase().includes(searchLower) ||
            conv.subject?.toLowerCase().includes(searchLower) ||
            (conv.messages && conv.messages.length > 0 && 
             conv.messages[conv.messages.length - 1].content?.toLowerCase().includes(searchLower));
+    
+    // Filter by archive status using helper function
+    const matchesArchiveFilter = showArchived ? isConversationArchived(conv) : !isConversationArchived(conv);
+    
+    return matchesSearch && matchesArchiveFilter;
   });
 
   const handleSendMessage = async () => {
@@ -319,6 +355,10 @@ const MessagingSystem = () => {
             ? { ...conv, lastMessage: data.message, lastActivity: data.message.timestamp }
             : conv
         ));
+        
+        // Show success notification
+        setSuccessMessage('Message sent successfully');
+        setTimeout(() => setSuccessMessage(null), 2000);
       } else {
         // If failed, mark message as failed
         setMessages(prev => prev.map(msg => 
@@ -370,6 +410,10 @@ const MessagingSystem = () => {
             ? { ...conv, lastMessage: data.message, lastActivity: data.message.timestamp }
             : conv
         ));
+        
+        // Show success notification
+        setSuccessMessage('Message sent successfully');
+        setTimeout(() => setSuccessMessage(null), 2000);
       } else {
         setError('Failed to retry message');
       }
@@ -404,7 +448,13 @@ const MessagingSystem = () => {
         setNewMessageRecipient('');
         setNewMessageSubject('');
         setNewMessageContent('');
-        loadConversations();
+        
+        // Show success notification
+        setSuccessMessage('Conversation created successfully');
+        setTimeout(() => setSuccessMessage(null), 3000);
+        
+        // Reload conversations and navigate to the new conversation
+        await loadConversations();
         
         // Navigate to the new conversation
         if (data.conversation) {
@@ -432,8 +482,8 @@ const MessagingSystem = () => {
   };
 
   const getOtherParticipant = (conversation) => {
-    if (!conversation?.participants) return null;
-    return conversation.participants.find(p => p.uid !== currentUser?.uid);
+    if (!conversation?.participants || !currentUser?.uid) return null;
+    return conversation.participants.find(p => p.uid !== currentUser.uid);
   };
 
   const handleOpenNewMessageDialog = () => {
@@ -559,6 +609,10 @@ const MessagingSystem = () => {
       
       if (response.ok) {
         setMessages(prev => prev.filter(msg => msg.id !== messageActions.message.id));
+        
+        // Show success notification
+        setSuccessMessage('Message deleted successfully');
+        setTimeout(() => setSuccessMessage(null), 2000);
       } else {
         setError('Failed to delete message');
       }
@@ -580,24 +634,23 @@ const MessagingSystem = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser?.uid}`
-        },
-        body: JSON.stringify({ muted: !selectedConversation.muted })
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        // Update local state
-        setSelectedConversation(prev => ({
-          ...prev,
-          muted: data.muted
-        }));
+        // Update local state with the full conversation object
+        setSelectedConversation(data.conversation);
         
         // Update conversations list
         setConversations(prev => prev.map(conv => 
           conv.id === selectedConversation.id 
-            ? { ...conv, muted: data.muted }
+            ? data.conversation
             : conv
         ));
+        
+        setSuccessMessage(`Conversation ${data.muted ? 'muted' : 'unmuted'} successfully`);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError('Failed to mute conversation');
       }
@@ -618,24 +671,23 @@ const MessagingSystem = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser?.uid}`
-        },
-        body: JSON.stringify({ starred: !selectedConversation.starred })
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        // Update local state
-        setSelectedConversation(prev => ({
-          ...prev,
-          starred: data.starred
-        }));
+        // Update local state with the full conversation object
+        setSelectedConversation(data.conversation);
         
         // Update conversations list
         setConversations(prev => prev.map(conv => 
           conv.id === selectedConversation.id 
-            ? { ...conv, starred: data.starred }
+            ? data.conversation
             : conv
         ));
+        
+        setSuccessMessage(`Conversation ${data.starred ? 'starred' : 'unstarred'} successfully`);
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError('Failed to star conversation');
       }
@@ -656,24 +708,29 @@ const MessagingSystem = () => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser?.uid}`
-        },
-        body: JSON.stringify({ archived: !selectedConversation.archived })
+        }
       });
       
       if (response.ok) {
         const data = await response.json();
-        // Update local state
-        setSelectedConversation(prev => ({
-          ...prev,
-          archived: data.archived
-        }));
+        // Update local state with the full conversation object
+        setSelectedConversation(data.conversation);
         
         // Update conversations list
         setConversations(prev => prev.map(conv => 
           conv.id === selectedConversation.id 
-            ? { ...conv, archived: data.archived }
+            ? data.conversation
             : conv
         ));
+        
+        setSuccessMessage(`Conversation ${data.archived ? 'archived' : 'unarchived'} successfully`);
+        setTimeout(() => setSuccessMessage(null), 3000);
+        
+        // If archiving, close the conversation view
+        if (data.archived) {
+          setSelectedConversation(null);
+          setMessages([]);
+        }
       } else {
         setError('Failed to archive conversation');
       }
@@ -702,7 +759,8 @@ const MessagingSystem = () => {
       });
       
       if (response.ok) {
-        setError('User blocked successfully');
+        setSuccessMessage('User blocked successfully');
+        setTimeout(() => setSuccessMessage(null), 3000);
         // Optionally remove conversation from list
         setConversations(prev => prev.filter(conv => conv.id !== selectedConversation.id));
         setSelectedConversation(null);
@@ -751,8 +809,9 @@ const MessagingSystem = () => {
       });
       
       if (response.ok) {
-        setError('User reported successfully');
+        setSuccessMessage('User reported successfully. Our support team will review this report.');
         setReportDialog({ open: false, userId: null, username: '', reason: '', description: '' });
+        setTimeout(() => setSuccessMessage(null), 5000);
       } else {
         setError('Failed to report user');
       }
@@ -779,6 +838,10 @@ const MessagingSystem = () => {
         setConversations(prev => prev.filter(conv => conv.id !== selectedConversation.id));
         setSelectedConversation(null);
         setMessages([]);
+        
+        // Show success notification
+        setSuccessMessage('Conversation deleted successfully');
+        setTimeout(() => setSuccessMessage(null), 3000);
       } else {
         setError('Failed to delete conversation');
       }
@@ -855,16 +918,50 @@ const MessagingSystem = () => {
 
   return (
     <Container maxWidth="lg" sx={{ py: 4, height: 'calc(100vh - 200px)' }}>
+      {/* Success and Error Messages */}
+      {successMessage && (
+        <Alert 
+          severity="success" 
+          sx={{ mb: 2, borderRadius: 2 }}
+          onClose={() => setSuccessMessage(null)}
+        >
+          {successMessage}
+        </Alert>
+      )}
+      {error && (
+        <Alert 
+          severity="error" 
+          sx={{ mb: 2, borderRadius: 2 }}
+          onClose={() => setError(null)}
+        >
+          {error}
+        </Alert>
+      )}
+      
       <Box sx={{ display: 'flex', height: '100%', gap: 2 }}>
         {/* Conversation List */}
         <Paper elevation={2} sx={{ width: { xs: '100%', md: 340 }, minWidth: 0, maxWidth: 400, height: '100%', overflow: 'auto', borderRadius: 4, border: '1px solid #eee', bgcolor: '#fff', p: 0 }}>
           <Box sx={{ p: 2, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <Typography variant="h6" fontWeight={600} sx={{ color: 'primary.main' }}>Messages</Typography>
-            <Tooltip title="New Message">
-              <IconButton color="primary" onClick={handleOpenNewMessageDialog}>
-                <AddIcon />
-              </IconButton>
-            </Tooltip>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Tooltip title={showArchived ? "Show Active" : "Show Archived"}>
+                <IconButton 
+                  color={showArchived ? "primary" : "default"}
+                  onClick={() => setShowArchived(!showArchived)}
+                  sx={{ 
+                    bgcolor: showArchived ? 'rgba(255,56,92,0.1)' : 'transparent',
+                    '&:hover': { bgcolor: showArchived ? 'rgba(255,56,92,0.2)' : 'rgba(0,0,0,0.05)' }
+                  }}
+                >
+                  <ArchiveIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="New Message">
+                <IconButton color="primary" onClick={handleOpenNewMessageDialog}>
+                  <AddIcon />
+                </IconButton>
+              </Tooltip>
+            </Box>
           </Box>
           <Divider />
           <Box sx={{ p: 1, pb: 0 }}>
@@ -888,7 +985,7 @@ const MessagingSystem = () => {
             )}
             {filteredConversations.map((conv) => {
               const isSelected = selectedConversation && selectedConversation.id === conv.id;
-              const lastMsg = conv.messages && conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null;
+              const lastMsg = conv.lastMessage || (conv.messages && conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null);
               const unreadCount = conv.unreadCount || 0;
               const otherUser = conv.participants ? getOtherUser(conv.participants) : null;
               const isOnline = onlineUsers && otherUser?._id && onlineUsers.includes(otherUser._id);
@@ -926,13 +1023,13 @@ const MessagingSystem = () => {
                         <Typography fontWeight={600} sx={{ color: isSelected ? 'primary.main' : 'text.primary' }}>
                           {otherUser?.username || 'Unknown'}
                         </Typography>
-                        {conv.starred && (
+                        {isConversationStarred(conv) && (
                           <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
                         )}
-                        {conv.muted && (
+                        {isConversationMuted(conv) && (
                           <MuteIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                         )}
-                        {conv.archived && (
+                        {isConversationArchived(conv) && (
                           <ArchiveIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
                         )}
                         {unreadCount > 0 && (
@@ -999,13 +1096,13 @@ const MessagingSystem = () => {
                       <Typography variant="h6" fontWeight="bold" color="text.primary">
                         {getOtherParticipant(selectedConversation)?.username || 'Unknown User'}
                       </Typography>
-                      {selectedConversation?.starred && (
+                      {isConversationStarred(selectedConversation) && (
                         <StarIcon sx={{ fontSize: 20, color: 'warning.main' }} />
                       )}
-                      {selectedConversation?.muted && (
+                      {isConversationMuted(selectedConversation) && (
                         <MuteIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                       )}
-                      {selectedConversation?.archived && (
+                      {isConversationArchived(selectedConversation) && (
                         <ArchiveIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                       )}
                     </Box>
@@ -1365,28 +1462,28 @@ const MessagingSystem = () => {
         </MenuItem>
         <MenuItem onClick={handleStarConversation}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {selectedConversation?.starred ? (
+            {isConversationStarred(selectedConversation) ? (
               <StarIcon sx={{ fontSize: 18, color: 'warning.main' }} />
             ) : (
               <StarBorderIcon sx={{ fontSize: 18 }} />
             )}
-            {selectedConversation?.starred ? 'Unstar Conversation' : 'Star Conversation'}
+            {isConversationStarred(selectedConversation) ? 'Unstar Conversation' : 'Star Conversation'}
           </Box>
         </MenuItem>
         <MenuItem onClick={handleMuteConversation}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {selectedConversation?.muted ? (
+            {isConversationMuted(selectedConversation) ? (
               <UnmuteIcon sx={{ fontSize: 18 }} />
             ) : (
               <MuteIcon sx={{ fontSize: 18 }} />
             )}
-            {selectedConversation?.muted ? 'Unmute Notifications' : 'Mute Notifications'}
+            {isConversationMuted(selectedConversation) ? 'Unmute Notifications' : 'Mute Notifications'}
           </Box>
         </MenuItem>
         <MenuItem onClick={handleArchiveConversation}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <ArchiveIcon sx={{ fontSize: 18 }} />
-            {selectedConversation?.archived ? 'Unarchive' : 'Archive'}
+            {isConversationArchived(selectedConversation) ? 'Unarchive' : 'Archive'}
           </Box>
         </MenuItem>
         <Divider />

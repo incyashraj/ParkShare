@@ -31,6 +31,7 @@ import {
   MoreVert,
   VerifiedUser,
   Message as MessageIcon,
+  Support as SupportIcon,
 } from '@mui/icons-material';
 import Login from './Login';
 import Register from './Register';
@@ -53,6 +54,7 @@ import ParkingAnalytics from './components/ParkingAnalytics';
 import Dashboard from './components/Dashboard';
 import TestBooking from './TestBooking';
 import DesignSystemDemo from './components/DesignSystemDemo';
+import SupportPanel from './components/SupportPanel';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -529,6 +531,14 @@ function AppContent() {
                             </MenuItem>
                             <MenuItem 
                               component={Link} 
+                              to="/support"
+                              onClick={handleMenuClose}
+                            >
+                              <SupportIcon sx={{ mr: 2 }} />
+                              Support Panel
+                            </MenuItem>
+                            <MenuItem 
+                              component={Link} 
                               to="/verify"
                               onClick={handleMenuClose}
                             >
@@ -578,6 +588,7 @@ function AppContent() {
                   <Route path="/verify" element={<HostVerification />} />
                   <Route path="/favorites" element={<FavoritesManager />} />
                   <Route path="/analytics" element={<ParkingAnalytics />} />
+                  <Route path="/support" element={<SupportPanel />} />
                   <Route path="/test-booking" element={<TestBooking />} />
                   <Route path="/design-demo" element={<DesignSystemDemo />} />
                   <Route path="/login" element={<Login />} />
