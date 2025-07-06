@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   IconButton,
   Badge,
@@ -35,6 +36,7 @@ import {
 import { useRealtime } from '../contexts/RealtimeContext';
 
 const NotificationCenter = () => {
+  const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
@@ -44,6 +46,7 @@ const NotificationCenter = () => {
     clearNotification,
     clearAllNotifications,
     markNotificationAsRead,
+    addNotification,
     isConnected
   } = useRealtime();
 
@@ -100,30 +103,62 @@ const NotificationCenter = () => {
     });
   };
 
-  // Add test notification for debugging
-  const addTestNotification = () => {
-    const testNotification = {
-      id: Date.now(),
-      type: 'announcement',
-      title: 'Test Notification',
-      message: 'This is a test notification to verify the system is working.',
-      data: {},
-      timestamp: new Date(),
-      read: false
-    };
-    // This would normally be handled by the context, but for testing we can add it directly
-    console.log('Test notification added:', testNotification);
+  // Add test notifications for debugging
+  const addTestNotifications = () => {
+    const testNotifications = [
+      {
+        id: Date.now(),
+        type: 'booking',
+        title: 'New Booking Received',
+        message: 'You have a new booking for your parking spot in Bandra West.',
+        data: { spotId: 'spot_mumbai_bandra_001' },
+        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
+        read: false
+      },
+      {
+        id: Date.now() + 1,
+        type: 'message',
+        title: 'New Message from John',
+        message: 'Hi! I have a question about your parking spot availability.',
+        data: { senderId: 'user_john_123' },
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
+        read: false
+      },
+      {
+        id: Date.now() + 2,
+        type: 'payment',
+        title: 'Payment Received',
+        message: 'Payment of ₹150 has been received for your parking spot.',
+        data: { amount: 150, spotId: 'spot_mumbai_bandra_001' },
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
+        read: true
+      },
+      {
+        id: Date.now() + 3,
+        type: 'announcement',
+        title: 'System Maintenance',
+        message: 'Scheduled maintenance will occur tonight from 2-4 AM.',
+        data: {},
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
+        read: true
+      }
+    ];
+    
+    // Add notifications to the context
+    testNotifications.forEach(notification => {
+      addNotification(notification);
+    });
   };
 
-  // Add test notification on component mount for debugging
+  // Add test notifications on component mount for debugging
   useEffect(() => {
-    // Only add test notification if there are no notifications
+    // Only add test notifications if there are no notifications
     if (notifications.length === 0) {
       setTimeout(() => {
-        addTestNotification();
+        addTestNotifications();
       }, 2000);
     }
-  }, [notifications.length]);
+  }, [notifications.length, addNotification]);
 
   const getTimeAgo = (timestamp) => {
     const now = new Date();
@@ -402,7 +437,7 @@ const NotificationCenter = () => {
               onClick={() => {
                 handleClose();
                 // Navigate to notifications page
-                window.location.href = '/notifications';
+                navigate('/notifications');
               }}
             >
               View All Notifications

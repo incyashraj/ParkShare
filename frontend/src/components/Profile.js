@@ -34,7 +34,13 @@ import {
   Divider,
   Badge,
   Tooltip,
-  Fab
+  Fab,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
+  Checkbox,
+  Select,
+  InputLabel
 } from '@mui/material';
 import {
   Settings as SettingsIcon,
@@ -354,7 +360,10 @@ function Profile() {
       amenities: listing.amenities || [],
       vehicleTypes: listing.vehicleTypes || ['car'],
       maxVehicleHeight: listing.maxVehicleHeight || '',
-      maxVehicleLength: listing.maxVehicleLength || ''
+      maxVehicleLength: listing.maxVehicleLength || '',
+      parkingType: listing.parkingType || 'lot',
+      coordinates: listing.coordinates || null,
+      images: listing.images || []
     });
     setOpenEditListingDialog(true);
   };
@@ -1173,11 +1182,15 @@ function Profile() {
       </Dialog>
 
       {/* Edit Listing Dialog */}
-      <Dialog open={openEditListingDialog} onClose={() => setOpenEditListingDialog(false)} maxWidth="md" fullWidth>
+      <Dialog open={openEditListingDialog} onClose={() => setOpenEditListingDialog(false)} maxWidth="lg" fullWidth>
         <DialogTitle>Edit Parking Spot</DialogTitle>
         <DialogContent>
           <Box py={2}>
             <Grid container spacing={3}>
+              {/* Basic Information */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>Basic Information</Typography>
+              </Grid>
               <Grid item xs={12}>
                 <TextField
                   label="Title"
@@ -1217,6 +1230,49 @@ function Profile() {
                   required
                 />
               </Grid>
+
+              {/* Parking Type and Vehicle Types */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Parking Details</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Parking Type</InputLabel>
+                  <Select
+                    value={editListingData.parkingType}
+                    onChange={(e) => setEditListingData({ ...editListingData, parkingType: e.target.value })}
+                    label="Parking Type"
+                  >
+                    <MenuItem value="street">Street Parking</MenuItem>
+                    <MenuItem value="lot">Parking Lot</MenuItem>
+                    <MenuItem value="covered_lot">Covered Lot</MenuItem>
+                    <MenuItem value="garage">Garage</MenuItem>
+                    <MenuItem value="underground">Underground</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Vehicle Types</InputLabel>
+                  <Select
+                    multiple
+                    value={editListingData.vehicleTypes}
+                    onChange={(e) => setEditListingData({ ...editListingData, vehicleTypes: e.target.value })}
+                    label="Vehicle Types"
+                    renderValue={(selected) => selected.join(', ')}
+                  >
+                    <MenuItem value="car">Car</MenuItem>
+                    <MenuItem value="suv">SUV</MenuItem>
+                    <MenuItem value="bike">Bike</MenuItem>
+                    <MenuItem value="truck">Truck</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Booking Settings */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Booking Settings</Typography>
+              </Grid>
               <Grid item xs={12} sm={6}>
                 <TextField
                   label="Max Duration (hours)"
@@ -1235,6 +1291,95 @@ function Profile() {
                   type="number"
                 />
               </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Max Vehicle Height (m)"
+                  value={editListingData.maxVehicleHeight}
+                  onChange={(e) => setEditListingData({ ...editListingData, maxVehicleHeight: e.target.value })}
+                  fullWidth
+                  type="number"
+                  step="0.1"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Max Vehicle Length (m)"
+                  value={editListingData.maxVehicleLength}
+                  onChange={(e) => setEditListingData({ ...editListingData, maxVehicleLength: e.target.value })}
+                  fullWidth
+                  type="number"
+                  step="0.1"
+                />
+              </Grid>
+
+              {/* Features */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Features & Amenities</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={editListingData.available24h}
+                      onChange={(e) => setEditListingData({ ...editListingData, available24h: e.target.checked })}
+                    />
+                  }
+                  label="Available 24/7"
+                />
+              </Grid>
+
+              {/* Security Features */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom>Security Features</Typography>
+                <FormGroup row>
+                  {['cctv', 'security_guard', 'fenced', 'well_lit'].map((feature) => (
+                    <FormControlLabel
+                      key={feature}
+                      control={
+                        <Checkbox
+                          checked={editListingData.securityFeatures.includes(feature)}
+                          onChange={(e) => {
+                            const newFeatures = e.target.checked
+                              ? [...editListingData.securityFeatures, feature]
+                              : editListingData.securityFeatures.filter(f => f !== feature);
+                            setEditListingData({ ...editListingData, securityFeatures: newFeatures });
+                          }}
+                        />
+                      }
+                      label={feature.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+
+              {/* Amenities */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom>Amenities</Typography>
+                <FormGroup row>
+                  {['covered', 'ev_charging', 'accessible', 'car_wash', 'valet_service'].map((amenity) => (
+                    <FormControlLabel
+                      key={amenity}
+                      control={
+                        <Checkbox
+                          checked={editListingData.amenities.includes(amenity)}
+                          onChange={(e) => {
+                            const newAmenities = e.target.checked
+                              ? [...editListingData.amenities, amenity]
+                              : editListingData.amenities.filter(a => a !== amenity);
+                            setEditListingData({ ...editListingData, amenities: newAmenities });
+                          }}
+                        />
+                      }
+                      label={amenity.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+
+              {/* Terms and Conditions */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Terms & Conditions</Typography>
+              </Grid>
               <Grid item xs={12}>
                 <TextField
                   label="Terms and Conditions"
@@ -1242,7 +1387,7 @@ function Profile() {
                   onChange={(e) => setEditListingData({ ...editListingData, termsAndConditions: e.target.value })}
                   fullWidth
                   multiline
-                  rows={3}
+                  rows={4}
                   required
                 />
               </Grid>

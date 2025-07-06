@@ -340,6 +340,12 @@ export const RealtimeProvider = ({ children }) => {
     );
   }, []);
 
+  const markAllNotificationsAsRead = useCallback(() => {
+    setNotifications(prev => 
+      prev.map(n => ({ ...n, read: true }))
+    );
+  }, []);
+
   const getConversation = useCallback((otherUserId) => {
     if (!currentUser) return [];
     const conversationId = [currentUser.uid, otherUserId].sort().join('-');
@@ -394,6 +400,7 @@ export const RealtimeProvider = ({ children }) => {
     clearNotification,
     clearAllNotifications,
     markNotificationAsRead,
+    markAllNotificationsAsRead,
     getConversation,
     isUserOnline,
     isUserTyping,

@@ -100,7 +100,8 @@ const ParkingSpotList = () => {
   
   // Enhanced search and filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [priceRange, setPriceRange] = useState([0, 200]); // Increased max price to 200 to accommodate higher prices
+  const [maxPrice, setMaxPrice] = useState(200); // Dynamic maximum price
+  const [priceRange, setPriceRange] = useState([0, 200]); // Will be updated based on maxPrice
   const [ratingFilter, setRatingFilter] = useState(0);
   const [distanceFilter, setDistanceFilter] = useState(10);
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
@@ -202,12 +203,31 @@ const ParkingSpotList = () => {
         setSpots(transformedSpots);
         setFilteredSpots(transformedSpots);
 
-        // If geolocation is available, update user location but don't filter spots
+        // Calculate maximum price from all spots
+        const prices = transformedSpots.map(spot => 
+          parseFloat(spot.hourlyRate?.replace(/[^0-9.]/g, '') || '0')
+        );
+        const calculatedMaxPrice = Math.max(...prices, 200); // Ensure minimum of 200
+        console.log('Detected maximum price:', calculatedMaxPrice, 'from prices:', prices);
+        setMaxPrice(calculatedMaxPrice);
+        
+        // Update price range if current max is less than calculated max
+        if (priceRange[1] < calculatedMaxPrice) {
+          console.log('Updating price range from', priceRange[1], 'to', calculatedMaxPrice);
+          setPriceRange([0, calculatedMaxPrice]);
+        }
+
+        // If geolocation is available, update user location and calculate distances
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
               const { latitude, longitude } = position.coords;
               setUserLocation([latitude, longitude]);
+              
+              // Calculate distances for all spots
+              const spotsWithDistances = calculateDistances(transformedSpots, latitude, longitude);
+              setSpots(spotsWithDistances);
+              setFilteredSpots(spotsWithDistances);
             },
             (error) => {
               console.error('Error getting location:', error);
@@ -233,6 +253,23 @@ const ParkingSpotList = () => {
   useEffect(() => {
     fetchParkingSpots();
   }, [fetchParkingSpots]);
+
+  // Update price range when maxPrice changes
+  useEffect(() => {
+    if (priceRange[1] < maxPrice) {
+      setPriceRange([0, maxPrice]);
+    }
+  }, [maxPrice]);
+
+  // Recalculate distances when user location changes
+  useEffect(() => {
+    if (userLocation && spots.length > 0) {
+      const [latitude, longitude] = userLocation;
+      const spotsWithDistances = calculateDistances(spots, latitude, longitude);
+      setSpots(spotsWithDistances);
+      setFilteredSpots(spotsWithDistances);
+    }
+  }, [userLocation]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -365,8 +402,6 @@ const ParkingSpotList = () => {
     }
   };
 
-
-
   const handleToggleFavorite = (spotId) => {
     setFavorites(prev => 
       prev.includes(spotId) 
@@ -399,7 +434,7 @@ const ParkingSpotList = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setPriceRange([0, 200]); // Updated to match new range
+    setPriceRange([0, maxPrice]); // Use dynamic maximum price
     setRatingFilter(0);
     setDistanceFilter(10);
     setAvailabilityFilter('all');
@@ -452,6 +487,31 @@ const ParkingSpotList = () => {
         ? prev.filter(id => id !== amenityId)
         : [...prev, amenityId]
     );
+  };
+
+  // Calculate distance between two coordinates using Haversine formula
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const R = 6371; // Radius of the Earth in kilometers
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const distance = R * c; // Distance in kilometers
+    return distance;
+  };
+
+  // Calculate distances for all spots
+  const calculateDistances = (spots, userLat, userLon) => {
+    return spots.map(spot => {
+      if (spot.coordinates && spot.coordinates.length === 2 && userLat && userLon) {
+        const distance = calculateDistance(userLat, userLon, spot.coordinates[0], spot.coordinates[1]);
+        return { ...spot, distance };
+      }
+      return { ...spot, distance: null };
+    });
   };
 
   if (loading) {
@@ -633,7 +693,7 @@ const ParkingSpotList = () => {
                   onChange={(e, newValue) => setPriceRange(newValue)}
                   valueLabelDisplay="auto"
                   min={0}
-                  max={200}
+                  max={maxPrice}
                   sx={{ color: 'primary.main' }}
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>

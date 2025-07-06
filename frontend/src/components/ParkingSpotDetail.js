@@ -24,6 +24,13 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  FormGroup,
+  Checkbox,
 } from '@mui/material';
 import {
   LocationOn,
@@ -52,6 +59,7 @@ import {
   MyLocation,
   CheckCircle,
   Warning,
+  Edit,
 } from '@mui/icons-material';
 
 import { useAuth } from '../contexts/AuthContext';
@@ -76,7 +84,30 @@ const ParkingSpotDetail = () => {
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [showContactDialog, setShowContactDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editData, setEditData] = useState({
+    title: '',
+    description: '',
+    hourlyRate: '',
+    location: '',
+    termsAndConditions: '',
+    available24h: true,
+    maxDuration: '',
+    advanceBooking: 24,
+    securityFeatures: [],
+    amenities: [],
+    vehicleTypes: ['car'],
+    maxVehicleHeight: '',
+    maxVehicleLength: '',
+    parkingType: 'lot',
+    coordinates: null,
+    images: []
+  });
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState('');
 
+  // Check if current user is the owner of this spot
+  const isOwner = currentUser && spot && spot.owner === currentUser.uid;
 
   useEffect(() => {
     fetchSpotDetails();
@@ -153,8 +184,6 @@ const ParkingSpotDetail = () => {
     setShowBookingModal(true);
   };
 
-
-
   const handleBookingComplete = (success) => {
     setShowBookingModal(false);
     if (success) {
@@ -162,7 +191,66 @@ const ParkingSpotDetail = () => {
     }
   };
 
+  const handleEdit = () => {
+    if (!spot) return;
+    
+    setEditData({
+      title: spot.title || '',
+      description: spot.description || '',
+      hourlyRate: spot.hourlyRate ? spot.hourlyRate.replace(/[^0-9.]/g, '') : '',
+      location: spot.location || '',
+      termsAndConditions: spot.termsAndConditions || '',
+      available24h: spot.available24h !== undefined ? spot.available24h : true,
+      maxDuration: spot.maxDuration ? spot.maxDuration.replace(/[^0-9]/g, '') : '',
+      advanceBooking: spot.advanceBooking || 24,
+      securityFeatures: spot.securityFeatures || [],
+      amenities: spot.amenities || [],
+      vehicleTypes: spot.vehicleTypes || ['car'],
+      maxVehicleHeight: spot.maxVehicleHeight || '',
+      maxVehicleLength: spot.maxVehicleLength || '',
+      parkingType: spot.parkingType || 'lot',
+      coordinates: spot.coordinates || null,
+      images: spot.images || []
+    });
+    setShowEditDialog(true);
+  };
 
+  const handleSaveEdit = async () => {
+    if (!spot) return;
+    
+    setEditLoading(true);
+    setEditError('');
+    
+    try {
+      const response = await fetch(`http://localhost:3001/parking-spots/${spot.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...editData,
+          hourlyRate: `₹ ${editData.hourlyRate}`,
+          userId: currentUser.uid
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update parking spot');
+      }
+
+      // Refresh spot data
+      await fetchSpotDetails();
+      
+      setShowEditDialog(false);
+      if (addNotification) {
+        addNotification('Parking spot updated successfully!', 'success');
+      }
+    } catch (error) {
+      setEditError('Failed to update parking spot: ' + error.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   const getAvailabilityColor = () => {
     if (!spot) return 'default';
@@ -644,6 +732,19 @@ const ParkingSpotDetail = () => {
                 </Button>
               )}
 
+              {isOwner && (
+                <Button
+                  variant="outlined"
+                  size="large"
+                  fullWidth
+                  startIcon={<Edit />}
+                  onClick={handleEdit}
+                  sx={{ mb: 2, py: 1.5, borderColor: '#FF385C', color: '#FF385C', '&:hover': { borderColor: '#E31C5F', backgroundColor: 'rgba(255, 56, 92, 0.05)' } }}
+                >
+                  Edit Spot
+                </Button>
+              )}
+
               {!currentUser && (
                 <Typography variant="body2" color="text.secondary" textAlign="center">
                   Please log in to book this spot
@@ -730,6 +831,243 @@ const ParkingSpotDetail = () => {
         />
       )}
 
+      {/* Edit Spot Dialog */}
+      <Dialog open={showEditDialog && editData && editData.securityFeatures && editData.amenities} onClose={() => setShowEditDialog(false)} maxWidth="lg" fullWidth>
+        <DialogTitle>Edit Parking Spot</DialogTitle>
+        <DialogContent>
+          <Box py={2}>
+            <Grid container spacing={3}>
+              {/* Basic Information */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom>Basic Information</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Title"
+                  value={editData.title}
+                  onChange={(e) => setEditData({ ...editData, title: e.target.value })}
+                  fullWidth
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Description"
+                  value={editData.description}
+                  onChange={(e) => setEditData({ ...editData, description: e.target.value })}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Location"
+                  value={editData.location}
+                  onChange={(e) => setEditData({ ...editData, location: e.target.value })}
+                  fullWidth
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Hourly Rate (₹)"
+                  value={editData.hourlyRate}
+                  onChange={(e) => setEditData({ ...editData, hourlyRate: e.target.value })}
+                  fullWidth
+                  type="number"
+                  required
+                />
+              </Grid>
+
+              {/* Parking Type and Vehicle Types */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Parking Details</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Parking Type</InputLabel>
+                  <Select
+                    value={editData.parkingType}
+                    onChange={(e) => setEditData({ ...editData, parkingType: e.target.value })}
+                    label="Parking Type"
+                  >
+                    <MenuItem value="street">Street Parking</MenuItem>
+                    <MenuItem value="lot">Parking Lot</MenuItem>
+                    <MenuItem value="covered_lot">Covered Lot</MenuItem>
+                    <MenuItem value="garage">Garage</MenuItem>
+                    <MenuItem value="underground">Underground</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControl fullWidth>
+                  <InputLabel>Vehicle Types</InputLabel>
+                  <Select
+                    multiple
+                    value={editData.vehicleTypes}
+                    onChange={(e) => setEditData({ ...editData, vehicleTypes: e.target.value })}
+                    label="Vehicle Types"
+                    renderValue={(selected) => selected.join(', ')}
+                  >
+                    <MenuItem value="car">Car</MenuItem>
+                    <MenuItem value="suv">SUV</MenuItem>
+                    <MenuItem value="bike">Bike</MenuItem>
+                    <MenuItem value="truck">Truck</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {/* Booking Settings */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Booking Settings</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Max Duration (hours)"
+                  value={editData.maxDuration}
+                  onChange={(e) => setEditData({ ...editData, maxDuration: e.target.value })}
+                  fullWidth
+                  type="number"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Advance Booking (hours)"
+                  value={editData.advanceBooking}
+                  onChange={(e) => setEditData({ ...editData, advanceBooking: e.target.value })}
+                  fullWidth
+                  type="number"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Max Vehicle Height (m)"
+                  value={editData.maxVehicleHeight}
+                  onChange={(e) => setEditData({ ...editData, maxVehicleHeight: e.target.value })}
+                  fullWidth
+                  type="number"
+                  step="0.1"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Max Vehicle Length (m)"
+                  value={editData.maxVehicleLength}
+                  onChange={(e) => setEditData({ ...editData, maxVehicleLength: e.target.value })}
+                  fullWidth
+                  type="number"
+                  step="0.1"
+                />
+              </Grid>
+
+              {/* Features */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Features & Amenities</Typography>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={editData.available24h}
+                      onChange={(e) => setEditData({ ...editData, available24h: e.target.checked })}
+                    />
+                  }
+                  label="Available 24/7"
+                />
+              </Grid>
+
+              {/* Security Features */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom>Security Features</Typography>
+                <FormGroup row>
+                  {['cctv', 'security_guard', 'fenced', 'well_lit'].map((feature) => (
+                    <FormControlLabel
+                      key={feature}
+                      control={
+                        <Checkbox
+                          checked={editData.securityFeatures?.includes(feature) || false}
+                          onChange={(e) => {
+                            const currentFeatures = editData.securityFeatures || [];
+                            const newFeatures = e.target.checked
+                              ? [...currentFeatures, feature]
+                              : currentFeatures.filter(f => f !== feature);
+                            setEditData({ ...editData, securityFeatures: newFeatures });
+                          }}
+                        />
+                      }
+                      label={feature.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+
+              {/* Amenities */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1" gutterBottom>Amenities</Typography>
+                <FormGroup row>
+                  {['covered', 'ev_charging', 'accessible', 'car_wash', 'valet_service'].map((amenity) => (
+                    <FormControlLabel
+                      key={amenity}
+                      control={
+                        <Checkbox
+                          checked={editData.amenities?.includes(amenity) || false}
+                          onChange={(e) => {
+                            const currentAmenities = editData.amenities || [];
+                            const newAmenities = e.target.checked
+                              ? [...currentAmenities, amenity]
+                              : currentAmenities.filter(a => a !== amenity);
+                            setEditData({ ...editData, amenities: newAmenities });
+                          }}
+                        />
+                      }
+                      label={amenity.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    />
+                  ))}
+                </FormGroup>
+              </Grid>
+
+              {/* Terms and Conditions */}
+              <Grid item xs={12}>
+                <Typography variant="h6" gutterBottom sx={{ mt: 2 }}>Terms & Conditions</Typography>
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Terms and Conditions"
+                  value={editData.termsAndConditions}
+                  onChange={(e) => setEditData({ ...editData, termsAndConditions: e.target.value })}
+                  fullWidth
+                  multiline
+                  rows={4}
+                  required
+                />
+              </Grid>
+            </Grid>
+            {editError && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {editError}
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setShowEditDialog(false);
+            setEditError('');
+          }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveEdit} 
+            variant="contained" 
+            color="primary"
+            disabled={editLoading}
+          >
+            {editLoading ? 'Saving...' : 'Save Changes'}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
     </Container>
   );

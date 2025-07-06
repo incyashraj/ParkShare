@@ -42,6 +42,7 @@ import Profile from './components/Profile';
 import BookingManagement from './components/BookingManagement';
 import Settings from './components/Settings';
 import NotificationCenter from './components/NotificationCenter';
+import NotificationsPage from './components/NotificationsPage';
 import AdvancedSearch from './components/AdvancedSearch';
 import ReviewsAndRatings from './components/ReviewsAndRatings';
 import FavoritesManager from './components/FavoritesManager';
@@ -559,6 +560,7 @@ function AppContent() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/bookings" element={<BookingManagement />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
                   <Route path="/verify" element={<HostVerification />} />
                   <Route path="/favorites" element={<FavoritesManager />} />
                   <Route path="/analytics" element={<ParkingAnalytics />} />

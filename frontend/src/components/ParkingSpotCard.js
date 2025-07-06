@@ -72,6 +72,9 @@ import { useAuth } from '../contexts/AuthContext';
 const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, isFavorite, onToggleFavorite }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
+  
+  // Check if this is the current user's listing
+  const isMyListing = currentUser && spot.owner === currentUser.uid;
   const { spotStatus, isConnected, socket } = useRealtime();
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showMessageDialog, setShowMessageDialog] = useState(false);
@@ -440,6 +443,27 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
             {spot.available ? 'Available' : 'Occupied'}
           </div>
 
+          {/* My Listing Indicator */}
+          {isMyListing && (
+            <div style={{
+              position: 'absolute',
+              top: '12px',
+              left: '12px',
+              backgroundColor: '#007AFF',
+              color: 'white',
+              padding: '4px 8px',
+              borderRadius: '12px',
+              fontSize: '12px',
+              fontWeight: '600',
+              zIndex: 2,
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
+            }}>
+              My Listing
+            </div>
+          )}
+
           {/* Favorite Button */}
           <IconButton 
             onClick={(e) => {
@@ -449,7 +473,7 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
             className="favorite-button"
             sx={{ 
               position: 'absolute',
-              top: 12,
+              top: isMyListing ? 50 : 12,
               left: 12,
               backgroundColor: 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(10px)',

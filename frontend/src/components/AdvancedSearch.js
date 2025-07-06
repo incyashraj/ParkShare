@@ -1,11 +1,12 @@
 import { Box, Paper, Typography, TextField, Slider, FormControl, InputLabel, Select, MenuItem, Checkbox, FormControlLabel, Button, Chip, Grid, Accordion, AccordionSummary, AccordionDetails, IconButton, Divider,  } from '@mui/material';
 import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon, ExpandMore as ExpandMoreIcon, LocationOn as LocationIcon, AttachMoney as MoneyIcon, AccessTime as TimeIcon, Security as SecurityIcon, LocalParking as ParkingIcon,  } from '@mui/icons-material';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const AdvancedSearch = ({ onSearch, onClear }) => {
+  const [maxPrice, setMaxPrice] = useState(200);
   const [searchParams, setSearchParams] = useState({
     location: '',
-    priceRange: [0, 200], // Updated to accommodate higher prices
+    priceRange: [0, 200], // Will be updated based on maxPrice
     date: '',
     time: '',
     duration: 2,
@@ -14,6 +15,36 @@ const AdvancedSearch = ({ onSearch, onClear }) => {
     rating: 0,
     distance: 5,
   });
+
+  // Fetch maximum price from parking spots
+  useEffect(() => {
+    const fetchMaxPrice = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/parking-spots');
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          const prices = data.map(spot => 
+            parseFloat(spot.hourlyRate?.replace(/[^0-9.]/g, '') || '0')
+          );
+          const calculatedMaxPrice = Math.max(...prices, 200); // Ensure minimum of 200
+          setMaxPrice(calculatedMaxPrice);
+          
+          // Update price range if current max is less than calculated max
+          if (searchParams.priceRange[1] < calculatedMaxPrice) {
+            setSearchParams(prev => ({
+              ...prev,
+              priceRange: [0, calculatedMaxPrice]
+            }));
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching max price:', error);
+      }
+    };
+
+    fetchMaxPrice();
+  }, []);
 
   const amenities = [
     { id: 'security', label: 'Security Camera', icon: SecurityIcon },
@@ -47,7 +78,7 @@ const AdvancedSearch = ({ onSearch, onClear }) => {
   const handleClear = () => {
     setSearchParams({
       location: '',
-      priceRange: [0, 200], // Updated to accommodate higher prices
+      priceRange: [0, maxPrice], // Use dynamic maximum price
       date: '',
       time: '',
       duration: 2,
@@ -104,7 +135,7 @@ const AdvancedSearch = ({ onSearch, onClear }) => {
             onChange={(e, newValue) => setSearchParams(prev => ({ ...prev, priceRange: newValue }))}
             valueLabelDisplay="auto"
             min={0}
-            max={200}
+            max={maxPrice}
             sx={{ color: 'primary.main' }}
           />
         </Grid>

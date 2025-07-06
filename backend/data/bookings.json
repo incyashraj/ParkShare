@@ -140,5 +140,30 @@
       ]
     },
     "cancelledAt": "2025-07-06T17:03:36.848Z"
+  },
+  {
+    "id": "booking_1751825113569",
+    "spotId": "spot_mumbai_powai_005",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-06T18:05:00.000Z",
+    "endTime": "2025-07-07T18:05:00.000Z",
+    "hours": 24,
+    "totalPrice": 840,
+    "hourlyRate": "₹35",
+    "status": "confirmed",
+    "createdAt": "2025-07-06T18:05:13.569Z",
+    "spotOwner": "user_powai_host",
+    "spotOwnerName": "Rajesh Kumar",
+    "location": "Powai Lake Road, Near IIT Bombay",
+    "spotDetails": {
+      "location": "Powai Lake Road, Near IIT Bombay",
+      "hourlyRate": "₹35",
+      "coordinates": [
+        19.1197,
+        72.9089
+      ]
+    }
   }
 ]
