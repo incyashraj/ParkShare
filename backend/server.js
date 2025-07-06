@@ -72,7 +72,8 @@ let verificationCodes = {}; // Store verification codes temporarily
 console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings`);
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -466,6 +467,15 @@ app.post('/parking-spots', async (req, res) => {
     securityFeatures,
     termsAndConditions,
     images = [],
+    title,
+    description,
+    parkingType,
+    amenities = [],
+    available24h,
+    advanceBooking,
+    vehicleTypes = [],
+    maxVehicleHeight,
+    maxVehicleLength,
     userId
   } = req.body;
 
@@ -479,6 +489,22 @@ app.post('/parking-spots', async (req, res) => {
     return res.status(404).send({ message: 'User not found. Please log in again.' });
   }
 
+  // Process images - convert base64 data to URLs or use existing URLs
+  const processedImages = images.map((image, index) => {
+    // If it's already a URL string, use it as-is
+    if (typeof image === 'string') {
+      return image;
+    }
+    
+    // If it's a base64 image object, use the data URL
+    if (image && typeof image === 'object' && image.data) {
+      return image.data; // This is the base64 data URL
+    }
+    
+    // Default fallback
+    return `https://via.placeholder.com/400x300/FF385C/FFFFFF?text=Parking+Spot`;
+  });
+
   const parkingSpot = {
     id: Date.now().toString(),
     location,
@@ -487,7 +513,16 @@ app.post('/parking-spots', async (req, res) => {
     maxDuration,
     securityFeatures,
     termsAndConditions,
-    images,
+    images: processedImages,
+    title: title || location,
+    description: description || 'Parking spot available for booking',
+    parkingType: parkingType || 'street',
+    amenities,
+    available24h: available24h !== undefined ? available24h : true,
+    advanceBooking: advanceBooking || 24,
+    vehicleTypes,
+    maxVehicleHeight,
+    maxVehicleLength,
     rating: 0,
     reviews: [],
     owner: user.uid,
@@ -642,6 +677,92 @@ app.get('/parking-spots/:spotId/availability', (req, res) => {
 
   const available = isSpotAvailable(spotId, startTime, endTime);
   res.send({ available });
+});
+
+// Endpoint to get parking spots by user ID
+app.get('/spots/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  // Find all spots owned by this user
+  const userSpots = parkingSpots.filter(spot => spot.owner === userId);
+  
+  // Add availability status to each spot
+  const spotsWithAvailability = userSpots.map(spot => {
+    const activeBookings = bookings.filter(b => 
+      b.spotId === spot.id && 
+      b.status !== 'cancelled'
+    );
+    
+    return {
+      ...spot,
+      available: activeBookings.length === 0
+    };
+  });
+  
+  res.json(spotsWithAvailability);
+});
+
+// Endpoint to update a parking spot
+app.put('/parking-spots/:spotId', (req, res) => {
+  const { spotId } = req.params;
+  const {
+    title,
+    description,
+    location,
+    hourlyRate,
+    maxDuration,
+    termsAndConditions,
+    available24h,
+    advanceBooking,
+    securityFeatures,
+    amenities,
+    vehicleTypes,
+    maxVehicleHeight,
+    maxVehicleLength,
+    userId
+  } = req.body;
+
+  // Find the spot
+  const spotIndex = parkingSpots.findIndex(spot => spot.id === spotId);
+  if (spotIndex === -1) {
+    return res.status(404).send({ message: 'Parking spot not found' });
+  }
+
+  const spot = parkingSpots[spotIndex];
+
+  // Check if user owns this spot
+  if (spot.owner !== userId) {
+    return res.status(403).send({ message: 'You can only edit your own parking spots' });
+  }
+
+  // Update the spot
+  parkingSpots[spotIndex] = {
+    ...spot,
+    title: title || spot.title,
+    description: description || spot.description,
+    location: location || spot.location,
+    hourlyRate: hourlyRate || spot.hourlyRate,
+    maxDuration: maxDuration || spot.maxDuration,
+    termsAndConditions: termsAndConditions || spot.termsAndConditions,
+    available24h: available24h !== undefined ? available24h : spot.available24h,
+    advanceBooking: advanceBooking || spot.advanceBooking,
+    securityFeatures: securityFeatures || spot.securityFeatures,
+    amenities: amenities || spot.amenities,
+    vehicleTypes: vehicleTypes || spot.vehicleTypes,
+    maxVehicleHeight: maxVehicleHeight || spot.maxVehicleHeight,
+    maxVehicleLength: maxVehicleLength || spot.maxVehicleLength,
+    updatedAt: new Date()
+  };
+
+  // Save to file for persistence
+  saveData(SPOTS_FILE, parkingSpots);
+
+  console.log('Parking spot updated:', spotId, 'by user:', userId);
+
+  res.json({ 
+    message: 'Parking spot updated successfully', 
+    spot: parkingSpots[spotIndex]
+  });
 });
 
 // Real-time endpoints
@@ -1822,6 +1943,24 @@ app.get('/verify/status/:userId', (req, res) => {
   const { userId } = req.params;
   
   const user = users.find(u => u.id === userId);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  res.json({
+    emailVerified: user.emailVerified || false,
+    mobileVerified: user.mobileVerified || false,
+    isVerifiedHost: user.isVerifiedHost || false,
+    verifiedEmail: user.verifiedEmail,
+    verifiedMobile: user.verifiedMobile
+  });
+});
+
+// Get user verification status (alternative endpoint for Profile page)
+app.get('/users/:userId/verification', (req, res) => {
+  const { userId } = req.params;
+  
+  const user = users.find(u => u.uid === userId || u.id === userId);
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
   }

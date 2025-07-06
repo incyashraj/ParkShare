@@ -96,6 +96,26 @@ function Profile() {
   const [newStartTime, setNewStartTime] = useState(null);
   const [newEndTime, setNewEndTime] = useState(null);
   
+  // Edit listing state
+  const [openEditListingDialog, setOpenEditListingDialog] = useState(false);
+  const [selectedListingForEdit, setSelectedListingForEdit] = useState(null);
+  const [editListingData, setEditListingData] = useState({
+    title: '',
+    description: '',
+    hourlyRate: '',
+    location: '',
+    termsAndConditions: '',
+    available24h: true,
+    maxDuration: '',
+    advanceBooking: 24,
+    securityFeatures: [],
+    amenities: [],
+    vehicleTypes: ['car'],
+    maxVehicleHeight: '',
+    maxVehicleLength: ''
+  });
+  const [editListingLoading, setEditListingLoading] = useState(false);
+  
   // New state for enhanced functionality
   const [editProfileDialog, setEditProfileDialog] = useState(false);
   const [editProfileData, setEditProfileData] = useState({
@@ -319,6 +339,65 @@ function Profile() {
     }
   };
 
+  const handleEditListing = (listing) => {
+    setSelectedListingForEdit(listing);
+    setEditListingData({
+      title: listing.title || listing.location,
+      description: listing.description || '',
+      hourlyRate: listing.hourlyRate ? listing.hourlyRate.replace(/[^0-9.]/g, '') : '',
+      location: listing.location || '',
+      termsAndConditions: listing.termsAndConditions || '',
+      available24h: listing.available24h !== undefined ? listing.available24h : true,
+      maxDuration: listing.maxDuration ? listing.maxDuration.replace(/[^0-9]/g, '') : '',
+      advanceBooking: listing.advanceBooking || 24,
+      securityFeatures: listing.securityFeatures || [],
+      amenities: listing.amenities || [],
+      vehicleTypes: listing.vehicleTypes || ['car'],
+      maxVehicleHeight: listing.maxVehicleHeight || '',
+      maxVehicleLength: listing.maxVehicleLength || ''
+    });
+    setOpenEditListingDialog(true);
+  };
+
+  const handleSaveListingEdit = async () => {
+    if (!selectedListingForEdit) {
+      setError('No listing selected for editing');
+      return;
+    }
+
+    setEditListingLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3001/parking-spots/${selectedListingForEdit.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...editListingData,
+          hourlyRate: `₹ ${editListingData.hourlyRate}`,
+          userId: currentUser.uid
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update parking spot');
+      }
+
+      // Refresh data
+      await fetchData(currentUser.uid);
+      
+      setSuccessMessage('Parking spot updated successfully!');
+      setOpenEditListingDialog(false);
+      setSelectedListingForEdit(null);
+      
+      setTimeout(() => setSuccessMessage(''), 5000);
+    } catch (error) {
+      setError('Failed to update parking spot: ' + error.message);
+    } finally {
+      setEditListingLoading(false);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setCurrentUser(user);
@@ -534,7 +613,7 @@ function Profile() {
                   <Button
                     startIcon={<EditIcon />}
                     size="small"
-                    onClick={() => {/* TODO: Add edit listing functionality */}}
+                    onClick={() => handleEditListing(listing)}
                   >
                     Edit Spot
                   </Button>
@@ -1089,6 +1168,106 @@ function Profile() {
           </Button>
           <Button onClick={handleSaveProfile} variant="contained" color="primary">
             Save Changes
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Listing Dialog */}
+      <Dialog open={openEditListingDialog} onClose={() => setOpenEditListingDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Edit Parking Spot</DialogTitle>
+        <DialogContent>
+          <Box py={2}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  label="Title"
+                  value={editListingData.title}
+                  onChange={(e) => setEditListingData({ ...editListingData, title: e.target.value })}
+                  fullWidth
+                  required
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Description"
+                  value={editListingData.description}
+                  onChange={(e) => setEditListingData({ ...editListingData, description: e.target.value })}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Location"
+                  value={editListingData.location}
+                  onChange={(e) => setEditListingData({ ...editListingData, location: e.target.value })}
+                  fullWidth
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Hourly Rate (₹)"
+                  value={editListingData.hourlyRate}
+                  onChange={(e) => setEditListingData({ ...editListingData, hourlyRate: e.target.value })}
+                  fullWidth
+                  type="number"
+                  required
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Max Duration (hours)"
+                  value={editListingData.maxDuration}
+                  onChange={(e) => setEditListingData({ ...editListingData, maxDuration: e.target.value })}
+                  fullWidth
+                  type="number"
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  label="Advance Booking (hours)"
+                  value={editListingData.advanceBooking}
+                  onChange={(e) => setEditListingData({ ...editListingData, advanceBooking: e.target.value })}
+                  fullWidth
+                  type="number"
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  label="Terms and Conditions"
+                  value={editListingData.termsAndConditions}
+                  onChange={(e) => setEditListingData({ ...editListingData, termsAndConditions: e.target.value })}
+                  fullWidth
+                  multiline
+                  rows={3}
+                  required
+                />
+              </Grid>
+            </Grid>
+            {error && (
+              <Alert severity="error" sx={{ mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setOpenEditListingDialog(false);
+            setError(null);
+          }}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleSaveListingEdit} 
+            variant="contained" 
+            color="primary"
+            disabled={editListingLoading}
+          >
+            {editListingLoading ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -5,7 +5,7 @@ import { useState } from 'react';
 const AdvancedSearch = ({ onSearch, onClear }) => {
   const [searchParams, setSearchParams] = useState({
     location: '',
-    priceRange: [0, 50],
+    priceRange: [0, 200], // Updated to accommodate higher prices
     date: '',
     time: '',
     duration: 2,
@@ -47,7 +47,7 @@ const AdvancedSearch = ({ onSearch, onClear }) => {
   const handleClear = () => {
     setSearchParams({
       location: '',
-      priceRange: [0, 50],
+      priceRange: [0, 200], // Updated to accommodate higher prices
       date: '',
       time: '',
       duration: 2,
@@ -104,7 +104,7 @@ const AdvancedSearch = ({ onSearch, onClear }) => {
             onChange={(e, newValue) => setSearchParams(prev => ({ ...prev, priceRange: newValue }))}
             valueLabelDisplay="auto"
             min={0}
-            max={100}
+            max={200}
             sx={{ color: 'primary.main' }}
           />
         </Grid>

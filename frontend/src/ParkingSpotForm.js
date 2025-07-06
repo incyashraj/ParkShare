@@ -219,6 +219,24 @@ function ParkingSpotForm() {
     setLoading(true);
     
     try {
+      // Convert File objects to base64 strings for transmission
+      const imagePromises = formData.images.map(file => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            resolve({
+              name: file.name,
+              type: file.type,
+              size: file.size,
+              data: reader.result
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+      });
+
+      const processedImages = await Promise.all(imagePromises);
+
       // Prepare the data for the backend
       const spotData = {
         location: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`.trim(),
@@ -227,7 +245,7 @@ function ParkingSpotForm() {
         maxDuration: formData.maxDuration || '24 hours',
         securityFeatures: formData.selectedSecurityFeatures,
         termsAndConditions: formData.terms,
-        images: formData.images,
+        images: processedImages,
         title: formData.title,
         description: formData.description,
         parkingType: formData.parkingType,
@@ -265,7 +283,7 @@ function ParkingSpotForm() {
       setOpenSnackbar(true);
       
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/search');
       }, 2000);
       
     } catch (error) {

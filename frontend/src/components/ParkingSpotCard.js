@@ -294,6 +294,23 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
   };
 
   const getSpotImage = () => {
+    // Check if spot has images array and use the first image
+    if (spot.images && spot.images.length > 0) {
+      // If images is an array of URLs or base64 data, use the first one
+      if (typeof spot.images[0] === 'string') {
+        return spot.images[0];
+      }
+      // If images is an array of objects with data property (base64)
+      if (spot.images[0] && typeof spot.images[0] === 'object' && spot.images[0].data) {
+        return spot.images[0].data;
+      }
+      // If images is an array of File objects, create object URL
+      if (spot.images[0] instanceof File) {
+        return URL.createObjectURL(spot.images[0]);
+      }
+    }
+    
+    // Check for single imageUrl property
     if (spot.imageUrl) return spot.imageUrl;
     
     // Default images based on vehicle type

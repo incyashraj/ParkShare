@@ -251,7 +251,19 @@ const ParkingSpotDetail = () => {
               <CardMedia
                 component="img"
                 height="400"
-                image={spot.images?.[0] || 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=800&h=400&fit=crop'}
+                image={(() => {
+                  if (spot.images && spot.images.length > 0) {
+                    // If images is an array of URLs or base64 data, use the first one
+                    if (typeof spot.images[0] === 'string') {
+                      return spot.images[0];
+                    }
+                    // If images is an array of objects with data property (base64)
+                    if (spot.images[0] && typeof spot.images[0] === 'object' && spot.images[0].data) {
+                      return spot.images[0].data;
+                    }
+                  }
+                  return 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=800&h=400&fit=crop';
+                })()}
                 alt={spot.title || spot.location}
                 sx={{ objectFit: 'cover', width: '100%' }}
               />

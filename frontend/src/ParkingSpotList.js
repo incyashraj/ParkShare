@@ -16,17 +16,13 @@ import {
   Alert,
   CircularProgress,
   Fade,
-  Grow,
   Zoom,
   Tabs,
   Tab,
   IconButton,
-  Tooltip,
-  Badge,
   Switch,
   FormControlLabel,
   FormControl,
-  InputLabel,
   Select,
   MenuItem,
   Pagination,
@@ -39,16 +35,11 @@ import {
   DialogActions,
   Card,
   CardContent,
-  Divider,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   Skeleton,
-  AlertTitle,
   Breadcrumbs,
   Link,
   Checkbox,
@@ -56,18 +47,15 @@ import {
 import {
   Search as SearchIcon,
   Security as SecurityIcon,
-  Person as PersonIcon,
   WifiTethering as LiveIcon,
   ViewList as ListIcon,
   Map as MapIcon,
   FilterList as FilterIcon,
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
-  Sort as SortIcon,
   LocationOn as LocationIcon,
   AttachMoney as MoneyIcon,
   Star as StarIcon,
-  AccessTime as TimeIcon,
   ViewModule as GridIcon,
   Clear as ClearIcon,
   Add as AddIcon,
@@ -78,20 +66,14 @@ import {
   Accessibility as AccessibilityIcon,
   LocalCarWash as CarWashIcon,
   DirectionsCar as CarIcon,
-  DirectionsWalk as WalkIcon,
   DirectionsBike as BikeIcon,
-  LocalTaxi as TaxiIcon,
   Schedule as ScheduleIcon,
   TrendingUp as TrendingIcon,
   Refresh as RefreshIcon,
   Save as SaveIcon,
-  Share as ShareIcon,
   Bookmark as BookmarkIcon,
   BookmarkBorder as BookmarkBorderIcon,
   Info as InfoIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -108,6 +90,7 @@ const ParkingSpotList = () => {
   const [spots, setSpots] = useState([]);
   const [filteredSpots, setFilteredSpots] = useState([]);
   const [error, setError] = useState('');
+
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
@@ -117,7 +100,7 @@ const ParkingSpotList = () => {
   
   // Enhanced search and filter states
   const [searchTerm, setSearchTerm] = useState('');
-  const [priceRange, setPriceRange] = useState([0, 50]);
+  const [priceRange, setPriceRange] = useState([0, 200]); // Increased max price to 200 to accommodate higher prices
   const [ratingFilter, setRatingFilter] = useState(0);
   const [distanceFilter, setDistanceFilter] = useState(10);
   const [availabilityFilter, setAvailabilityFilter] = useState('all');
@@ -129,7 +112,7 @@ const ParkingSpotList = () => {
   const [favorites, setFavorites] = useState([]);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
-  const [searchHistory, setSearchHistory] = useState([]);
+
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [vehicleType, setVehicleType] = useState('all');
   const [parkingType, setParkingType] = useState('all');
@@ -145,26 +128,30 @@ const ParkingSpotList = () => {
   ];
 
   const amenities = [
-    { id: 'security', label: 'Security Camera', icon: SecurityIcon },
+    { id: 'cctv', label: 'Security Camera', icon: SecurityIcon },
+    { id: 'security_guard', label: 'Security Guard', icon: SecurityIcon },
+    { id: 'fenced', label: 'Fenced Area', icon: SecurityIcon },
+    { id: 'well_lit', label: 'Well Lit', icon: SecurityIcon },
     { id: 'covered', label: 'Covered Parking', icon: ParkingIcon },
-    { id: 'electric', label: 'Electric Charging', icon: ElectricIcon },
+    { id: 'ev_charging', label: 'EV Charging', icon: ElectricIcon },
     { id: 'accessible', label: 'Accessible', icon: AccessibilityIcon },
     { id: 'car_wash', label: 'Car Wash', icon: CarWashIcon },
-    { id: 'valet', label: 'Valet Service', icon: ParkingIcon },
+    { id: 'valet_service', label: 'Valet Service', icon: ParkingIcon },
   ];
 
   const vehicleTypes = [
     { value: 'all', label: 'All Vehicles', icon: CarIcon },
     { value: 'car', label: 'Car', icon: CarIcon },
     { value: 'suv', label: 'SUV', icon: CarIcon },
+    { value: 'bike', label: 'Bike', icon: BikeIcon },
     { value: 'truck', label: 'Truck', icon: CarIcon },
-    { value: 'motorcycle', label: 'Motorcycle', icon: BikeIcon },
   ];
 
   const parkingTypes = [
     { value: 'all', label: 'All Types', icon: ParkingIcon },
     { value: 'street', label: 'Street Parking', icon: ParkingIcon },
     { value: 'lot', label: 'Parking Lot', icon: ParkingIcon },
+    { value: 'covered_lot', label: 'Covered Lot', icon: ParkingIcon },
     { value: 'garage', label: 'Garage', icon: ParkingIcon },
     { value: 'underground', label: 'Underground', icon: ParkingIcon },
   ];
@@ -269,6 +256,35 @@ const ParkingSpotList = () => {
   }, [spots, joinSpotRoom, leaveSpotRoom]);
 
   // Apply filters and sorting
+  const sortSpots = (spotsToSort) => {
+    // Always sort by availability first (available spots first)
+    const sortedByAvailability = [...spotsToSort].sort((a, b) => {
+      if (a.available && !b.available) return -1;
+      if (!a.available && b.available) return 1;
+      return 0;
+    });
+    
+    // Then apply the selected sort criteria
+    switch (sortBy) {
+      case 'price':
+        return sortedByAvailability.sort((a, b) => {
+          const priceA = parseFloat(a.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
+          const priceB = parseFloat(b.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
+          return priceA - priceB;
+        });
+      case 'rating':
+        return sortedByAvailability.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+      case 'availability':
+        // Already sorted by availability above
+        return sortedByAvailability;
+      case 'popularity':
+        return sortedByAvailability.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+      case 'distance':
+      default:
+        return sortedByAvailability.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+    }
+  };
+
   const filteredAndSortedSpots = useCallback(() => {
     let filtered = [...spots];
 
@@ -300,7 +316,7 @@ const ParkingSpotList = () => {
     if (selectedAmenities.length > 0) {
       filtered = filtered.filter(spot =>
         selectedAmenities.every(amenity => 
-          spot.features?.includes(amenity) || spot.amenities?.includes(amenity)
+          spot.amenities?.includes(amenity) || spot.securityFeatures?.includes(amenity)
         )
       );
     }
@@ -308,49 +324,27 @@ const ParkingSpotList = () => {
     // Apply vehicle type filter
     if (vehicleType !== 'all') {
       filtered = filtered.filter(spot =>
-        spot.vehicleTypes?.includes(vehicleType) || true // Default to true if no vehicle types specified
+        spot.vehicleTypes?.includes(vehicleType)
       );
     }
 
     // Apply parking type filter
     if (parkingType !== 'all') {
-      filtered = filtered.filter(spot => spot.parkingType === parkingType);
+      filtered = filtered.filter(spot => {
+        const spotParkingType = spot.parkingType || 'lot';
+        return spotParkingType === parkingType;
+      });
     }
 
     // Apply instant booking filter
     if (instantBooking) {
-      filtered = filtered.filter(spot => spot.canBook);
+      filtered = filtered.filter(spot => spot.available24h === true);
     }
 
     // Sort spots
     const sorted = sortSpots(filtered);
     return sorted;
-  }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking]);
-
-  const sortSpots = (spotsToSort) => {
-    // Always sort by availability first (available spots first)
-    const sortedByAvailability = [...spotsToSort].sort((a, b) => {
-      if (a.available && !b.available) return -1;
-      if (!a.available && b.available) return 1;
-      return 0;
-    });
-    
-    // Then apply the selected sort criteria
-    switch (sortBy) {
-      case 'price':
-        return sortedByAvailability.sort((a, b) => a.price - b.price);
-      case 'rating':
-        return sortedByAvailability.sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      case 'availability':
-        // Already sorted by availability above
-        return sortedByAvailability;
-      case 'popularity':
-        return sortedByAvailability.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
-      case 'distance':
-      default:
-        return sortedByAvailability.sort((a, b) => (a.distance || 0) - (b.distance || 0));
-    }
-  };
+  }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking, sortBy]);
 
   const handleLocationClick = () => {
     if (navigator.geolocation) {
@@ -371,14 +365,7 @@ const ParkingSpotList = () => {
     }
   };
 
-  const handleAdvancedSearch = (searchParams) => {
-    setSearchTerm(searchParams.location || '');
-    setPriceRange(searchParams.priceRange || [0, 50]);
-    setRatingFilter(searchParams.rating || 0);
-    setDistanceFilter(searchParams.distance || 10);
-    setSelectedAmenities(searchParams.amenities || []);
-    setShowFilters(false);
-  };
+
 
   const handleToggleFavorite = (spotId) => {
     setFavorites(prev => 
@@ -412,7 +399,7 @@ const ParkingSpotList = () => {
 
   const clearFilters = () => {
     setSearchTerm('');
-    setPriceRange([0, 50]);
+    setPriceRange([0, 200]); // Updated to match new range
     setRatingFilter(0);
     setDistanceFilter(10);
     setAvailabilityFilter('all');
@@ -646,7 +633,7 @@ const ParkingSpotList = () => {
                   onChange={(e, newValue) => setPriceRange(newValue)}
                   valueLabelDisplay="auto"
                   min={0}
-                  max={100}
+                  max={200}
                   sx={{ color: 'primary.main' }}
                 />
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
