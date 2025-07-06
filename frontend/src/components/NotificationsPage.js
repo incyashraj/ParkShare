@@ -31,6 +31,11 @@ import {
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  DialogContentText,
 } from '@mui/material';
 import {
   Notifications as NotificationsIcon,
@@ -60,6 +65,8 @@ import {
   UnfoldLess as UnfoldLessIcon,
   Refresh as RefreshIcon,
   Settings as SettingsIcon,
+  Close as CloseIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRealtime } from '../contexts/RealtimeContext';
@@ -85,6 +92,8 @@ const NotificationsPage = () => {
   const [filterType, setFilterType] = useState('all');
   const [expandedNotifications, setExpandedNotifications] = useState(new Set());
   const [showSpeedDial, setShowSpeedDial] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [notificationDialogOpen, setNotificationDialogOpen] = useState(false);
 
   const unreadNotifications = notifications.filter(n => !n.read);
   const readNotifications = notifications.filter(n => n.read);
@@ -162,6 +171,27 @@ const NotificationsPage = () => {
     setTimeout(() => {
       setLoading(false);
     }, 1000);
+  };
+
+  const handleOpenNotification = (notification, event) => {
+    event.stopPropagation();
+    setSelectedNotification(notification);
+    setNotificationDialogOpen(true);
+    if (!notification.read) {
+      handleMarkAsRead(notification.id);
+    }
+  };
+
+  const handleCloseNotificationDialog = () => {
+    setNotificationDialogOpen(false);
+    setSelectedNotification(null);
+  };
+
+  const handleDeleteFromDialog = () => {
+    if (selectedNotification) {
+      handleDeleteNotification(selectedNotification.id);
+      handleCloseNotificationDialog();
+    }
   };
 
   const getTimeAgo = (timestamp) => {
@@ -481,6 +511,7 @@ const NotificationsPage = () => {
               fontWeight: 500,
               fontSize: '16px',
               minHeight: 64,
+              color: '#717171',
               '&.Mui-selected': {
                 color: '#FF385C',
                 fontWeight: 600,
@@ -623,6 +654,22 @@ const NotificationsPage = () => {
                     />
                     
                     <Stack direction="row" spacing={1} alignItems="center">
+                      <Tooltip title="Open notification">
+                        <IconButton
+                          size="small"
+                          onClick={(e) => handleOpenNotification(notification, e)}
+                          sx={{
+                            color: 'text.secondary',
+                            '&:hover': {
+                              backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                              color: '#FF385C'
+                            }
+                          }}
+                        >
+                          <VisibilityIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
                       <Tooltip title="Toggle details">
                         <IconButton
                           size="small"
@@ -693,6 +740,116 @@ const NotificationsPage = () => {
           )}
         </Box>
       </Paper>
+
+      {/* Notification Dialog */}
+      <Dialog
+        open={notificationDialogOpen}
+        onClose={handleCloseNotificationDialog}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 20px 40px rgba(0,0,0,0.15)'
+          }
+        }}
+      >
+        {selectedNotification && (
+          <>
+            <DialogTitle sx={{ 
+              pb: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 2
+            }}>
+              <Avatar
+                sx={{
+                  backgroundColor: `${getNotificationColor(selectedNotification)}15`,
+                  color: getNotificationColor(selectedNotification),
+                  width: 48,
+                  height: 48
+                }}
+              >
+                {getNotificationIcon(selectedNotification)}
+              </Avatar>
+              <Box sx={{ flexGrow: 1 }}>
+                <Typography variant="h6" fontWeight="bold" color="text.primary">
+                  {selectedNotification.title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {getTimeAgo(selectedNotification.timestamp)}
+                </Typography>
+              </Box>
+              <IconButton
+                onClick={handleCloseNotificationDialog}
+                sx={{ color: 'text.secondary' }}
+              >
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            
+            <DialogContent sx={{ pt: 2 }}>
+              <Box sx={{ mb: 3 }}>
+                <Chip
+                  label={selectedNotification.type}
+                  size="small"
+                  sx={{
+                    backgroundColor: `${getNotificationColor(selectedNotification)}15`,
+                    color: getNotificationColor(selectedNotification),
+                    fontWeight: 500,
+                    textTransform: 'capitalize',
+                    mb: 2
+                  }}
+                />
+                <DialogContentText sx={{ 
+                  fontSize: '16px', 
+                  lineHeight: 1.6,
+                  color: 'text.primary',
+                  mb: 2
+                }}>
+                  {selectedNotification.message}
+                </DialogContentText>
+                {selectedNotification.details && (
+                  <Paper sx={{ p: 2, backgroundColor: '#F7F7F7', borderRadius: 2 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      {selectedNotification.details}
+                    </Typography>
+                  </Paper>
+                )}
+              </Box>
+            </DialogContent>
+            
+            <DialogActions sx={{ p: 3, pt: 0 }}>
+              <Button
+                onClick={handleCloseNotificationDialog}
+                sx={{ 
+                  color: 'text.secondary',
+                  textTransform: 'none'
+                }}
+              >
+                Close
+              </Button>
+              <Button
+                onClick={handleDeleteFromDialog}
+                startIcon={<DeleteIcon />}
+                variant="outlined"
+                color="error"
+                sx={{ 
+                  textTransform: 'none',
+                  borderColor: '#FF5A5F',
+                  color: '#FF5A5F',
+                  '&:hover': {
+                    borderColor: '#E31C5F',
+                    backgroundColor: 'rgba(255, 90, 95, 0.08)'
+                  }
+                }}
+              >
+                Delete
+              </Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
 
       {/* Mobile Speed Dial */}
       {isMobile && (

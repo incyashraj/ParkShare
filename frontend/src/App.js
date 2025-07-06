@@ -30,6 +30,7 @@ import {
   Settings as SettingsIcon,
   MoreVert,
   VerifiedUser,
+  Message as MessageIcon,
 } from '@mui/icons-material';
 import Login from './Login';
 import Register from './Register';
@@ -43,6 +44,7 @@ import BookingManagement from './components/BookingManagement';
 import Settings from './components/Settings';
 import NotificationCenter from './components/NotificationCenter';
 import NotificationsPage from './components/NotificationsPage';
+import MessagingSystem from './components/MessagingSystem';
 import AdvancedSearch from './components/AdvancedSearch';
 import ReviewsAndRatings from './components/ReviewsAndRatings';
 import FavoritesManager from './components/FavoritesManager';
@@ -510,6 +512,14 @@ function AppContent() {
                             </MenuItem>
                             <MenuItem 
                               component={Link} 
+                              to="/messages"
+                              onClick={handleMenuClose}
+                            >
+                              <MessageIcon sx={{ mr: 2 }} />
+                              Messages
+                            </MenuItem>
+                            <MenuItem 
+                              component={Link} 
                               to="/analytics"
                               onClick={handleMenuClose}
                             >
@@ -561,6 +571,8 @@ function AppContent() {
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/bookings" element={<BookingManagement />} />
                   <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/messages" element={<MessagingSystem />} />
+                  <Route path="/messages/:conversationId" element={<MessagingSystem />} />
                   <Route path="/verify" element={<HostVerification />} />
                   <Route path="/favorites" element={<FavoritesManager />} />
                   <Route path="/analytics" element={<ParkingAnalytics />} />

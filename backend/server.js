@@ -35,6 +35,8 @@ const DATA_DIR = path.join(__dirname, 'data');
 const USERS_FILE = path.join(DATA_DIR, 'users.json');
 const SPOTS_FILE = path.join(DATA_DIR, 'spots.json');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
+const CONVERSATIONS_FILE = path.join(DATA_DIR, 'conversations.json');
+const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
@@ -67,9 +69,11 @@ const saveData = (filePath, data) => {
 let users = loadData(USERS_FILE, []);
 let parkingSpots = loadData(SPOTS_FILE, []);
 let bookings = loadData(BOOKINGS_FILE, []);
+let conversations = loadData(CONVERSATIONS_FILE, []);
+let messages = loadData(MESSAGES_FILE, []);
 let verificationCodes = {}; // Store verification codes temporarily
 
-console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings`);
+console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings, ${conversations.length} conversations, ${messages.length} messages`);
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -2185,7 +2189,254 @@ app.get('/bookings/all', (req, res) => {
   }
 });
 
+// ===== MESSAGING SYSTEM API ENDPOINTS =====
 
+// Get all conversations for a user
+app.get('/api/conversations', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const userConversations = conversations.filter(conv => 
+      conv.participants.some(p => p.id === userId || p.uid === userId)
+    );
+
+    // Add last message and unread count to each conversation
+    const conversationsWithDetails = userConversations.map(conv => {
+      const convMessages = messages.filter(m => m.conversationId === conv.id);
+      const lastMessage = convMessages.length > 0 
+        ? convMessages[convMessages.length - 1] 
+        : null;
+      
+      const unreadCount = convMessages.filter(m => 
+        m.senderId !== userId && !m.read
+      ).length;
+
+      return {
+        ...conv,
+        lastMessage,
+        unreadCount
+      };
+    });
+
+    res.json({ conversations: conversationsWithDetails });
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get messages for a specific conversation
+app.get('/api/conversations/:conversationId/messages', (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Check if user is a participant
+    const isParticipant = conversation.participants.some(p => p.id === userId || p.uid === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const conversationMessages = messages
+      .filter(m => m.conversationId === conversationId)
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+    res.json({ messages: conversationMessages });
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Create a new conversation
+app.post('/api/conversations', (req, res) => {
+  try {
+    const { participants, subject, initialMessage } = req.body;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!participants || participants.length !== 2) {
+      return res.status(400).json({ message: 'Invalid participants' });
+    }
+
+    // Get user details for participants
+    const participantDetails = participants.map(participantId => {
+      const user = users.find(u => u.uid === participantId || u.id === participantId);
+      return {
+        id: user?.uid || participantId,
+        uid: user?.uid || participantId,
+        username: user?.username || 'Unknown User',
+        email: user?.email || ''
+      };
+    });
+
+    const conversation = {
+      id: `conv_${Date.now()}`,
+      participants: participantDetails,
+      subject: subject || 'New Conversation',
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString()
+    };
+
+    conversations.push(conversation);
+    saveData(CONVERSATIONS_FILE, conversations);
+
+    // Create initial message if provided
+    if (initialMessage) {
+      const message = {
+        id: `msg_${Date.now()}`,
+        conversationId: conversation.id,
+        senderId: userId,
+        content: initialMessage,
+        timestamp: new Date().toISOString(),
+        read: false
+      };
+
+      messages.push(message);
+      saveData(MESSAGES_FILE, messages);
+
+      // Emit real-time notification to other participant
+      const otherParticipant = participantDetails.find(p => p.id !== userId);
+      if (otherParticipant) {
+        io.to(`user-${otherParticipant.id}`).emit('new-message', {
+          conversationId: conversation.id,
+          message,
+          sender: users.find(u => u.uid === userId)
+        });
+      }
+    }
+
+    res.status(201).json({ conversation });
+  } catch (error) {
+    console.error('Error creating conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Send a new message
+app.post('/api/messages', (req, res) => {
+  try {
+    const { conversationId, content, senderId } = req.body;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Check if user is a participant
+    const isParticipant = conversation.participants.some(p => p.id === userId || p.uid === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    const message = {
+      id: `msg_${Date.now()}`,
+      conversationId,
+      senderId: userId,
+      content,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    messages.push(message);
+    saveData(MESSAGES_FILE, messages);
+
+    // Update conversation last activity
+    conversation.lastActivity = new Date().toISOString();
+    saveData(CONVERSATIONS_FILE, conversations);
+
+    // Emit real-time notification to other participants
+    const otherParticipants = conversation.participants.filter(p => p.id !== userId);
+    otherParticipants.forEach(participant => {
+      io.to(`user-${participant.id}`).emit('new-message', {
+        conversationId,
+        message,
+        sender: users.find(u => u.uid === userId)
+      });
+    });
+
+    res.status(201).json({ message });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Mark messages as read
+app.put('/api/conversations/:conversationId/read', (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Mark all messages in this conversation as read for this user
+    const conversationMessages = messages.filter(m => m.conversationId === conversationId);
+    conversationMessages.forEach(message => {
+      if (message.senderId !== userId && !message.read) {
+        message.read = true;
+      }
+    });
+
+    saveData(MESSAGES_FILE, messages);
+    res.json({ message: 'Messages marked as read' });
+  } catch (error) {
+    console.error('Error marking messages as read:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all users (for messaging)
+app.get('/api/users', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    // Return users without sensitive information, excluding current user
+    const safeUsers = users
+      .filter(user => user.uid !== userId)
+      .map(user => ({
+        uid: user.uid,
+        username: user.username,
+        email: user.email,
+        createdAt: user.createdAt || new Date().toISOString()
+      }));
+    
+    res.json({ users: safeUsers });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
 
 server.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);

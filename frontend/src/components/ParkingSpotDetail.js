@@ -184,6 +184,15 @@ const ParkingSpotDetail = () => {
     setShowBookingModal(true);
   };
 
+  const handleContactHost = () => {
+    if (!currentUser) {
+      navigate('/login');
+      return;
+    }
+    // Navigate to messaging system with the host
+    navigate(`/messages?recipient=${spot?.owner}&subject=Inquiry about ${spot?.title}`);
+  };
+
   const handleBookingComplete = (success) => {
     setShowBookingModal(false);
     if (success) {
@@ -704,6 +713,26 @@ const ParkingSpotDetail = () => {
                     sx={{ mb: 2, py: 1.5, bgcolor: '#22C55E', '&:hover': { bgcolor: '#16A34A' } }}
                   >
                     Book Now
+                  </Button>
+                  
+                  <Button
+                    variant="outlined"
+                    size="large"
+                    fullWidth
+                    startIcon={<Message />}
+                    onClick={handleContactHost}
+                    sx={{ 
+                      mb: 2, 
+                      py: 1.5, 
+                      borderColor: '#007A87', 
+                      color: '#007A87', 
+                      '&:hover': { 
+                        borderColor: '#005F6B', 
+                        backgroundColor: 'rgba(0, 122, 135, 0.05)' 
+                      } 
+                    }}
+                  >
+                    Contact Host
                   </Button>
                 </>
               )}
