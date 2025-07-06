@@ -390,6 +390,7 @@ export const RealtimeProvider = ({ children }) => {
     stopTyping,
     searchSpots,
     updateSpotAvailability,
+    addNotification,
     clearNotification,
     clearAllNotifications,
     markNotificationAsRead,

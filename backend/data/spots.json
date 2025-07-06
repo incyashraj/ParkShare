@@ -43,16 +43,20 @@
     "maxDuration": "72 hours",
     "termsAndConditions": "24/7 security, CCTV monitored, valet service available, EV charging stations, car wash service on request.",
     "createdAt": "2025-07-04T21:54:49.372Z",
-    "bookings": [
-      "booking_1751818979630"
-    ],
-    "lastUpdated": "2025-07-06T16:15:00.000Z",
+    "bookings": [],
+    "lastUpdated": "2025-07-06T17:03:36.848Z",
     "bookingHistory": [
       {
         "bookingId": "booking_1751818979630",
         "startTime": "2025-07-06T16:22:00.000Z",
         "endTime": "2025-07-07T16:22:00.000Z",
         "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+      },
+      {
+        "bookingId": "booking_1751821403228",
+        "startTime": "2025-07-06T17:03:00.000Z",
+        "endTime": "2025-07-07T17:03:00.000Z",
+        "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2"
       }
     ],
     "pendingNotifications": [
@@ -86,6 +90,38 @@
           }
         },
         "timestamp": "2025-07-06T16:22:59.631Z"
+      },
+      {
+        "type": "booking",
+        "title": "New Booking Received",
+        "message": "Yashraj Pardeshi booked your spot at Linking Road, Bandra West, Mumbai",
+        "booking": {
+          "id": "booking_1751821403228",
+          "spotId": "spot_mumbai_bandra_001",
+          "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+          "userName": "Yashraj Pardeshi",
+          "userEmail": "incyashraj@gmail.com",
+          "startTime": "2025-07-06T17:03:00.000Z",
+          "endTime": "2025-07-07T17:03:00.000Z",
+          "hours": 24,
+          "totalPrice": 1200,
+          "hourlyRate": "₹50",
+          "status": "cancelled",
+          "createdAt": "2025-07-06T17:03:23.228Z",
+          "spotOwner": "user_bandra_host",
+          "spotOwnerName": "Rahul Sharma",
+          "location": "Linking Road, Bandra West, Mumbai",
+          "spotDetails": {
+            "location": "Linking Road, Bandra West, Mumbai",
+            "hourlyRate": "₹50",
+            "coordinates": [
+              19.0596,
+              72.8295
+            ]
+          },
+          "cancelledAt": "2025-07-06T17:03:36.848Z"
+        },
+        "timestamp": "2025-07-06T17:03:23.229Z"
       }
     ]
   },
@@ -256,6 +292,39 @@
         "startTime": "2025-07-06T16:47:00.000Z",
         "endTime": "2025-07-07T16:47:00.000Z",
         "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+      }
+    ],
+    "pendingNotifications": [
+      {
+        "type": "booking",
+        "title": "New Booking Received",
+        "message": "Mblue booked your spot at Juhu Beach Road, Mumbai",
+        "booking": {
+          "id": "booking_1751820458274",
+          "spotId": "spot_mumbai_juhu_004",
+          "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+          "userName": "Mblue",
+          "userEmail": "123@gmail.com",
+          "startTime": "2025-07-06T16:47:00.000Z",
+          "endTime": "2025-07-07T16:47:00.000Z",
+          "hours": 24,
+          "totalPrice": 960,
+          "hourlyRate": "₹40",
+          "status": "confirmed",
+          "createdAt": "2025-07-06T16:47:38.274Z",
+          "spotOwner": "user_juhu_host",
+          "spotOwnerName": "Sunita Desai",
+          "location": "Juhu Beach Road, Mumbai",
+          "spotDetails": {
+            "location": "Juhu Beach Road, Mumbai",
+            "hourlyRate": "₹40",
+            "coordinates": [
+              19.0996,
+              72.8295
+            ]
+          }
+        },
+        "timestamp": "2025-07-06T16:47:38.275Z"
       }
     ]
   },

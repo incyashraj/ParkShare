@@ -135,5 +135,23 @@
     "username": "sarah_jones",
     "email": "sarah@example.com",
     "uid": "user_sarah_101"
+  },
+  {
+    "username": "Mblue",
+    "email": "123@gmail.com",
+    "uid": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "fullName": "Mblue",
+    "phone": "+91 98765 43219",
+    "location": "Mumbai",
+    "verified": false,
+    "hostSince": "2024-01-01",
+    "totalSpots": 0,
+    "rating": 0
+  },
+  {
+    "username": "Yashraj Pardeshi",
+    "email": "incyashraj@gmail.com",
+    "password": "",
+    "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2"
   }
 ]

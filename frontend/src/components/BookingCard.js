@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -7,7 +7,9 @@ import {
   Chip,
   Grid,
   Divider,
-  Button
+  Button,
+  Alert,
+  Snackbar
 } from '@mui/material';
 import {
   Schedule as ScheduleIcon,
@@ -19,6 +21,9 @@ import {
 import { format } from 'date-fns';
 
 const BookingCard = ({ booking, onCancel, isCancelling = false }) => {
+  const [downloading, setDownloading] = useState(false);
+  const [downloadError, setDownloadError] = useState(null);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const getStatusColor = (status) => {
     switch (status?.toLowerCase()) {
       case 'confirmed':
@@ -74,6 +79,59 @@ const BookingCard = ({ booking, onCancel, isCancelling = false }) => {
       return `${diffHours} hour${diffHours > 1 ? 's' : ''}`;
     } catch (error) {
       return 'N/A';
+    }
+  };
+
+  const handleDownloadReceipt = async () => {
+    setDownloading(true);
+    setDownloadError(null);
+    
+    try {
+      const response = await fetch('http://localhost:3001/receipts/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          bookingId: booking.id,
+          userId: booking.userId || booking.userId
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to generate receipt');
+      }
+
+      const data = await response.json();
+      
+      if (data.downloadUrl) {
+        // Download the file
+        const downloadResponse = await fetch(`http://localhost:3001${data.downloadUrl}`);
+        if (downloadResponse.ok) {
+          const blob = await downloadResponse.blob();
+          
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = data.fileName || `receipt_${booking.id}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+          
+          setDownloadSuccess(true);
+        } else {
+          throw new Error('Failed to download receipt file');
+        }
+      } else {
+        throw new Error('No download URL received');
+      }
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      setDownloadError(error.message || 'Failed to download receipt. Please try again.');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -135,12 +193,10 @@ const BookingCard = ({ booking, onCancel, isCancelling = false }) => {
                   size="small"
                   startIcon={<ReceiptIcon />}
                   fullWidth
-                  onClick={() => {
-                    // TODO: Implement receipt download
-                    console.log('Download receipt for booking:', booking.id);
-                  }}
+                  disabled={downloading}
+                  onClick={handleDownloadReceipt}
                 >
-                  Download Receipt
+                  {downloading ? 'Downloading...' : 'Download Receipt'}
                 </Button>
                 
                 {booking.status === 'confirmed' && (
@@ -180,6 +236,29 @@ const BookingCard = ({ booking, onCancel, isCancelling = false }) => {
           </>
         )}
       </CardContent>
+      
+      {/* Success/Error Notifications */}
+      <Snackbar
+        open={downloadSuccess}
+        autoHideDuration={3000}
+        onClose={() => setDownloadSuccess(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setDownloadSuccess(false)} severity="success" sx={{ width: '100%' }}>
+          Receipt downloaded successfully!
+        </Alert>
+      </Snackbar>
+      
+      <Snackbar
+        open={!!downloadError}
+        autoHideDuration={5000}
+        onClose={() => setDownloadError(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setDownloadError(null)} severity="error" sx={{ width: '100%' }}>
+          {downloadError}
+        </Alert>
+      </Snackbar>
     </Card>
   );
 };

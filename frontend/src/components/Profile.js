@@ -43,12 +43,9 @@ import {
   VerifiedUser,
   Email,
   Phone,
-  Add as AddIcon,
-  Search as SearchIcon,
   BookOnline as BookingsIcon,
   Star as StarIcon,
   TrendingUp as TrendingUpIcon,
-  Person as PersonIcon,
   LocationOn as LocationIcon,
   AttachMoney as MoneyIcon,
   Schedule as ScheduleIcon,
@@ -347,7 +344,7 @@ function Profile() {
       setNetworkError(null);
 
       const [bookingsResponse, listingsResponse, verificationResponse] = await Promise.allSettled([
-        fetch(`http://localhost:3001/bookings/user/${userId}`),
+        fetch(`http://localhost:3001/users/${userId}/bookings`),
         fetch(`http://localhost:3001/spots/user/${userId}`),
         fetch(`http://localhost:3001/users/${userId}/verification`)
       ]);
@@ -502,59 +499,7 @@ function Profile() {
     </Grid>
   );
 
-  const renderQuickActions = () => (
-    <Paper elevation={0} sx={{ p: 3, mb: 4, bgcolor: 'background.default' }}>
-      <Typography variant="h6" gutterBottom>
-        Quick Actions
-      </Typography>
-      <Grid container spacing={2}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Button
-            fullWidth
-            variant="contained"
-            startIcon={<AddIcon />}
-            onClick={() => navigate('/list')}
-            sx={{ py: 2 }}
-          >
-            Add Parking Spot
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<SearchIcon />}
-            onClick={() => navigate('/search')}
-            sx={{ py: 2 }}
-          >
-            Find Parking
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<BookingsIcon />}
-            onClick={() => setTabValue(0)}
-            sx={{ py: 2 }}
-          >
-            View Bookings
-          </Button>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={<VerifiedUser />}
-            onClick={() => navigate('/verify')}
-            sx={{ py: 2 }}
-          >
-            Verify Account
-          </Button>
-        </Grid>
-      </Grid>
-    </Paper>
-  );
+
 
   const renderListings = () => (
     <Grid container spacing={3}>
@@ -773,9 +718,6 @@ function Profile() {
 
         {/* Quick Stats Dashboard */}
         {renderQuickStats()}
-        
-        {/* Quick Actions */}
-        {renderQuickActions()}
 
         <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 3 }}>
           <Tabs 

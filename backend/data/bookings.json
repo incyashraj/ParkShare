@@ -50,7 +50,7 @@
     "hours": 24,
     "totalPrice": 1200,
     "hourlyRate": "₹50",
-    "status": "confirmed",
+    "status": "cancelled",
     "createdAt": "2025-07-06T16:22:59.630Z",
     "spotOwner": "user_bandra_host",
     "spotOwnerName": "Rahul Sharma",
@@ -62,7 +62,8 @@
         19.0596,
         72.8295
       ]
-    }
+    },
+    "cancelledAt": "2025-07-06T16:52:41.620Z"
   },
   {
     "id": "booking_1751819123269",
@@ -113,5 +114,31 @@
         72.8295
       ]
     }
+  },
+  {
+    "id": "booking_1751821403228",
+    "spotId": "spot_mumbai_bandra_001",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-06T17:03:00.000Z",
+    "endTime": "2025-07-07T17:03:00.000Z",
+    "hours": 24,
+    "totalPrice": 1200,
+    "hourlyRate": "₹50",
+    "status": "cancelled",
+    "createdAt": "2025-07-06T17:03:23.228Z",
+    "spotOwner": "user_bandra_host",
+    "spotOwnerName": "Rahul Sharma",
+    "location": "Linking Road, Bandra West, Mumbai",
+    "spotDetails": {
+      "location": "Linking Road, Bandra West, Mumbai",
+      "hourlyRate": "₹50",
+      "coordinates": [
+        19.0596,
+        72.8295
+      ]
+    },
+    "cancelledAt": "2025-07-06T17:03:36.848Z"
   }
 ]
