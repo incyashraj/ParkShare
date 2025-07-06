@@ -66,7 +66,7 @@ const ParkingSpotDetail = () => {
   const { spotId } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { addNotification } = useRealtime();
+  const { addNotification } = useRealtime() || {};
   
   const [spot, setSpot] = useState(null);
   const [loading, setLoading] = useState(true);

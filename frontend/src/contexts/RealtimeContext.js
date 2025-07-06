@@ -313,6 +313,19 @@ export const RealtimeProvider = ({ children }) => {
     }
   }, [socket]);
 
+  const addNotification = useCallback((notification) => {
+    const newNotification = {
+      id: Date.now(),
+      type: notification.type || 'info',
+      title: notification.title || 'Notification',
+      message: notification.message || '',
+      data: notification.data || {},
+      timestamp: notification.timestamp || new Date(),
+      read: false
+    };
+    setNotifications(prev => [newNotification, ...prev]);
+  }, []);
+
   const clearNotification = useCallback((notificationId) => {
     setNotifications(prev => prev.filter(n => n.id !== notificationId));
   }, []);

@@ -1,6 +1,6 @@
 import { auth } from '../firebase';
 import { Container, Typography, Box, Tabs, Tab, Paper, Grid, Card, CardContent, Button, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, CircularProgress, Alert, Chip, TextField } from '@mui/material';
-import { Download as DownloadIcon, Edit as EditIcon, Cancel as CancelIcon, AccessTime as AccessTimeIcon } from '@mui/icons-material';
+import { Download as DownloadIcon, Edit as EditIcon, Cancel as CancelIcon, AccessTime as AccessTimeIcon, CalendarToday, CheckCircle } from '@mui/icons-material';
 import { format } from 'date-fns';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -147,6 +147,7 @@ function BookingManagement() {
     const now = new Date();
     switch (type) {
       case 'active':
+        // Active bookings: Currently ongoing (started but not ended)
         return bookings.filter(booking => {
           try {
             const startTime = new Date(booking.startTime);
@@ -159,6 +160,7 @@ function BookingManagement() {
           }
         });
       case 'upcoming':
+        // Upcoming bookings: Future bookings that haven't started yet
         return bookings.filter(booking => {
           try {
             const startTime = new Date(booking.startTime);
@@ -169,6 +171,7 @@ function BookingManagement() {
           }
         });
       case 'past':
+        // Past bookings: Completed bookings
         return bookings.filter(booking => {
           try {
             const endTime = new Date(booking.endTime);
@@ -220,9 +223,39 @@ function BookingManagement() {
             textColor="primary"
             variant="fullWidth"
           >
-            <Tab label="Active Bookings" />
-            <Tab label="Upcoming Reservations" />
-            <Tab label="Past Bookings" />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <AccessTimeIcon fontSize="small" />
+                  <Box>
+                    <Typography variant="body2">Currently Active</Typography>
+                    <Typography variant="caption" color="text.secondary">Ongoing bookings</Typography>
+                  </Box>
+                </Box>
+              } 
+            />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CalendarToday fontSize="small" />
+                  <Box>
+                    <Typography variant="body2">Upcoming</Typography>
+                    <Typography variant="caption" color="text.secondary">Future reservations</Typography>
+                  </Box>
+                </Box>
+              } 
+            />
+            <Tab 
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CheckCircle fontSize="small" />
+                  <Box>
+                    <Typography variant="body2">Completed</Typography>
+                    <Typography variant="caption" color="text.secondary">Past bookings</Typography>
+                  </Box>
+                </Box>
+              } 
+            />
           </Tabs>
 
           <TabPanel value={value} index={0}>

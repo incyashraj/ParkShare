@@ -30,18 +30,26 @@ const ReceiptDownload = ({ booking, spot, user }) => {
 
       const data = await response.json();
       
-      // Download the file
-      const downloadResponse = await fetch(`http://localhost:3001${data.downloadUrl}`);
-      const blob = await downloadResponse.blob();
-      
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = data.fileName;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      if (data.downloadUrl) {
+        // Download the file
+        const downloadResponse = await fetch(`http://localhost:3001${data.downloadUrl}`);
+        if (downloadResponse.ok) {
+          const blob = await downloadResponse.blob();
+          
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = data.fileName || `receipt_${booking.id}.pdf`;
+          document.body.appendChild(a);
+          a.click();
+          window.URL.revokeObjectURL(url);
+          document.body.removeChild(a);
+        } else {
+          throw new Error('Failed to download file');
+        }
+      } else {
+        throw new Error('No download URL provided');
+      }
 
       setSuccess('Receipt downloaded successfully!');
     } catch (error) {

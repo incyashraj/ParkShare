@@ -48,63 +48,284 @@ import FavoritesManager from './components/FavoritesManager';
 import ParkingAnalytics from './components/ParkingAnalytics';
 import Dashboard from './components/Dashboard';
 import TestBooking from './TestBooking';
+import DesignSystemDemo from './components/DesignSystemDemo';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
+import './styles/global.css';
 
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#1E3A8A',
-      light: '#2563EB',
-      dark: '#1E40AF',
+      main: '#FF385C', // Airbnb Red
+      light: '#FF5A5F',
+      dark: '#E31C5F',
     },
     secondary: {
-      main: '#0D9488',
-      light: '#14B8A6',
-      dark: '#0F766E',
+      main: '#00A699', // Airbnb Success Green
+      light: '#00D1C1',
+      dark: '#008489',
+    },
+    error: {
+      main: '#FF5A5F', // Airbnb Error Red
+      light: '#FF8A8F',
+      dark: '#E31C5F',
+    },
+    warning: {
+      main: '#FFB400', // Airbnb Warning Yellow
+      light: '#FFC233',
+      dark: '#E6A200',
+    },
+    info: {
+      main: '#007A87', // Airbnb Info Blue
+      light: '#0099A8',
+      dark: '#005F6B',
+    },
+    success: {
+      main: '#00A699', // Airbnb Success Green
+      light: '#00D1C1',
+      dark: '#008489',
     },
     background: {
-      default: '#F3F4F6',
+      default: '#FFFFFF', // Airbnb White
+      paper: '#FFFFFF',
     },
+    text: {
+      primary: '#222222', // Airbnb Black
+      secondary: '#717171', // Airbnb Gray Dark
+    },
+    divider: '#DDDDDD', // Airbnb Gray
   },
   typography: {
-    fontFamily: 'Inter, Arial, sans-serif',
+    fontFamily: '"Circular", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
     h1: {
-      fontWeight: 700,
+      fontWeight: 600,
+      fontSize: '40px',
+      lineHeight: 1.2,
+      color: '#222222',
     },
     h2: {
-      fontWeight: 700,
+      fontWeight: 600,
+      fontSize: '34px',
+      lineHeight: 1.2,
+      color: '#222222',
     },
     h3: {
       fontWeight: 600,
+      fontSize: '30px',
+      lineHeight: 1.2,
+      color: '#222222',
     },
     h4: {
       fontWeight: 600,
+      fontSize: '26px',
+      lineHeight: 1.2,
+      color: '#222222',
+    },
+    h5: {
+      fontWeight: 500,
+      fontSize: '22px',
+      lineHeight: 1.2,
+      color: '#222222',
+    },
+    h6: {
+      fontWeight: 500,
+      fontSize: '20px',
+      lineHeight: 1.2,
+      color: '#222222',
+    },
+    body1: {
+      fontSize: '16px',
+      lineHeight: 1.4,
+      color: '#222222',
+    },
+    body2: {
+      fontSize: '14px',
+      lineHeight: 1.4,
+      color: '#717171',
     },
     button: {
       textTransform: 'none',
+      fontWeight: 500,
+      fontSize: '16px',
     },
+  },
+  shape: {
+    borderRadius: 12,
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 12,
+          padding: '12px 20px',
+          fontWeight: 500,
+          textTransform: 'none',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
+          transition: 'all 0.2s ease',
+          border: '1px solid transparent',
+          '&:hover': {
+            transform: 'translateY(-1px)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+          },
+          '&:active': {
+            transform: 'translateY(0)',
+            boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
+          },
+        },
+        contained: {
+          background: '#FF385C',
+          '&:hover': {
+            background: '#E31C5F',
+          },
+        },
+        outlined: {
+          borderColor: '#DDDDDD',
+          backgroundColor: '#FFFFFF',
+          '&:hover': {
+            borderColor: '#FF385C',
+            backgroundColor: 'rgba(255, 56, 92, 0.05)',
+          },
+        },
+        text: {
+          '&:hover': {
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          },
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
+          borderRadius: 20,
+          border: '1px solid #DDDDDD',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
+          transition: 'all 0.2s ease',
+          backgroundColor: '#FFFFFF',
+          '&:hover': {
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.12)',
+            transform: 'translateY(-2px)',
+          },
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         root: {
+          borderRadius: 20,
+          border: '1px solid #DDDDDD',
+          backgroundColor: '#FFFFFF',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 12,
+            backgroundColor: '#FFFFFF',
+            border: '1px solid #DDDDDD',
+            transition: 'all 0.15s ease',
+            '&:hover': {
+              borderColor: '#B0B0B0',
+            },
+            '&.Mui-focused': {
+              borderColor: '#FF385C',
+              boxShadow: '0 0 0 2px rgba(255, 56, 92, 0.1)',
+            },
+          },
+          '& .MuiInputLabel-root': {
+            color: '#717171',
+            '&.Mui-focused': {
+              color: '#FF385C',
+            },
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: 20,
+          fontWeight: 500,
+          fontSize: '14px',
+          height: '24px',
+        },
+        outlined: {
+          borderColor: '#DDDDDD',
+          backgroundColor: '#FFFFFF',
+          '&:hover': {
+            borderColor: '#FF385C',
+            backgroundColor: 'rgba(255, 56, 92, 0.05)',
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(20px)',
+          borderBottom: '1px solid #DDDDDD',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
+        },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: {
+          borderRadius: 24,
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)',
+          border: '1px solid #DDDDDD',
+        },
+      },
+    },
+    MuiSnackbar: {
+      styleOverrides: {
+        root: {
+          '& .MuiAlert-root': {
+            borderRadius: 12,
+            fontWeight: 500,
+            fontSize: '16px',
+          },
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
           borderRadius: 12,
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+          border: '1px solid #DDDDDD',
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          fontSize: '16px',
+          padding: '12px 16px',
+          '&:hover': {
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          },
+        },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          transition: 'all 0.15s ease',
+          '&:hover': {
+            backgroundColor: 'rgba(0, 0, 0, 0.05)',
+          },
+        },
+      },
+    },
+    MuiAvatar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: '#FF385C',
         },
       },
     },
@@ -126,7 +347,7 @@ function AppContent() {
   };
 
   return (
-    <ThemeProvider theme={theme} className="app-container">
+    <ThemeProvider theme={theme} className="airbnb-app-container">
       <React.Suspense fallback={
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
           <CircularProgress />
@@ -135,8 +356,8 @@ function AppContent() {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
           <Router>
-            <Box sx={{ flexGrow: 1 }} className="app-container">
-              <AppBar position="static" sx={{ backgroundColor: 'white', boxShadow: 1 }}>
+            <Box sx={{ flexGrow: 1 }} className="airbnb-app-container">
+              <AppBar position="static" className="airbnb-app-header">
                 <Container maxWidth="xl">
                   <Toolbar disableGutters>
                     <Typography
@@ -148,6 +369,7 @@ function AppContent() {
                         textDecoration: 'none',
                         fontWeight: 'bold',
                         flexGrow: 1,
+                        fontSize: '24px',
                       }}
                     >
                       ParkShare
@@ -158,6 +380,7 @@ function AppContent() {
                           <Button
                             component={Link}
                             to="/"
+                            className="airbnb-nav-link"
                             sx={{ color: 'primary.main' }}
                           >
                             Home
@@ -165,6 +388,7 @@ function AppContent() {
                           <Button
                             component={Link}
                             to="/login"
+                            className="airbnb-nav-link"
                             sx={{ color: 'primary.main' }}
                           >
                             Login
@@ -173,6 +397,7 @@ function AppContent() {
                             component={Link}
                             to="/register"
                             variant="contained"
+                            className="airbnb-btn-primary"
                             sx={{
                               color: 'white',
                               '&:hover': {
@@ -191,6 +416,7 @@ function AppContent() {
                             component={Link}
                             to="/"
                             startIcon={<DashboardIcon />}
+                            className="airbnb-nav-link"
                             sx={{ color: 'primary.main' }}
                           >
                             Dashboard
@@ -199,6 +425,7 @@ function AppContent() {
                             component={Link}
                             to="/search"
                             startIcon={<Search />}
+                            className="airbnb-nav-link"
                             sx={{ color: 'primary.main' }}
                           >
                             Search
@@ -208,6 +435,7 @@ function AppContent() {
                             to="/list"
                             variant="contained"
                             startIcon={<Add />}
+                            className="airbnb-btn-primary"
                             sx={{
                               color: 'white',
                               '&:hover': {
@@ -221,6 +449,7 @@ function AppContent() {
                             component={Link}
                             to="/bookings"
                             startIcon={<BookOnline />}
+                            className="airbnb-nav-link"
                             sx={{ color: 'primary.main' }}
                           >
                             Bookings
@@ -311,7 +540,7 @@ function AppContent() {
                 </Container>
               </AppBar>
 
-              <Container component="main" sx={{ mt: 2, pt: { xs: 8, md: 10 } }}>
+              <Container component="main" className="airbnb-main-content" sx={{ mt: 2, pt: { xs: 8, md: 10 } }}>
                 <Routes>
                   <Route
                     path="/"
@@ -334,6 +563,7 @@ function AppContent() {
                   <Route path="/favorites" element={<FavoritesManager />} />
                   <Route path="/analytics" element={<ParkingAnalytics />} />
                   <Route path="/test-booking" element={<TestBooking />} />
+                  <Route path="/design-demo" element={<DesignSystemDemo />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
                 </Routes>

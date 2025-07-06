@@ -328,22 +328,27 @@ const ParkingSpotList = () => {
   }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking]);
 
   const sortSpots = (spotsToSort) => {
+    // Always sort by availability first (available spots first)
+    const sortedByAvailability = [...spotsToSort].sort((a, b) => {
+      if (a.available && !b.available) return -1;
+      if (!a.available && b.available) return 1;
+      return 0;
+    });
+    
+    // Then apply the selected sort criteria
     switch (sortBy) {
       case 'price':
-        return [...spotsToSort].sort((a, b) => a.price - b.price);
+        return sortedByAvailability.sort((a, b) => a.price - b.price);
       case 'rating':
-        return [...spotsToSort].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        return sortedByAvailability.sort((a, b) => (b.rating || 0) - (a.rating || 0));
       case 'availability':
-        return [...spotsToSort].sort((a, b) => {
-          if (a.available && !b.available) return -1;
-          if (!a.available && b.available) return 1;
-          return 0;
-        });
+        // Already sorted by availability above
+        return sortedByAvailability;
       case 'popularity':
-        return [...spotsToSort].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+        return sortedByAvailability.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
       case 'distance':
       default:
-        return [...spotsToSort].sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        return sortedByAvailability.sort((a, b) => (a.distance || 0) - (b.distance || 0));
     }
   };
 
@@ -849,7 +854,115 @@ const ParkingSpotList = () => {
                 )}
               </Paper>
             </Zoom>
+          ) : viewMode === 'list' ? (
+            // List View
+            <Box>
+              {loading ? (
+                Array.from({ length: 6 }).map((_, index) => (
+                  <Card key={index} sx={{ mb: 2 }}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Skeleton variant="rectangular" width={120} height={80} />
+                        <Box sx={{ flex: 1 }}>
+                          <Skeleton variant="text" height={24} />
+                          <Skeleton variant="text" height={20} />
+                          <Skeleton variant="text" height={20} />
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : filteredAndSortedSpots().length === 0 ? (
+                <Box sx={{ textAlign: 'center', p: 6 }}>
+                  <InfoIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h5" color="text.secondary" gutterBottom>
+                    No parking spots found
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                    Try adjusting your filters or search criteria
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    startIcon={<RefreshIcon />}
+                    onClick={clearFilters}
+                  >
+                    Clear All Filters
+                  </Button>
+                </Box>
+              ) : (
+                getCurrentSpots().map((spot, index) => (
+                  <Card key={spot.id || index} sx={{ mb: 2, cursor: 'pointer' }} onClick={() => navigate(`/spot/${spot.id}`)}>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                        <Box sx={{ width: 120, height: 80, borderRadius: 2, overflow: 'hidden', flexShrink: 0 }}>
+                          <img 
+                            src={spot.images?.[0] || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=120&h=80&fit=crop'} 
+                            alt={spot.title}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </Box>
+                        <Box sx={{ flex: 1 }}>
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                            <Typography variant="h6" fontWeight="bold" sx={{ color: 'primary.main' }}>
+                              {spot.title}
+                            </Typography>
+                            <Chip 
+                              label={spot.available ? 'Available' : 'Occupied'} 
+                              color={spot.available ? 'success' : 'error'}
+                              size="small"
+                            />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            {spot.location}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                            <Rating value={spot.rating || 0} readOnly size="small" />
+                            <Typography variant="body2" color="text.secondary">
+                              ({spot.reviewCount || 0} reviews)
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                            <Typography variant="h6" fontWeight="bold" color="primary">
+                              ₹{spot.hourlyRate}/hour
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {spot.distance ? `${spot.distance.toFixed(1)} km away` : 'Distance unavailable'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+                          <IconButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleFavorite(spot.id);
+                            }}
+                            color={favorites.includes(spot.id) ? 'primary' : 'default'}
+                          >
+                            {favorites.includes(spot.id) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                          </IconButton>
+                          <Button
+                            variant="contained"
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/spot/${spot.id}`);
+                            }}
+                            sx={{ 
+                              bgcolor: '#22C55E',
+                              '&:hover': { bgcolor: '#16A34A' }
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </Box>
           ) : (
+            // Grid View
             <Grid container spacing={3}>
               {loading ? (
                 Array.from({ length: 6 }).map((_, index) => (

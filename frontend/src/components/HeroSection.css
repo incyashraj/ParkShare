@@ -305,3 +305,228 @@
     transform: translateX(-50%);
   }
 }
+
+/* ===== Airbnb-Inspired Hero Section Styles ===== */
+
+.airbnb-hero-section {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #FF385C 0%, #00A699 100%);
+}
+
+.airbnb-hero-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 56, 92, 0.9) 0%, rgba(0, 166, 153, 0.8) 100%);
+  z-index: 1;
+}
+
+.airbnb-hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 2rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.airbnb-hero-title {
+  font-size: clamp(2.5rem, 5vw, 5rem);
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 1.5rem;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  animation: airbnbFadeInUp 1s ease-out;
+}
+
+.airbnb-hero-subtitle {
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 400;
+  line-height: 1.4;
+  margin-bottom: 3rem;
+  color: white;
+  opacity: 0.95;
+  max-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  animation: airbnbFadeInUp 1s ease-out 0.2s both;
+}
+
+.airbnb-hero-stats {
+  margin-bottom: 3rem;
+  animation: airbnbFadeInUp 1s ease-out 0.4s both;
+}
+
+.airbnb-hero-cta {
+  margin-bottom: 2rem;
+  animation: airbnbFadeInUp 1s ease-out 0.6s both;
+}
+
+.airbnb-hero-trust {
+  animation: airbnbFadeInUp 1s ease-out 0.8s both;
+}
+
+.airbnb-hero-decoration {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 100px;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  z-index: 1;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .airbnb-hero-section {
+    min-height: 80vh;
+    padding: 2rem 0;
+  }
+  
+  .airbnb-hero-content {
+    padding: 1rem 0;
+  }
+  
+  .airbnb-hero-title {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .airbnb-hero-subtitle {
+    font-size: 1.25rem;
+    margin-bottom: 2rem;
+  }
+  
+  .airbnb-hero-stats {
+    margin-bottom: 2rem;
+  }
+  
+  .airbnb-hero-cta {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .airbnb-hero-cta .MuiButton-root {
+    width: 100%;
+    max-width: 300px;
+  }
+}
+
+@media (max-width: 480px) {
+  .airbnb-hero-section {
+    min-height: 70vh;
+  }
+  
+  .airbnb-hero-title {
+    font-size: 2rem;
+  }
+  
+  .airbnb-hero-subtitle {
+    font-size: 1.1rem;
+  }
+}
+
+/* Animations */
+@keyframes airbnbFadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes airbnbFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes airbnbSlideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes airbnbSlideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hover Effects */
+.airbnb-hero-cta .MuiButton-root {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.airbnb-hero-cta .MuiButton-root:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* Loading States */
+.airbnb-hero-section.loading {
+  opacity: 0.8;
+}
+
+.airbnb-hero-section.loading .airbnb-hero-content {
+  animation: none;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+  .airbnb-hero-title,
+  .airbnb-hero-subtitle,
+  .airbnb-hero-stats,
+  .airbnb-hero-cta,
+  .airbnb-hero-trust {
+    animation: none;
+  }
+  
+  .airbnb-hero-cta .MuiButton-root {
+    transition: none;
+  }
+}
+
+/* Print Styles */
+@media print {
+  .airbnb-hero-section {
+    min-height: auto;
+    background: white !important;
+    color: black !important;
+  }
+  
+  .airbnb-hero-background {
+    display: none;
+  }
+  
+  .airbnb-hero-title,
+  .airbnb-hero-subtitle {
+    color: black !important;
+    text-shadow: none;
+  }
+}

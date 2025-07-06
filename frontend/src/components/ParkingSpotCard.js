@@ -199,42 +199,40 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
     try {
       console.log('Payment successful:', paymentResult);
       
-      // Call the onBook callback for UI updates
-      if (onBook) {
-        await onBook({
+      // Create booking with payment confirmation
+      const bookingResponse = await fetch('http://localhost:3001/api/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           spotId: spot.id,
-          spotName: spot.title || spot.location,
+          userId: currentUser.uid,
           startTime: bookingData.startTime,
           endTime: bookingData.endTime,
-          date: bookingData.date,
-          hours: bookingData.hours,
           totalPrice: paymentAmount,
-          bookingId: paymentResult.id || `booking_${Date.now()}`,
-        });
-      }
-      
-      // Close all dialogs
-      setShowBookingDialog(false);
-      setShowPaymentModal(false);
-      setPaymentIntent(null);
-      setPaymentAmount(0);
-      
-      // Reset booking data
-      setBookingData({
-        startTime: '',
-        endTime: '',
-        date: format(new Date(), 'yyyy-MM-dd'),
-        hours: 2,
+          paymentIntentId: paymentResult.paymentIntent.id,
+          status: 'confirmed'
+        }),
       });
+
+      if (!bookingResponse.ok) {
+        throw new Error('Failed to create booking');
+      }
+
+      const booking = await bookingResponse.json();
       
-      // Show success message
-      setSnackbarMessage('Booking successful! Check your email for confirmation.');
+      setSnackbarMessage('Booking confirmed! Check your email for details.');
       setSnackbarSeverity('success');
       setOpenSnackbar(true);
+      setShowPaymentModal(false);
       
-    } catch (err) {
-      console.error('Payment success handling error:', err);
-      setSnackbarMessage('Booking successful but there was an issue updating the UI.');
+      // Navigate to booking details or dashboard
+      navigate('/bookings');
+      
+    } catch (error) {
+      console.error('Booking creation error:', error);
+      setSnackbarMessage('Payment successful but booking creation failed. Please contact support.');
       setSnackbarSeverity('warning');
       setOpenSnackbar(true);
     }
@@ -245,17 +243,23 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
     setSnackbarMessage('Payment failed. Please try again.');
     setSnackbarSeverity('error');
     setOpenSnackbar(true);
-    setShowPaymentModal(false);
   };
 
   const handleMessageSubmit = async (message) => {
     try {
-      await sendMessage(spot.owner, message);
-      setShowMessageDialog(false);
-      setSnackbarMessage('Message sent successfully!');
-      setSnackbarSeverity('success');
-      setOpenSnackbar(true);
+      const success = await sendMessage(spot.owner, message);
+      if (success) {
+        setSnackbarMessage('Message sent successfully!');
+        setSnackbarSeverity('success');
+        setOpenSnackbar(true);
+        setShowMessageDialog(false);
+      } else {
+        setSnackbarMessage('Failed to send message. Please try again.');
+        setSnackbarSeverity('error');
+        setOpenSnackbar(true);
+      }
     } catch (error) {
+      console.error('Message error:', error);
       setSnackbarMessage('Failed to send message. Please try again.');
       setSnackbarSeverity('error');
       setOpenSnackbar(true);
@@ -279,168 +283,124 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
   const getLastUpdatedText = () => {
     if (!spotStatus?.lastUpdated) return null;
     
-    try {
-      const now = new Date();
-      const updated = new Date(spotStatus.lastUpdated);
-      
-      // Check if the date is valid
-      if (isNaN(updated.getTime())) {
-        return null;
-      }
-      
-      const diff = now - updated;
-      const minutes = Math.floor(diff / (1000 * 60));
-      
-      if (minutes < 1) return 'Just updated';
-      if (minutes < 60) return `${minutes}m ago`;
-      const hours = Math.floor(minutes / 60);
-      if (hours < 24) return `${hours}h ago`;
-      return `${Math.floor(hours / 24)}d ago`;
-    } catch (error) {
-      console.warn('Error parsing last updated time:', error);
-      return null;
-    }
+    const now = new Date();
+    const lastUpdated = new Date(spotStatus.lastUpdated);
+    const diffInMinutes = Math.floor((now - lastUpdated) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
+    return `${Math.floor(diffInMinutes / 1440)}d ago`;
   };
 
   const getSpotImage = () => {
-    if (imageError) {
-      return `https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=200&fit=crop`;
-    }
+    if (spot.imageUrl) return spot.imageUrl;
     
-    if (spot.images && spot.images.length > 0) {
-      return typeof spot.images[0] === 'string' 
-        ? spot.images[0] 
-        : spot.images[0].url || spot.images[0].preview;
-    }
+    // Default images based on vehicle type
+    const defaultImages = {
+      car: 'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=300&fit=crop',
+      motorcycle: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop',
+      bicycle: 'https://images.unsplash.com/photo-1571068316344-75bc76f77890?w=400&h=300&fit=crop',
+      truck: 'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=400&h=300&fit=crop',
+    };
     
-    return `https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=200&fit=crop`;
+    return defaultImages[spot.vehicleType?.toLowerCase()] || defaultImages.car;
   };
 
   const getVehicleIcon = (vehicleType) => {
-    switch (vehicleType?.toLowerCase()) {
-      case 'car':
-        return <DirectionsCar />;
-      case 'suv':
-        return <DirectionsCar />;
-      case 'truck':
-        return <DirectionsCar />;
-      case 'motorcycle':
-        return <DirectionsBike />;
-      default:
-        return <LocalParking />;
-    }
+    const icons = {
+      car: <DirectionsCar sx={{ fontSize: 16 }} />,
+      motorcycle: <DirectionsBike sx={{ fontSize: 16 }} />,
+      bicycle: <DirectionsBike sx={{ fontSize: 16 }} />,
+      truck: <DirectionsCar sx={{ fontSize: 16 }} />,
+    };
+    return icons[vehicleType?.toLowerCase()] || <LocalParking sx={{ fontSize: 16 }} />;
   };
 
   const getAmenityIcon = (amenity) => {
-    switch (amenity?.toLowerCase()) {
-      case 'electric':
-      case 'charging':
-        return <ElectricCar />;
-      case 'security':
-      case 'camera':
-        return <Security />;
-      case 'covered':
-        return <LocalParking />;
-      default:
-        return <CheckCircle />;
-    }
+    const icons = {
+      'Security Camera': <Security sx={{ fontSize: 16 }} />,
+      'Electric Charging': <ElectricCar sx={{ fontSize: 16 }} />,
+      'Covered': <LocalParking sx={{ fontSize: 16 }} />,
+      '24/7 Access': <AccessTime sx={{ fontSize: 16 }} />,
+      'WiFi': <WifiTethering sx={{ fontSize: 16 }} />,
+      'Well Lit': <Visibility sx={{ fontSize: 16 }} />,
+    };
+    return icons[amenity] || <CheckCircle sx={{ fontSize: 16 }} />;
+  };
+
+
+
+  // Airbnb-style price
+  const priceText = `₹${spot.price}/hr`;
+
+  // Airbnb-style rating
+  const rating = spot.rating || 0;
+
+
+
+  // Status chip styling
+  const statusChipStyle = {
+    position: 'absolute',
+    top: '12px',
+    right: '12px',
+    backgroundColor: spot.available ? '#34C759' : '#FF3B30',
+    color: 'white',
+    padding: '4px 8px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    fontWeight: '600',
+    zIndex: 2,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px'
   };
 
   return (
     <>
       <Card 
+        className="airbnb-parking-card"
         sx={{ 
           height: '100%', 
           display: 'flex', 
           flexDirection: 'column',
-          transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           position: 'relative',
           cursor: 'pointer',
-          borderRadius: 4,
+          borderRadius: 3,
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          border: '1px solid #e2e8f0',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          backgroundColor: '#FFFFFF',
+          border: '1px solid #DDDDDD',
+          boxShadow: '0 1px 2px rgba(0, 0, 0, 0.08)',
           '&:hover': {
-            transform: 'translateY(-12px) scale(1.02)',
-            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-            borderColor: '#22C55E',
+            transform: 'translateY(-4px)',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.12)',
+            borderColor: '#FF385C',
             '& .card-media': {
               transform: 'scale(1.05)',
             },
             '& .price-badge': {
-              transform: 'scale(1.1)',
+              transform: 'scale(1.05)',
+            },
+            '& .favorite-button': {
+              opacity: 1,
             },
           },
         }}
         onClick={() => navigate(`/spot/${spot.id}`)}
       >
-        {/* Real-time indicator */}
-        <Fade in={isConnected}>
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 12,
-              right: 12,
-              zIndex: 2,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 0.5,
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderRadius: 3,
-              px: 1.5,
-              py: 0.5,
-              backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              border: '1px solid rgba(34, 197, 94, 0.2)',
-            }}
-          >
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: '#22C55E',
-                animation: 'pulse 2s infinite',
-                '@keyframes pulse': {
-                  '0%': {
-                    boxShadow: '0 0 0 0 rgba(34, 197, 94, 0.7)',
-                  },
-                  '70%': {
-                    boxShadow: '0 0 0 10px rgba(34, 197, 94, 0)',
-                  },
-                  '100%': {
-                    boxShadow: '0 0 0 0 rgba(34, 197, 94, 0)',
-                  },
-                },
-              }}
-            />
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                fontSize: '0.75rem', 
-                fontWeight: '700',
-                color: '#22C55E',
-                letterSpacing: '0.5px'
-              }}
-            >
-              LIVE
-            </Typography>
-          </Box>
-        </Fade>
-
         {/* Image Section */}
-        <Box sx={{ position: 'relative', height: 220 }}>
+        <Box sx={{ position: 'relative', height: 240 }}>
           {!imageLoaded && !imageError && (
             <Skeleton 
               variant="rectangular" 
-              height={220} 
-              sx={{ bgcolor: 'rgba(0,0,0,0.1)' }}
+              height={240} 
+              sx={{ bgcolor: '#F7F7F7' }}
             />
           )}
           <CardMedia
             component="img"
-            height="220"
+            height="240"
             image={getSpotImage()}
             alt={spot.title || 'Parking Spot'}
             className="card-media"
@@ -448,7 +408,7 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
               objectFit: 'cover',
               width: '100%',
               height: '100%',
-              transition: 'transform 0.4s ease',
+              transition: 'transform 0.3s ease',
               display: imageLoaded ? 'block' : 'none',
             }}
             onLoad={() => setImageLoaded(true)}
@@ -458,48 +418,46 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
             }}
           />
           
-          {/* Gradient overlay */}
-          <Box
-            sx={{
-              position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
-              height: '70%',
-              background: 'linear-gradient(transparent, rgba(0,0,0,0.8))',
+          {/* Status Chip */}
+          <div style={statusChipStyle}>
+            {spot.available ? 'Available' : 'Occupied'}
+          </div>
+
+          {/* Favorite Button */}
+          <IconButton 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFavorite();
             }}
-          />
-          
-          {/* Price badge */}
-          <Box
-            className="price-badge"
-            sx={{
+            className="favorite-button"
+            sx={{ 
               position: 'absolute',
-              bottom: 12,
+              top: 12,
               left: 12,
-              background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-              color: 'white',
-              px: 2.5,
-              py: 1,
-              borderRadius: 3,
-              fontWeight: 'bold',
-              fontSize: '1rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.9)',
               backdropFilter: 'blur(10px)',
-              boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
-              border: '1px solid rgba(255, 255, 255, 0.2)',
-              transition: 'transform 0.3s ease',
+              color: isFavorite ? '#FF385C' : '#222222',
+              opacity: isFavorite ? 1 : 0.8,
+              transition: 'all 0.2s ease',
+              '&:hover': {
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                transform: 'scale(1.1)',
+                color: '#FF385C',
+              },
             }}
           >
-            ₹{spot.price}/hr
-          </Box>
+            {isFavorite ? <Favorite /> : <FavoriteBorder />}
+          </IconButton>
 
-          {/* Vehicle type indicator */}
+
+
+          {/* Vehicle Type Badge */}
           {spot.vehicleType && (
             <Box
               sx={{
                 position: 'absolute',
-                top: 12,
-                left: 12,
+                bottom: 12,
+                right: 12,
                 background: 'rgba(0, 0, 0, 0.7)',
                 color: 'white',
                 px: 1.5,
@@ -508,7 +466,7 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
                 display: 'flex',
                 alignItems: 'center',
                 gap: 0.5,
-                fontSize: '0.8rem',
+                fontSize: '0.75rem',
                 fontWeight: 500,
                 backdropFilter: 'blur(10px)',
               }}
@@ -517,299 +475,63 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
               {spot.vehicleType}
             </Box>
           )}
+
+
         </Box>
         
-        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 3 }}>
-          {/* Header with title and favorite button */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-            <Typography 
-              variant="h6" 
-              component="h2" 
-              fontWeight="700" 
-              sx={{ 
-                flex: 1,
-                fontSize: '1.2rem',
-                lineHeight: 1.3,
-                color: '#1e293b',
-                mb: 0.5,
-              }}
-            >
-              {spot.title}
-            </Typography>
-            <IconButton 
-              onClick={(e) => {
-                e.stopPropagation();
-                handleFavorite();
-              }}
-              size="small"
-              sx={{ 
-                color: isFavorite ? '#ef4444' : '#94a3b8',
-                '&:hover': {
-                  color: isFavorite ? '#dc2626' : '#ef4444',
-                  transform: 'scale(1.15)',
-                  bgcolor: 'rgba(239, 68, 68, 0.1)',
-                },
-                transition: 'all 0.2s ease'
-              }}
-            >
-              {isFavorite ? <Favorite /> : <FavoriteBorder />}
-            </IconButton>
-          </Box>
+        <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', p: 2.5 }}>
+          {/* Title */}
+          <Typography 
+            variant="h6" 
+            component="h2" 
+            sx={{ 
+              fontSize: '1.1rem',
+              fontWeight: 600,
+              lineHeight: 1.3,
+              color: '#222222',
+              mb: 1,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            {spot.title}
+          </Typography>
 
-          {/* Location */}
+          {/* Rating and Reviews */}
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-            <LocationOn sx={{ fontSize: 18, color: '#64748b', mr: 1 }} />
-            <Typography 
-              variant="body2" 
-              sx={{ 
-                flex: 1,
-                color: '#64748b',
-                fontSize: '0.9rem',
-                fontWeight: 500,
-                lineHeight: 1.4,
-              }}
-            >
-              {spot.address}
-            </Typography>
-          </Box>
-
-          {/* Rating and reviews */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
             <Rating 
-              value={spot.rating || 0} 
+              value={rating} 
               readOnly 
               size="small" 
-              sx={{ mr: 1 }}
+              sx={{ mr: 1, '& .MuiRating-iconFilled': { color: '#FF385C' } }}
             />
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#64748b',
-                fontSize: '0.85rem',
-                fontWeight: 500
+                color: '#717171',
+                fontSize: '0.8rem',
+                fontWeight: 400
               }}
             >
-              {spot.rating || 0} ({spot.reviewCount || 0} reviews)
+              {rating.toFixed(2)}
             </Typography>
           </Box>
 
           {/* Distance */}
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-            <AccessTime sx={{ fontSize: 18, color: '#64748b', mr: 1 }} />
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+            <AccessTime sx={{ fontSize: 16, color: '#717171', mr: 0.5 }} />
             <Typography 
               variant="body2" 
               sx={{ 
-                color: '#64748b',
-                fontSize: '0.9rem',
-                fontWeight: 500
+                color: '#717171',
+                fontSize: '0.85rem',
+                fontWeight: 400
               }}
             >
               {calculateDistance(spot.distance)}
             </Typography>
-          </Box>
-
-          {/* Features/Amenities */}
-          {spot.features && spot.features.length > 0 && (
-            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
-              {spot.features.slice(0, 3).map((feature, index) => (
-                <Chip
-                  key={index}
-                  label={feature}
-                  size="small"
-                  variant="outlined"
-                  icon={getAmenityIcon(feature)}
-                  sx={{ 
-                    fontSize: '0.7rem',
-                    height: 26,
-                    borderColor: '#e2e8f0',
-                    color: '#64748b',
-                    '&:hover': {
-                      borderColor: '#22C55E',
-                      color: '#22C55E',
-                      bgcolor: 'rgba(34, 197, 94, 0.05)',
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                />
-              ))}
-              {spot.features.length > 3 && (
-                <Chip
-                  label={`+${spot.features.length - 3} more`}
-                  size="small"
-                  variant="outlined"
-                  sx={{ 
-                    fontSize: '0.7rem',
-                    height: 26,
-                    borderColor: '#e2e8f0',
-                    color: '#64748b',
-                  }}
-                />
-              )}
-            </Box>
-          )}
-
-          {/* Availability status */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 0.5 }}>
-              <Chip
-                label={getAvailabilityText(isAvailable)}
-                color={getAvailabilityColor(isAvailable)}
-                size="small"
-                variant={isAvailable ? 'filled' : 'outlined'}
-                icon={spotStatus?.lastUpdated ? <TrendingUp /> : undefined}
-                sx={{
-                  fontWeight: 600,
-                  fontSize: '0.75rem',
-                  height: 26,
-                  ...(isAvailable ? {
-                    bgcolor: '#22C55E',
-                    color: 'white',
-                    boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-                  } : {
-                    borderColor: '#ef4444',
-                    color: '#ef4444',
-                  })
-                }}
-              />
-              {getLastUpdatedText() && (
-                <Typography 
-                  variant="caption" 
-                  sx={{ 
-                    color: '#94a3b8',
-                    fontSize: '0.7rem',
-                    fontWeight: 500
-                  }}
-                >
-                  {getLastUpdatedText()}
-                </Typography>
-              )}
-            </Box>
-          </Box>
-
-          {/* Owner information */}
-          {spot.ownerName && (
-            <Box sx={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              mb: 2, 
-              p: 1.5, 
-              bgcolor: '#f8fafc', 
-              borderRadius: 3,
-              border: '1px solid #e2e8f0',
-            }}>
-              <Badge
-                overlap="circular"
-                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                badgeContent={
-                  <Circle
-                    sx={{
-                      fontSize: 10,
-                      color: ownerOnline ? '#22C55E' : '#94a3b8',
-                    }}
-                  />
-                }
-              >
-                <Avatar 
-                  sx={{ 
-                    width: 32, 
-                    height: 32, 
-                    fontSize: '1rem', 
-                    mr: 1.5,
-                    bgcolor: '#22C55E',
-                    fontWeight: 600,
-                    boxShadow: '0 2px 8px rgba(34, 197, 94, 0.3)',
-                  }}
-                >
-                  {spot.ownerName.charAt(0).toUpperCase()}
-                </Avatar>
-              </Badge>
-              <Box sx={{ flex: 1 }}>
-                <Typography 
-                  variant="body2" 
-                  sx={{ 
-                    color: '#1e293b',
-                    fontSize: '0.9rem',
-                    fontWeight: 600,
-                    mb: 0.5
-                  }}
-                >
-                  {spot.ownerName}
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  {spot.isVerifiedHost && (
-                    <Tooltip title="Verified Host">
-                      <VerifiedUser sx={{ fontSize: 14, color: '#22C55E' }} />
-                    </Tooltip>
-                  )}
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: ownerOnline ? '#22C55E' : '#94a3b8',
-                      fontSize: '0.75rem',
-                      fontWeight: 500
-                    }}
-                  >
-                    {ownerOnline ? 'Online' : 'Offline'}
-                  </Typography>
-                </Box>
-              </Box>
-            </Box>
-          )}
-
-          {/* Action buttons */}
-          <Box sx={{ display: 'flex', gap: 1, mt: 'auto' }}>
-            {!spot.isOwner && spot.owner && (
-              <Tooltip title="Message owner">
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleMessage();
-                  }}
-                  disabled={!ownerOnline}
-                  sx={{ 
-                    color: ownerOnline ? '#22C55E' : '#cbd5e1',
-                    border: '1px solid',
-                    borderColor: ownerOnline ? '#22C55E' : '#cbd5e1',
-                    '&:hover': {
-                      bgcolor: ownerOnline ? 'rgba(34, 197, 94, 0.1)' : 'transparent',
-                      transform: 'scale(1.05)',
-                    },
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                  <Message />
-                </IconButton>
-              </Tooltip>
-            )}
-            <Button
-              variant="contained"
-              size="small"
-              fullWidth
-              startIcon={<Info />}
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/spot/${spot.id}`);
-              }}
-              sx={{ 
-                background: 'linear-gradient(135deg, #22C55E 0%, #16A34A 100%)',
-                color: 'white',
-                fontWeight: 600,
-                fontSize: '0.9rem',
-                py: 1.2,
-                borderRadius: 3,
-                textTransform: 'none',
-                boxShadow: '0 4px 12px rgba(34, 197, 94, 0.3)',
-                '&:hover': { 
-                  background: 'linear-gradient(135deg, #16A34A 0%, #15803D 100%)',
-                  boxShadow: '0 6px 16px rgba(34, 197, 94, 0.4)',
-                  transform: 'translateY(-1px)',
-                },
-                transition: 'all 0.3s ease'
-              }}
-            >
-              View Details
-            </Button>
           </Box>
         </CardContent>
       </Card>
@@ -995,14 +717,6 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
         onPaymentSuccess={handlePaymentSuccess}
         onPaymentError={handlePaymentError}
       />
-
-      <style jsx>{`
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 1; }
-        }
-      `}</style>
     </>
   );
 };

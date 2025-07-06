@@ -1,80 +1,458 @@
 [
   {
-    "id": "1751665094276",
-    "location": "Test Location",
+    "id": "spot_mumbai_bandra_001",
+    "title": "Bandra West Premium Parking",
+    "location": "Linking Road, Bandra West, Mumbai",
     "coordinates": [
-      19.076,
-      72.8777
+      19.0596,
+      72.8295
     ],
-    "hourlyRate": "$10",
-    "termsAndConditions": "Test terms",
+    "hourlyRate": "₹50",
+    "price": 50,
+    "description": "Premium covered parking in the heart of Bandra West, just 2 minutes walk from Linking Road shopping district. Perfect for shopping, dining, or business meetings.",
+    "available": true,
+    "owner": "user_bandra_host",
+    "ownerName": "Rahul Sharma",
     "images": [
-      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
-    ],
-    "rating": 0,
-    "reviews": [],
-    "owner": "test123",
-    "ownerName": "test",
-    "createdAt": "2025-07-04T21:38:14.276Z",
-    "bookings": [
-      {
-        "id": "booking_1751667846191",
-        "spotId": "1751665094276",
-        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-        "userName": "123@gmail.com",
-        "startTime": "2025-07-04T22:24:06.191Z",
-        "endTime": "2025-07-05T01:24:06.191Z",
-        "totalPrice": 30,
-        "createdAt": "2025-07-04T22:24:06.191Z",
-        "status": "paid",
-        "paymentId": "proxy_1751667846191",
-        "paidAt": "2025-07-04T22:24:06.191Z",
-        "paymentAmount": 30,
-        "isProxyPayment": true
-      }
-    ],
-    "available": false
-  },
-  {
-    "id": "1751665437464",
-    "location": "12, 12,",
-    "coordinates": [
-      19.076,
-      72.8777
-    ],
-    "hourlyRate": "INR 12",
-    "maxDuration": "24 hours",
-    "securityFeatures": [],
-    "termsAndConditions": "Standard parking terms and conditions apply. Users must follow parking rules and respect the property.",
-    "images": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop",
       "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop"
     ],
-    "rating": 0,
-    "reviews": [],
-    "owner": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "ownerName": "123",
-    "createdAt": "2025-07-04T21:43:57.464Z",
+    "securityFeatures": [
+      "cctv",
+      "security_guard",
+      "fenced",
+      "well_lit"
+    ],
+    "amenities": [
+      "covered",
+      "ev_charging",
+      "car_wash",
+      "accessible",
+      "valet_service"
+    ],
+    "rating": 4.7,
+    "reviewCount": 89,
+    "parkingType": "covered_lot",
+    "available24h": true,
+    "advanceBooking": 24,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "bike"
+    ],
+    "maxDuration": "72 hours",
+    "termsAndConditions": "24/7 security, CCTV monitored, valet service available, EV charging stations, car wash service on request.",
+    "createdAt": "2025-07-04T21:54:49.372Z",
     "bookings": [
+      "booking_1751818979630"
+    ],
+    "lastUpdated": "2025-07-06T16:15:00.000Z",
+    "bookingHistory": [
       {
-        "id": "booking_1751705627513",
-        "spotId": "1751665437464",
-        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-        "userName": "Test User",
-        "startTime": "2025-07-06T10:00:00.000Z",
-        "endTime": "2025-07-06T12:00:00.000Z",
-        "totalPrice": 24,
-        "hours": 2,
-        "createdAt": "2025-07-05T08:53:47.513Z",
-        "status": "paid",
-        "paymentId": "test_1751705627513",
-        "paidAt": "2025-07-05T08:53:47.513Z",
-        "paymentAmount": 24,
-        "paymentMethod": "Test Mode",
-        "isTestBooking": true
+        "bookingId": "booking_1751818979630",
+        "startTime": "2025-07-06T16:22:00.000Z",
+        "endTime": "2025-07-07T16:22:00.000Z",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
       }
     ],
+    "pendingNotifications": [
+      {
+        "type": "booking",
+        "title": "New Booking Received",
+        "message": "Mblue booked your spot at Linking Road, Bandra West, Mumbai",
+        "booking": {
+          "id": "booking_1751818979630",
+          "spotId": "spot_mumbai_bandra_001",
+          "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+          "userName": "Mblue",
+          "userEmail": "123@gmail.com",
+          "startTime": "2025-07-06T16:22:00.000Z",
+          "endTime": "2025-07-07T16:22:00.000Z",
+          "hours": 24,
+          "totalPrice": 1200,
+          "hourlyRate": "₹50",
+          "status": "confirmed",
+          "createdAt": "2025-07-06T16:22:59.630Z",
+          "spotOwner": "user_bandra_host",
+          "spotOwnerName": "Rahul Sharma",
+          "location": "Linking Road, Bandra West, Mumbai",
+          "spotDetails": {
+            "location": "Linking Road, Bandra West, Mumbai",
+            "hourlyRate": "₹50",
+            "coordinates": [
+              19.0596,
+              72.8295
+            ]
+          }
+        },
+        "timestamp": "2025-07-06T16:22:59.631Z"
+      }
+    ]
+  },
+  {
+    "id": "spot_mumbai_andheri_002",
+    "title": "Andheri Station Parking",
+    "location": "Near Andheri Railway Station, Mumbai",
+    "coordinates": [
+      19.1197,
+      72.8464
+    ],
+    "hourlyRate": "₹30",
+    "price": 30,
+    "description": "Convenient parking near Andheri Railway Station. Ideal for commuters and travelers. Quick access to metro and local trains.",
     "available": true,
-    "lastUpdated": "2025-07-05T14:28:49.823Z"
+    "owner": "user_andheri_host",
+    "ownerName": "Priya Patel",
+    "images": [
+      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "fenced",
+      "well_lit"
+    ],
+    "amenities": [
+      "uncovered",
+      "accessible",
+      "bike_parking"
+    ],
+    "rating": 4.2,
+    "reviewCount": 156,
+    "parkingType": "open_lot",
+    "available24h": true,
+    "advanceBooking": 12,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "bike"
+    ],
+    "maxDuration": "48 hours",
+    "termsAndConditions": "Open parking with CCTV surveillance. Perfect for daily commuters. Bike parking available.",
+    "createdAt": "2025-07-04T21:54:49.373Z",
+    "bookings": [
+      "booking_1751819123269"
+    ],
+    "lastUpdated": "2025-07-06T16:15:00.000Z",
+    "bookingHistory": [
+      {
+        "bookingId": "booking_1751819123269",
+        "startTime": "2025-07-06T16:25:00.000Z",
+        "endTime": "2025-07-07T16:25:00.000Z",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+      }
+    ]
+  },
+  {
+    "id": "spot_mumbai_colaba_003",
+    "title": "Colaba Fort Parking",
+    "location": "Near Gateway of India, Colaba, Mumbai",
+    "coordinates": [
+      18.9217,
+      72.8347
+    ],
+    "hourlyRate": "₹80",
+    "price": 80,
+    "description": "Premium parking in historic Colaba area, walking distance to Gateway of India, Taj Mahal Palace, and Marine Drive. Perfect for tourists and business travelers.",
+    "available": false,
+    "owner": "user_colaba_host",
+    "ownerName": "Arun Mehta",
+    "images": [
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "security_guard",
+      "fenced",
+      "well_lit",
+      "patrol"
+    ],
+    "amenities": [
+      "covered",
+      "valet_service",
+      "accessible",
+      "tourist_friendly"
+    ],
+    "rating": 4.9,
+    "reviewCount": 234,
+    "parkingType": "covered_lot",
+    "available24h": true,
+    "advanceBooking": 48,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "luxury_car"
+    ],
+    "maxDuration": "24 hours",
+    "termsAndConditions": "Premium location with valet service. Tourist-friendly with multilingual support. High security area.",
+    "createdAt": "2025-07-04T21:54:49.374Z",
+    "bookings": [
+      {
+        "id": "booking_colaba_001",
+        "spotId": "spot_mumbai_colaba_003",
+        "userId": "tourist_001",
+        "userName": "Tourist Group",
+        "startTime": "2025-07-06T10:00:00.000Z",
+        "endTime": "2025-07-06T18:00:00.000Z",
+        "totalPrice": 640,
+        "hours": 8,
+        "createdAt": "2025-07-06T09:00:00.000Z",
+        "status": "paid"
+      }
+    ],
+    "lastUpdated": "2025-07-06T16:15:00.000Z"
+  },
+  {
+    "id": "spot_mumbai_juhu_004",
+    "title": "Juhu Beach Parking",
+    "location": "Juhu Beach Road, Mumbai",
+    "coordinates": [
+      19.0996,
+      72.8295
+    ],
+    "hourlyRate": "₹40",
+    "price": 40,
+    "description": "Beachfront parking near Juhu Beach. Perfect for beach visits, sunset watching, and nearby restaurants. Family-friendly location.",
+    "available": true,
+    "owner": "user_juhu_host",
+    "ownerName": "Sunita Desai",
+    "images": [
+      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "fenced",
+      "well_lit"
+    ],
+    "amenities": [
+      "uncovered",
+      "beach_access",
+      "family_friendly",
+      "food_nearby"
+    ],
+    "rating": 4.4,
+    "reviewCount": 178,
+    "parkingType": "open_lot",
+    "available24h": false,
+    "availableHours": "6:00 AM - 10:00 PM",
+    "advanceBooking": 6,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "bike"
+    ],
+    "maxDuration": "12 hours",
+    "termsAndConditions": "Beachfront location. Family-friendly. Nearby restaurants and activities. Limited hours.",
+    "createdAt": "2025-07-04T21:54:49.375Z",
+    "bookings": [
+      "booking_1751820458274"
+    ],
+    "lastUpdated": "2025-07-06T16:15:00.000Z",
+    "bookingHistory": [
+      {
+        "bookingId": "booking_1751820458274",
+        "startTime": "2025-07-06T16:47:00.000Z",
+        "endTime": "2025-07-07T16:47:00.000Z",
+        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+      }
+    ]
+  },
+  {
+    "id": "spot_mumbai_powai_005",
+    "title": "Powai Lake Parking",
+    "location": "Powai Lake Road, Near IIT Bombay",
+    "coordinates": [
+      19.1197,
+      72.9089
+    ],
+    "hourlyRate": "₹35",
+    "price": 35,
+    "description": "Peaceful parking near Powai Lake and IIT Bombay campus. Great for nature walks, lake activities, and campus visits.",
+    "available": true,
+    "owner": "user_powai_host",
+    "ownerName": "Rajesh Kumar",
+    "images": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "fenced",
+      "well_lit"
+    ],
+    "amenities": [
+      "uncovered",
+      "lake_view",
+      "nature_trail",
+      "campus_access"
+    ],
+    "rating": 4.6,
+    "reviewCount": 92,
+    "parkingType": "open_lot",
+    "available24h": true,
+    "advanceBooking": 12,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "bike"
+    ],
+    "maxDuration": "24 hours",
+    "termsAndConditions": "Peaceful location near lake. Nature trails available. Campus access nearby.",
+    "createdAt": "2025-07-04T21:54:49.376Z",
+    "bookings": [],
+    "lastUpdated": "2025-07-06T16:15:00.000Z"
+  },
+  {
+    "id": "spot_mumbai_worli_006",
+    "title": "Worli Sea Face Parking",
+    "location": "Worli Sea Face, Mumbai",
+    "coordinates": [
+      19.017,
+      72.8478
+    ],
+    "hourlyRate": "₹60",
+    "price": 60,
+    "description": "Premium parking with sea view at Worli Sea Face. Perfect for evening walks, photography, and enjoying the Mumbai skyline.",
+    "available": true,
+    "owner": "user_worli_host",
+    "ownerName": "Meera Iyer",
+    "images": [
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "security_guard",
+      "fenced",
+      "well_lit"
+    ],
+    "amenities": [
+      "uncovered",
+      "sea_view",
+      "walking_promenade",
+      "photography_friendly"
+    ],
+    "rating": 4.8,
+    "reviewCount": 145,
+    "parkingType": "open_lot",
+    "available24h": true,
+    "advanceBooking": 24,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "bike"
+    ],
+    "maxDuration": "48 hours",
+    "termsAndConditions": "Premium sea view location. Walking promenade access. Photography-friendly area.",
+    "createdAt": "2025-07-04T21:54:49.377Z",
+    "bookings": [],
+    "lastUpdated": "2025-07-06T16:15:00.000Z"
+  },
+  {
+    "id": "spot_mumbai_bandra_kurla_007",
+    "title": "BKC Corporate Parking",
+    "location": "Bandra Kurla Complex, Mumbai",
+    "coordinates": [
+      19.0596,
+      72.8656
+    ],
+    "hourlyRate": "₹70",
+    "price": 70,
+    "description": "Corporate parking in Bandra Kurla Complex business district. Ideal for business meetings, conferences, and corporate events.",
+    "available": false,
+    "owner": "user_bkc_host",
+    "ownerName": "Vikram Singh",
+    "images": [
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "security_guard",
+      "fenced",
+      "well_lit",
+      "access_control"
+    ],
+    "amenities": [
+      "covered",
+      "ev_charging",
+      "business_center",
+      "conference_rooms"
+    ],
+    "rating": 4.5,
+    "reviewCount": 203,
+    "parkingType": "covered_lot",
+    "available24h": true,
+    "advanceBooking": 72,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "luxury_car"
+    ],
+    "maxDuration": "168 hours",
+    "termsAndConditions": "Corporate location with business facilities. EV charging available. Conference room access.",
+    "createdAt": "2025-07-04T21:54:49.378Z",
+    "bookings": [
+      {
+        "id": "booking_bkc_001",
+        "spotId": "spot_mumbai_bandra_kurla_007",
+        "userId": "corporate_001",
+        "userName": "Tech Corp",
+        "startTime": "2025-07-06T09:00:00.000Z",
+        "endTime": "2025-07-06T18:00:00.000Z",
+        "totalPrice": 630,
+        "hours": 9,
+        "createdAt": "2025-07-06T08:00:00.000Z",
+        "status": "paid"
+      }
+    ],
+    "lastUpdated": "2025-07-06T16:15:00.000Z"
+  },
+  {
+    "id": "spot_mumbai_santacruz_008",
+    "title": "Santacruz Station Parking",
+    "location": "Near Santacruz Railway Station, Mumbai",
+    "coordinates": [
+      19.0759,
+      72.8777
+    ],
+    "hourlyRate": "₹25",
+    "price": 25,
+    "description": "Affordable parking near Santacruz Railway Station. Perfect for daily commuters and travelers. Quick access to local trains.",
+    "available": true,
+    "owner": "user_santacruz_host",
+    "ownerName": "Lakshmi Devi",
+    "images": [
+      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop",
+      "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop"
+    ],
+    "securityFeatures": [
+      "cctv",
+      "fenced",
+      "well_lit"
+    ],
+    "amenities": [
+      "uncovered",
+      "accessible",
+      "commuter_friendly"
+    ],
+    "rating": 4.1,
+    "reviewCount": 267,
+    "parkingType": "open_lot",
+    "available24h": true,
+    "advanceBooking": 6,
+    "vehicleTypes": [
+      "car",
+      "suv",
+      "bike"
+    ],
+    "maxDuration": "24 hours",
+    "termsAndConditions": "Affordable commuter parking. Quick station access. Daily rates available.",
+    "createdAt": "2025-07-04T21:54:49.379Z",
+    "bookings": [],
+    "lastUpdated": "2025-07-06T16:15:00.000Z"
   },
   {
     "id": "spot_downtown_001",
@@ -87,7 +465,7 @@
     "hourlyRate": "$15",
     "price": 15,
     "description": "Premium parking in the heart of downtown with 24/7 security",
-    "available": false,
+    "available": true,
     "owner": "user_john_123",
     "ownerName": "John Doe",
     "images": [
@@ -112,26 +490,7 @@
       "car",
       "suv"
     ],
-    "createdAt": "2025-07-04T21:54:49.372Z",
-    "bookings": [
-      {
-        "id": "booking_1751705677885",
-        "spotId": "spot_downtown_001",
-        "userId": "any-user-id",
-        "userName": "Any User",
-        "startTime": "2025-07-06T14:00:00.000Z",
-        "endTime": "2025-07-06T16:00:00.000Z",
-        "totalPrice": 30,
-        "hours": 2,
-        "createdAt": "2025-07-05T08:54:37.885Z",
-        "status": "paid",
-        "paymentId": "test_1751705677885",
-        "paidAt": "2025-07-05T08:54:37.885Z",
-        "paymentAmount": 30,
-        "paymentMethod": "Test Mode",
-        "isTestBooking": true
-      }
-    ]
+    "createdAt": "2025-07-06T16:18:18.181Z"
   },
   {
     "id": "spot_airport_002",
@@ -144,7 +503,7 @@
     "hourlyRate": "$20",
     "price": 20,
     "description": "Convenient parking near airport with shuttle service",
-    "available": false,
+    "available": true,
     "owner": "user_jane_456",
     "ownerName": "Jane Smith",
     "images": [
@@ -170,104 +529,7 @@
       "suv",
       "truck"
     ],
-    "createdAt": "2025-07-04T21:54:49.373Z",
-    "bookings": [
-      "booking_1751710463129",
-      {
-        "id": "booking_1751735049809",
-        "spotId": "spot_airport_002",
-        "userId": "test-user-123",
-        "userName": "Test User",
-        "startTime": "2025-07-06T17:04:09.781Z",
-        "endTime": "2025-07-06T19:04:09.782Z",
-        "totalPrice": 40,
-        "hours": 2,
-        "createdAt": "2025-07-05T17:04:09.809Z",
-        "status": "paid",
-        "paymentId": "test_1751735049809",
-        "paidAt": "2025-07-05T17:04:09.809Z",
-        "paymentAmount": 40,
-        "isTestBooking": true
-      }
-    ],
-    "bookingHistory": [
-      {
-        "bookingId": "booking_1751710463129",
-        "startTime": "2024-01-01T10:00:00.000Z",
-        "endTime": "2024-01-01T12:00:00.000Z",
-        "userId": "test123"
-      },
-      {
-        "bookingId": "booking_1751710787212",
-        "startTime": "2025-07-05T10:19:47.205Z",
-        "endTime": "2025-07-05T11:19:47.205Z",
-        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
-      }
-    ],
-    "pendingNotifications": [
-      {
-        "type": "booking",
-        "title": "New Booking Received",
-        "message": "Test User booked your spot at 456 Airport Road, Near Terminal 1",
-        "booking": {
-          "id": "booking_1751710463129",
-          "spotId": "spot_airport_002",
-          "userId": "test123",
-          "userName": "Test User",
-          "userEmail": "test@example.com",
-          "startTime": "2024-01-01T10:00:00.000Z",
-          "endTime": "2024-01-01T12:00:00.000Z",
-          "hours": 2,
-          "totalPrice": 40,
-          "hourlyRate": "$20",
-          "status": "confirmed",
-          "createdAt": "2025-07-05T10:14:23.129Z",
-          "spotOwner": "user_jane_456",
-          "spotOwnerName": "Jane Smith",
-          "location": "456 Airport Road, Near Terminal 1",
-          "spotDetails": {
-            "location": "456 Airport Road, Near Terminal 1",
-            "hourlyRate": "$20",
-            "coordinates": [
-              19.0896,
-              72.8656
-            ]
-          }
-        },
-        "timestamp": "2025-07-05T10:14:23.129Z"
-      },
-      {
-        "type": "booking",
-        "title": "New Booking Received",
-        "message": "123 booked your spot at 456 Airport Road, Near Terminal 1",
-        "booking": {
-          "id": "booking_1751710787212",
-          "spotId": "spot_airport_002",
-          "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-          "userName": "123",
-          "userEmail": "123@gmail.com",
-          "startTime": "2025-07-05T10:19:47.205Z",
-          "endTime": "2025-07-05T11:19:47.205Z",
-          "hours": 1,
-          "totalPrice": 20,
-          "hourlyRate": "$20",
-          "status": "confirmed",
-          "createdAt": "2025-07-05T10:19:47.212Z",
-          "spotOwner": "user_jane_456",
-          "spotOwnerName": "Jane Smith",
-          "location": "456 Airport Road, Near Terminal 1",
-          "spotDetails": {
-            "location": "456 Airport Road, Near Terminal 1",
-            "hourlyRate": "$20",
-            "coordinates": [
-              19.0896,
-              72.8656
-            ]
-          }
-        },
-        "timestamp": "2025-07-05T10:19:47.214Z"
-      }
-    ]
+    "createdAt": "2025-07-06T16:18:18.181Z"
   },
   {
     "id": "spot_mall_003",
@@ -302,18 +564,7 @@
     "vehicleTypes": [
       "car"
     ],
-    "createdAt": "2025-07-04T21:54:49.373Z",
-    "bookings": [
-      "booking_1751710873443"
-    ],
-    "bookingHistory": [
-      {
-        "bookingId": "booking_1751710873443",
-        "startTime": "2025-07-05T10:21:13.437Z",
-        "endTime": "2025-07-05T11:21:13.437Z",
-        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
-      }
-    ]
+    "createdAt": "2025-07-06T16:18:18.181Z"
   },
   {
     "id": "spot_residential_004",
@@ -347,96 +598,6 @@
     "vehicleTypes": [
       "car"
     ],
-    "createdAt": "2025-07-04T21:54:49.373Z",
-    "bookings": [
-      "booking_1751710811688"
-    ],
-    "bookingHistory": [
-      {
-        "bookingId": "booking_1751710811688",
-        "startTime": "2025-07-05T10:20:00.000Z",
-        "endTime": "2025-07-06T10:20:00.000Z",
-        "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
-      }
-    ],
-    "pendingNotifications": [
-      {
-        "type": "booking",
-        "title": "New Booking Received",
-        "message": "123 booked your spot at 321 Oak Street, Residential Area",
-        "booking": {
-          "id": "booking_1751710811688",
-          "spotId": "spot_residential_004",
-          "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-          "userName": "123",
-          "userEmail": "123@gmail.com",
-          "startTime": "2025-07-05T10:20:00.000Z",
-          "endTime": "2025-07-06T10:20:00.000Z",
-          "hours": 24,
-          "totalPrice": 192,
-          "hourlyRate": "$8",
-          "status": "confirmed",
-          "createdAt": "2025-07-05T10:20:11.688Z",
-          "spotOwner": "user_sarah_101",
-          "spotOwnerName": "Sarah Jones",
-          "location": "321 Oak Street, Residential Area",
-          "spotDetails": {
-            "location": "321 Oak Street, Residential Area",
-            "hourlyRate": "$8",
-            "coordinates": [
-              19.0736,
-              72.8816
-            ]
-          }
-        },
-        "timestamp": "2025-07-05T10:20:11.689Z"
-      }
-    ]
-  },
-  {
-    "id": "1751708238335",
-    "location": "213, 123, 213 123",
-    "coordinates": [
-      19.055130521308893,
-      72.88222789764406
-    ],
-    "hourlyRate": "INR 123",
-    "maxDuration": "24 hours",
-    "securityFeatures": [
-      "cctv"
-    ],
-    "termsAndConditions": "Standard parking terms and conditions apply. Users must follow parking rules and respect the property.",
-    "images": [
-      {}
-    ],
-    "rating": 0,
-    "reviews": [],
-    "owner": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "ownerName": "123",
-    "createdAt": "2025-07-05T09:37:18.335Z",
-    "bookings": [],
-    "available": true
-  },
-  {
-    "id": "1751725467397",
-    "location": "123, 123, 123 123",
-    "coordinates": [
-      19.076,
-      72.8777
-    ],
-    "hourlyRate": "INR 123133",
-    "maxDuration": "1323",
-    "securityFeatures": [
-      "patrol"
-    ],
-    "termsAndConditions": "Standard parking terms and conditions apply. Users must follow parking rules and respect the property.",
-    "images": [],
-    "rating": 0,
-    "reviews": [],
-    "owner": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "ownerName": "123",
-    "createdAt": "2025-07-05T14:24:27.397Z",
-    "bookings": [],
-    "available": true
+    "createdAt": "2025-07-06T16:18:18.181Z"
   }
 ]

@@ -1,15 +1,120 @@
 [
   {
-    "username": "test",
-    "email": "test@test.com",
+    "username": "rahul_sharma",
+    "email": "rahul.sharma@email.com",
     "password": "",
-    "uid": "test123"
+    "uid": "user_bandra_host",
+    "fullName": "Rahul Sharma",
+    "phone": "+91 98765 43210",
+    "location": "Bandra West, Mumbai",
+    "verified": true,
+    "hostSince": "2023-01-15",
+    "totalSpots": 1,
+    "rating": 4.7
   },
   {
-    "username": "123",
-    "email": "123@gmail.com",
+    "username": "priya_patel",
+    "email": "priya.patel@email.com",
     "password": "",
-    "uid": "oefQiaqHBQUkJxJIo2yhn3m6k9j1"
+    "uid": "user_andheri_host",
+    "fullName": "Priya Patel",
+    "phone": "+91 98765 43211",
+    "location": "Andheri, Mumbai",
+    "verified": true,
+    "hostSince": "2023-03-20",
+    "totalSpots": 1,
+    "rating": 4.2
+  },
+  {
+    "username": "arun_mehta",
+    "email": "arun.mehta@email.com",
+    "password": "",
+    "uid": "user_colaba_host",
+    "fullName": "Arun Mehta",
+    "phone": "+91 98765 43212",
+    "location": "Colaba, Mumbai",
+    "verified": true,
+    "hostSince": "2022-11-10",
+    "totalSpots": 1,
+    "rating": 4.9
+  },
+  {
+    "username": "sunita_desai",
+    "email": "sunita.desai@email.com",
+    "password": "",
+    "uid": "user_juhu_host",
+    "fullName": "Sunita Desai",
+    "phone": "+91 98765 43213",
+    "location": "Juhu, Mumbai",
+    "verified": true,
+    "hostSince": "2023-06-05",
+    "totalSpots": 1,
+    "rating": 4.4
+  },
+  {
+    "username": "rajesh_kumar",
+    "email": "rajesh.kumar@email.com",
+    "password": "",
+    "uid": "user_powai_host",
+    "fullName": "Rajesh Kumar",
+    "phone": "+91 98765 43214",
+    "location": "Powai, Mumbai",
+    "verified": true,
+    "hostSince": "2023-02-18",
+    "totalSpots": 1,
+    "rating": 4.6
+  },
+  {
+    "username": "meera_iyer",
+    "email": "meera.iyer@email.com",
+    "password": "",
+    "uid": "user_worli_host",
+    "fullName": "Meera Iyer",
+    "phone": "+91 98765 43215",
+    "location": "Worli, Mumbai",
+    "verified": true,
+    "hostSince": "2023-04-12",
+    "totalSpots": 1,
+    "rating": 4.8
+  },
+  {
+    "username": "vikram_singh",
+    "email": "vikram.singh@email.com",
+    "password": "",
+    "uid": "user_bkc_host",
+    "fullName": "Vikram Singh",
+    "phone": "+91 98765 43216",
+    "location": "Bandra Kurla Complex, Mumbai",
+    "verified": true,
+    "hostSince": "2022-08-30",
+    "totalSpots": 1,
+    "rating": 4.5
+  },
+  {
+    "username": "lakshmi_devi",
+    "email": "lakshmi.devi@email.com",
+    "password": "",
+    "uid": "user_santacruz_host",
+    "fullName": "Lakshmi Devi",
+    "phone": "+91 98765 43217",
+    "location": "Santacruz, Mumbai",
+    "verified": true,
+    "hostSince": "2023-05-22",
+    "totalSpots": 1,
+    "rating": 4.1
+  },
+  {
+    "username": "testuser",
+    "email": "test@example.com",
+    "password": "password123",
+    "uid": "test-user-123",
+    "fullName": "Test User",
+    "phone": "+91 98765 43218",
+    "location": "Mumbai",
+    "verified": false,
+    "hostSince": "2024-01-01",
+    "totalSpots": 0,
+    "rating": 0
   },
   {
     "username": "john_doe",
@@ -30,11 +135,5 @@
     "username": "sarah_jones",
     "email": "sarah@example.com",
     "uid": "user_sarah_101"
-  },
-  {
-    "username": "testuser",
-    "email": "test@example.com",
-    "password": "password123",
-    "uid": "test-user-123"
   }
 ]
