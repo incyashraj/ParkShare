@@ -119,7 +119,8 @@
   {
     "username": "john_doe",
     "email": "john@example.com",
-    "uid": "user_john_123"
+    "uid": "user_john_123",
+    "blockedAt": {}
   },
   {
     "username": "jane_smith",
@@ -153,6 +154,7 @@
     "username": "Yashraj Pardeshi",
     "email": "incyashraj@gmail.com",
     "password": "",
-    "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2"
+    "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "blockedUsers": []
   }
 ]

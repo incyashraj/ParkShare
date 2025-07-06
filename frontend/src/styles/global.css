@@ -793,7 +793,7 @@ a:focus {
   }
 }
 
-/* ===== Airbnb Custom Scrollbar ===== */
+/* ===== Airbnb Smart Scrollbar ===== */
 
 ::-webkit-scrollbar {
   width: 8px;
@@ -801,16 +801,31 @@ a:focus {
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--background-secondary);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--airbnb-gray-dark);
+  background: rgba(0, 0, 0, 0.1);
   border-radius: var(--airbnb-radius-full);
+  opacity: 0;
+  transition: all 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--airbnb-black-soft);
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 1;
+}
+
+/* Show scrollbar when scrolling */
+.scrolling::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.4);
+  opacity: 1;
+}
+
+/* Show scrollbar on hover for better UX */
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  opacity: 1;
 }
 
 /* ===== Airbnb Selection Styles ===== */

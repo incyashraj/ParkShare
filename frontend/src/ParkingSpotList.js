@@ -35,6 +35,7 @@ import {
   DialogActions,
   Card,
   CardContent,
+  CardMedia,
   List,
   ListItem,
   ListItemIcon,
@@ -74,6 +75,7 @@ import {
   Bookmark as BookmarkIcon,
   BookmarkBorder as BookmarkBorderIcon,
   Info as InfoIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material';
 import { auth } from './firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -101,7 +103,7 @@ const ParkingSpotList = () => {
   const [priceRange, setPriceRange] = useState([0, 200]); // Will be updated based on maxPrice
   const [ratingFilter, setRatingFilter] = useState(0);
   const [distanceFilter, setDistanceFilter] = useState(10);
-  const [availabilityFilter, setAvailabilityFilter] = useState('all');
+  const [availabilityFilter, setAvailabilityFilter] = useState('available');
   const [sortBy, setSortBy] = useState('distance');
   const [viewMode, setViewMode] = useState('grid');
   const [showFilters, setShowFilters] = useState(false);
@@ -110,6 +112,7 @@ const ParkingSpotList = () => {
   const [favorites, setFavorites] = useState([]);
   const [savedSearches, setSavedSearches] = useState([]);
   const [showSavedSearches, setShowSavedSearches] = useState(false);
+  const [showFavorites, setShowFavorites] = useState(false);
 
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [vehicleType, setVehicleType] = useState('all');
@@ -314,37 +317,151 @@ const ParkingSpotList = () => {
     };
   }, [spots, joinSpotRoom, leaveSpotRoom]);
 
-  // Apply filters and sorting
+  // Apply sorting (without availability sorting since that's handled separately)
   const sortSpots = useCallback((spotsToSort) => {
-    // Always sort by availability first (available spots first)
-    const sortedByAvailability = [...spotsToSort].sort((a, b) => {
-      if (a.available && !b.available) return -1;
-      if (!a.available && b.available) return 1;
-      return 0;
-    });
+    console.log('Sorting spots by:', sortBy, 'Total spots:', spotsToSort.length);
     
-    // Then apply the selected sort criteria
+    // Apply the selected sort criteria
     switch (sortBy) {
       case 'price':
-        return sortedByAvailability.sort((a, b) => {
+        return [...spotsToSort].sort((a, b) => {
           const priceA = parseFloat(a.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
           const priceB = parseFloat(b.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
           return priceA - priceB;
         });
       case 'rating':
-        return sortedByAvailability.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        return [...spotsToSort].sort((a, b) => (b.rating || 0) - (a.rating || 0));
       case 'availability':
-        // Already sorted by availability above
-        return sortedByAvailability;
+        // Sort by availability (available first, then occupied)
+        return [...spotsToSort].sort((a, b) => {
+          const aAvailable = Boolean(a.available) || 
+                            Boolean(a.available24h) || 
+                            a.status === 'available' ||
+                            a.status === 'Available' ||
+                            (a.available !== false && a.available24h !== false);
+          const bAvailable = Boolean(b.available) || 
+                            Boolean(b.available24h) || 
+                            b.status === 'available' ||
+                            b.status === 'Available' ||
+                            (b.available !== false && b.available24h !== false);
+          
+          if (!aAvailable && bAvailable) return 1;  // a goes to bottom
+          if (aAvailable && !bAvailable) return -1; // a goes to top
+          return 0; // same availability, maintain order
+        });
       case 'popularity':
-        return sortedByAvailability.sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+        return [...spotsToSort].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
       case 'distance':
       default:
-        return sortedByAvailability.sort((a, b) => (a.distance || 0) - (b.distance || 0));
+        return [...spotsToSort].sort((a, b) => (a.distance || 0) - (b.distance || 0));
     }
   }, [sortBy]);
 
-  const filteredAndSortedSpots = useCallback(() => {
+
+
+  const handleLocationClick = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+          setSnackbarMessage('Location updated successfully!');
+          setSnackbarSeverity('success');
+          setOpenSnackbar(true);
+        },
+        (error) => {
+          setSnackbarMessage('Could not get your location');
+          setSnackbarSeverity('error');
+          setOpenSnackbar(true);
+        }
+      );
+    }
+  };
+
+  const handleToggleFavorite = (spotId) => {
+    const spot = spots.find(s => s.id === spotId);
+    if (!spot) return;
+
+    setFavorites(prev => {
+      const isFavorite = prev.some(fav => fav.id === spotId);
+      
+      if (isFavorite) {
+        // Remove from favorites
+        const updated = prev.filter(fav => fav.id !== spotId);
+        localStorage.setItem('favorites', JSON.stringify(updated));
+        setSnackbarMessage('Removed from favorites!');
+        setSnackbarSeverity('info');
+        setOpenSnackbar(true);
+        return updated;
+      } else {
+        // Add to favorites
+        const favoriteSpot = {
+          id: spot.id,
+          title: spot.title || spot.location,
+          location: spot.location,
+          hourlyRate: spot.hourlyRate,
+          rating: spot.rating || 0,
+          reviewCount: spot.reviewCount || 0,
+          images: spot.images || [],
+          available: spot.available,
+          available24h: spot.available24h,
+          distance: spot.distance,
+          favoritedAt: new Date().toISOString()
+        };
+        
+        const updated = [...prev, favoriteSpot];
+        localStorage.setItem('favorites', JSON.stringify(updated));
+        setSnackbarMessage('Added to favorites!');
+        setSnackbarSeverity('success');
+        setOpenSnackbar(true);
+        return updated;
+      }
+    });
+  };
+
+  const handleSortChange = (newSortBy) => {
+    setSortBy(newSortBy);
+  };
+
+  const handleFilterClick = () => {
+    setShowFilters(!showFilters);
+  };
+
+  const getCurrentSpots = () => {
+    const { availableSpots, occupiedSpots } = getOrganizedSpots();
+    
+    // If availability filter is set to 'available', only show available spots
+    if (availabilityFilter === 'available') {
+      // Sort available spots according to the selected sort criteria
+      const sortedAvailableSpots = sortSpots(availableSpots);
+      const startIndex = (currentPage - 1) * spotsPerPage;
+      const endIndex = startIndex + spotsPerPage;
+      return sortedAvailableSpots.slice(startIndex, endIndex);
+    }
+    
+    // Otherwise, show all spots with available ones first
+    const allSpots = [...availableSpots, ...occupiedSpots];
+    // Sort all spots according to the selected sort criteria
+    const sortedAllSpots = sortSpots(allSpots);
+    const startIndex = (currentPage - 1) * spotsPerPage;
+    const endIndex = startIndex + spotsPerPage;
+    return sortedAllSpots.slice(startIndex, endIndex);
+  };
+
+  const getTotalSpotsCount = () => {
+    const { availableSpots, occupiedSpots } = getOrganizedSpots();
+    
+    // If availability filter is set to 'available', only count available spots
+    if (availabilityFilter === 'available') {
+      return availableSpots.length;
+    }
+    
+    // Otherwise, count all spots
+    return availableSpots.length + occupiedSpots.length;
+  };
+
+  // Get filtered spots without availability filtering
+  const getFilteredSpotsWithoutAvailability = useCallback(() => {
     let filtered = [...spots];
 
     // Apply search filter
@@ -364,11 +481,6 @@ const ParkingSpotList = () => {
     // Apply rating filter
     if (ratingFilter > 0) {
       filtered = filtered.filter(spot => (spot.rating || 0) >= ratingFilter);
-    }
-
-    // Apply availability filter
-    if (availabilityFilter === 'available') {
-      filtered = filtered.filter(spot => spot.available);
     }
 
     // Apply amenities filter
@@ -397,61 +509,85 @@ const ParkingSpotList = () => {
 
     // Apply instant booking filter
     if (instantBooking) {
-      filtered = filtered.filter(spot => spot.available24h === true);
+      filtered = filtered.filter(spot => {
+        // Use the same logic as getOrganizedSpots
+        return Boolean(spot.available) || 
+               Boolean(spot.available24h) || 
+               spot.status === 'available' ||
+               spot.status === 'Available' ||
+               (spot.available !== false && spot.available24h !== false);
+      });
     }
 
-    // Sort spots
-    const sorted = sortSpots(filtered);
-    return sorted;
-  }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking, sortSpots]);
+    return filtered;
+  }, [spots, searchTerm, priceRange, ratingFilter, selectedAmenities, vehicleType, parkingType, instantBooking]);
 
-  const handleLocationClick = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          setUserLocation([latitude, longitude]);
-          setSnackbarMessage('Location updated successfully!');
-          setSnackbarSeverity('success');
-          setOpenSnackbar(true);
-        },
-        (error) => {
-          setSnackbarMessage('Could not get your location');
-          setSnackbarSeverity('error');
-          setOpenSnackbar(true);
-        }
-      );
-    }
-  };
-
-  const handleToggleFavorite = (spotId) => {
-    setFavorites(prev => 
-      prev.includes(spotId) 
-        ? prev.filter(id => id !== spotId)
-        : [...prev, spotId]
-    );
-  };
-
-  const handleSortChange = (newSortBy) => {
-    setSortBy(newSortBy);
-  };
-
-  const handleFilterClick = () => {
-    setShowFilters(!showFilters);
-  };
-
-  const getCurrentSpots = () => {
-    const startIndex = (currentPage - 1) * spotsPerPage;
-    const endIndex = startIndex + spotsPerPage;
-    return filteredAndSortedSpots().slice(startIndex, endIndex);
+  // Separate available and occupied spots for better organization
+  const getOrganizedSpots = () => {
+    const allSpots = getFilteredSpotsWithoutAvailability();
+    
+    // Helper function to check if a spot is available
+    const isSpotAvailable = (spot) => {
+      // Check multiple availability indicators
+      return Boolean(spot.available) || 
+             Boolean(spot.available24h) || 
+             spot.status === 'available' ||
+             spot.status === 'Available' ||
+             (spot.available !== false && spot.available24h !== false);
+    };
+    
+    const availableSpots = allSpots.filter(spot => isSpotAvailable(spot));
+    const occupiedSpots = allSpots.filter(spot => !isSpotAvailable(spot));
+    
+    console.log('Organized spots:', {
+      total: allSpots.length,
+      available: availableSpots.length,
+      occupied: occupiedSpots.length,
+      availabilityFilter,
+      availableSpots: availableSpots.map(s => ({ id: s.id, title: s.title, available: s.available, available24h: s.available24h, status: s.status })),
+      occupiedSpots: occupiedSpots.map(s => ({ id: s.id, title: s.title, available: s.available, available24h: s.available24h, status: s.status }))
+    });
+    
+    return { availableSpots, occupiedSpots };
   };
 
   const handleFavorite = (spotId, isFavorite) => {
-    if (isFavorite) {
-      setFavorites(prev => [...prev, spotId]);
-    } else {
-      setFavorites(prev => prev.filter(id => id !== spotId));
-    }
+    const spot = spots.find(s => s.id === spotId);
+    if (!spot) return;
+
+    setFavorites(prev => {
+      if (isFavorite) {
+        // Add to favorites
+        const favoriteSpot = {
+          id: spot.id,
+          title: spot.title || spot.location,
+          location: spot.location,
+          hourlyRate: spot.hourlyRate,
+          rating: spot.rating || 0,
+          reviewCount: spot.reviewCount || 0,
+          images: spot.images || [],
+          available: spot.available,
+          available24h: spot.available24h,
+          distance: spot.distance,
+          favoritedAt: new Date().toISOString()
+        };
+        
+        // Check if already in favorites
+        const exists = prev.some(fav => fav.id === spotId);
+        if (exists) {
+          return prev;
+        }
+        
+        const updated = [...prev, favoriteSpot];
+        localStorage.setItem('favorites', JSON.stringify(updated));
+        return updated;
+      } else {
+        // Remove from favorites
+        const updated = prev.filter(fav => fav.id !== spotId);
+        localStorage.setItem('favorites', JSON.stringify(updated));
+        return updated;
+      }
+    });
   };
 
   const clearFilters = () => {
@@ -459,7 +595,7 @@ const ParkingSpotList = () => {
     setPriceRange([0, maxPrice]); // Use dynamic maximum price
     setRatingFilter(0);
     setDistanceFilter(10);
-    setAvailabilityFilter('all');
+    setAvailabilityFilter('available');
     setSortBy('distance');
     setSelectedAmenities([]);
     setVehicleType('all');
@@ -483,10 +619,36 @@ const ParkingSpotList = () => {
       instantBooking,
       timestamp: new Date().toISOString()
     };
-    setSavedSearches(prev => [...prev, searchConfig]);
-    setSnackbarMessage('Search saved successfully!');
-    setSnackbarSeverity('success');
-    setOpenSnackbar(true);
+    
+    setSavedSearches(prev => {
+      // Check if this exact search already exists
+      const exists = prev.find(search => 
+        search.searchTerm === searchTerm &&
+        JSON.stringify(search.priceRange) === JSON.stringify(priceRange) &&
+        search.ratingFilter === ratingFilter &&
+        search.distanceFilter === distanceFilter &&
+        search.availabilityFilter === availabilityFilter &&
+        JSON.stringify(search.selectedAmenities) === JSON.stringify(selectedAmenities) &&
+        search.vehicleType === vehicleType &&
+        search.parkingType === parkingType &&
+        search.instantBooking === instantBooking
+      );
+      
+      if (exists) {
+        setSnackbarMessage('This search is already saved!');
+        setSnackbarSeverity('info');
+        setOpenSnackbar(true);
+        return prev;
+      }
+      
+      const updated = [...prev, searchConfig];
+      // Save to localStorage
+      localStorage.setItem('savedSearches', JSON.stringify(updated));
+      setSnackbarMessage('Search saved successfully!');
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+      return updated;
+    });
   };
 
   const loadSearch = (savedSearch) => {
@@ -503,6 +665,17 @@ const ParkingSpotList = () => {
     setCurrentPage(1);
   };
 
+  const removeSavedSearch = (searchId) => {
+    setSavedSearches(prev => {
+      const updated = prev.filter(search => search.id !== searchId);
+      localStorage.setItem('savedSearches', JSON.stringify(updated));
+      setSnackbarMessage('Search removed successfully!');
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+      return updated;
+    });
+  };
+
   const handleAmenityToggle = (amenityId) => {
     setSelectedAmenities(prev =>
       prev.includes(amenityId)
@@ -510,6 +683,60 @@ const ParkingSpotList = () => {
         : [...prev, amenityId]
     );
   };
+
+  // Remove favorite
+  const handleRemoveFavorite = (spotId) => {
+    setFavorites(prev => {
+      const updated = prev.filter(fav => fav.id !== spotId);
+      localStorage.setItem('favorites', JSON.stringify(updated));
+      setSnackbarMessage('Removed from favorites!');
+      setSnackbarSeverity('success');
+      setOpenSnackbar(true);
+      return updated;
+    });
+  };
+
+  // Load favorites from localStorage on component mount
+  useEffect(() => {
+    const saved = localStorage.getItem('favorites');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Remove duplicates by ID
+        const uniqueFavorites = parsed.filter((favorite, index, self) => 
+          index === self.findIndex(f => f.id === favorite.id)
+        );
+        setFavorites(uniqueFavorites);
+        // Update localStorage with deduplicated data
+        if (uniqueFavorites.length !== parsed.length) {
+          localStorage.setItem('favorites', JSON.stringify(uniqueFavorites));
+        }
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      }
+    }
+  }, []);
+
+  // Load saved searches from localStorage on component mount
+  useEffect(() => {
+    const saved = localStorage.getItem('savedSearches');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Remove duplicates by ID
+        const uniqueSearches = parsed.filter((search, index, self) => 
+          index === self.findIndex(s => s.id === search.id)
+        );
+        setSavedSearches(uniqueSearches);
+        // Update localStorage with deduplicated data
+        if (uniqueSearches.length !== parsed.length) {
+          localStorage.setItem('savedSearches', JSON.stringify(uniqueSearches));
+        }
+      } catch (error) {
+        console.error('Error loading saved searches:', error);
+      }
+    }
+  }, []);
 
   if (loading) {
     return (
@@ -555,6 +782,14 @@ const ParkingSpotList = () => {
               onClick={() => setShowSavedSearches(true)}
             >
               Saved Searches
+            </Button>
+            <Button
+              variant="outlined"
+              startIcon={<FavoriteIcon />}
+              onClick={() => setShowFavorites(true)}
+              sx={{ minWidth: 'auto' }}
+            >
+              Favorites ({favorites.length})
             </Button>
             <Button
               variant="contained"
@@ -613,7 +848,7 @@ const ParkingSpotList = () => {
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               <Typography variant="body2" color="text.secondary">
-                {filteredAndSortedSpots().length} spots found
+                {getTotalSpotsCount()} spots found
               </Typography>
               <FormControlLabel
                 control={
@@ -856,7 +1091,7 @@ const ParkingSpotList = () => {
                     center={userLocation}
                     zoom={13}
                     height="600px"
-                    markers={filteredAndSortedSpots().map(spot => ({
+                    markers={getFilteredSpotsWithoutAvailability().map(spot => ({
                       position: spot.coordinates,
                       popup: (
                         <Box sx={{ p: 1 }}>
@@ -886,7 +1121,7 @@ const ParkingSpotList = () => {
                       )
                     }))}
                     onMarkerClick={(marker) => {
-                      const spot = filteredAndSortedSpots().find(s => 
+                      const spot = getFilteredSpotsWithoutAvailability().find(s => 
                         s.coordinates[0] === marker.position[0] && 
                         s.coordinates[1] === marker.position[1]
                       );
@@ -916,7 +1151,7 @@ const ParkingSpotList = () => {
                     </CardContent>
                   </Card>
                 ))
-              ) : filteredAndSortedSpots().length === 0 ? (
+              ) : getTotalSpotsCount() === 0 ? (
                 <Box sx={{ textAlign: 'center', p: 6 }}>
                   <InfoIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
                   <Typography variant="h5" color="text.secondary" gutterBottom>
@@ -980,9 +1215,9 @@ const ParkingSpotList = () => {
                               e.stopPropagation();
                               handleToggleFavorite(spot.id);
                             }}
-                            color={favorites.includes(spot.id) ? 'primary' : 'default'}
+                            color={favorites.some(fav => fav.id === spot.id) ? 'primary' : 'default'}
                           >
-                            {favorites.includes(spot.id) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                            {favorites.some(fav => fav.id === spot.id) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
                           </IconButton>
                           <Button
                             variant="contained"
@@ -1006,7 +1241,6 @@ const ParkingSpotList = () => {
               )}
             </Box>
           ) : (
-            // Grid View
             <Grid container spacing={3}>
               {loading ? (
                 Array.from({ length: 6 }).map((_, index) => (
@@ -1021,7 +1255,7 @@ const ParkingSpotList = () => {
                     </Card>
                   </Grid>
                 ))
-              ) : filteredAndSortedSpots().length === 0 ? (
+              ) : getTotalSpotsCount() === 0 ? (
                 <Grid item xs={12}>
                   <Box sx={{ textAlign: 'center', p: 6 }}>
                     <InfoIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
@@ -1047,7 +1281,7 @@ const ParkingSpotList = () => {
                       spot={spot}
                       onFavorite={handleFavorite}
                       user={user}
-                      isFavorite={favorites.includes(spot.id)}
+                      isFavorite={favorites.some(fav => fav.id === spot.id)}
                       onToggleFavorite={() => handleToggleFavorite(spot.id)}
                       onBook={async (bookingData) => {
                         // Handle booking success
@@ -1065,10 +1299,10 @@ const ParkingSpotList = () => {
       </Grid>
 
       {/* Pagination */}
-      {filteredAndSortedSpots().length > spotsPerPage && (
+      {getTotalSpotsCount() > spotsPerPage && (
         <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
           <Pagination
-            count={Math.ceil(filteredAndSortedSpots().length / spotsPerPage)}
+            count={Math.ceil(getTotalSpotsCount() / spotsPerPage)}
             page={currentPage}
             onChange={(e, page) => setCurrentPage(page)}
             color="primary"
@@ -1111,20 +1345,133 @@ const ParkingSpotList = () => {
                     primary={search.name}
                     secondary={`${search.searchTerm || 'Any location'} • ₹${search.priceRange[0]}-${search.priceRange[1]}/hour`}
                   />
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    onClick={() => loadSearch(search)}
-                  >
-                    Load
-                  </Button>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      onClick={() => loadSearch(search)}
+                    >
+                      Load
+                    </Button>
+                    <IconButton
+                      size="small"
+                      onClick={() => removeSavedSearch(search.id)}
+                      color="error"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Box>
                 </ListItem>
               ))}
             </List>
           )}
         </DialogContent>
         <DialogActions>
+          {savedSearches.length > 0 && (
+            <Button 
+              onClick={() => {
+                setSavedSearches([]);
+                localStorage.removeItem('savedSearches');
+                setSnackbarMessage('All saved searches cleared!');
+                setSnackbarSeverity('success');
+                setOpenSnackbar(true);
+              }}
+              color="error"
+            >
+              Clear All
+            </Button>
+          )}
           <Button onClick={() => setShowSavedSearches(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Favorites Dialog */}
+      <Dialog
+        open={showFavorites}
+        onClose={() => setShowFavorites(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <FavoriteIcon />
+            Favorites ({favorites.length})
+          </Box>
+        </DialogTitle>
+        <DialogContent>
+          {favorites.length === 0 ? (
+            <Box sx={{ textAlign: 'center', p: 3 }}>
+              <FavoriteBorderIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+              <Typography variant="h6" color="text.secondary" gutterBottom>
+                No favorites yet
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Click the heart icon on parking spots to add them to your favorites
+              </Typography>
+            </Box>
+          ) : (
+            <Grid container spacing={2}>
+              {favorites.map((favoriteSpot) => (
+                <Grid item xs={12} sm={6} key={favoriteSpot.id}>
+                  <Card sx={{ height: '100%' }}>
+                    <CardMedia
+                      component="img"
+                      height="140"
+                      image={favoriteSpot.images?.[0] || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=300&h=140&fit=crop'}
+                      alt={favoriteSpot.title}
+                    />
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        {favoriteSpot.title}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        {favoriteSpot.location}
+                      </Typography>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <Typography variant="h6" color="primary">
+                          ₹{favoriteSpot.hourlyRate}/hour
+                        </Typography>
+                        <Rating value={favoriteSpot.rating || 0} readOnly size="small" />
+                      </Box>
+                      <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                        <Button
+                          variant="contained"
+                          size="small"
+                          onClick={() => navigate(`/spot/${favoriteSpot.id}`)}
+                        >
+                          View Details
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() => handleRemoveFavorite(favoriteSpot.id)}
+                        >
+                          Remove
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          )}
+        </DialogContent>
+        <DialogActions>
+          {favorites.length > 0 && (
+            <Button 
+              onClick={() => {
+                setFavorites([]);
+                localStorage.removeItem('favorites');
+                setSnackbarMessage('All favorites cleared!');
+                setSnackbarSeverity('success');
+                setOpenSnackbar(true);
+              }}
+              color="error"
+            >
+              Clear All
+            </Button>
+          )}
+          <Button onClick={() => setShowFavorites(false)}>Close</Button>
         </DialogActions>
       </Dialog>
 

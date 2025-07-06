@@ -17,7 +17,7 @@
     ],
     "subject": "Hi",
     "createdAt": "2025-07-06T18:40:30.099Z",
-    "lastActivity": "2025-07-06T18:40:30.099Z"
+    "lastActivity": "2025-07-06T22:40:39.881Z"
   },
   {
     "id": "conv_1751827921253",
@@ -57,7 +57,7 @@
     ],
     "subject": "check",
     "createdAt": "2025-07-06T19:53:35.525Z",
-    "lastActivity": "2025-07-06T20:52:16.662Z",
+    "lastActivity": "2025-07-06T22:41:06.866Z",
     "starred": {
       "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
     },
@@ -107,5 +107,25 @@
     "subject": "Inquiry about Residential Street Parking",
     "createdAt": "2025-07-06T20:46:17.535Z",
     "lastActivity": "2025-07-06T20:46:17.535Z"
+  },
+  {
+    "id": "conv_1751838130865",
+    "participants": [
+      {
+        "id": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "user_john_123",
+        "uid": "user_john_123",
+        "username": "john_doe",
+        "email": "john@example.com"
+      }
+    ],
+    "subject": "Inquiry about Downtown Premium Parking",
+    "createdAt": "2025-07-06T21:42:10.865Z",
+    "lastActivity": "2025-07-06T21:42:10.867Z"
   }
 ]

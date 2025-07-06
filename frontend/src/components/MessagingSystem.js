@@ -8,7 +8,6 @@ import {
   ListItem,
   ListItemText,
   ListItemAvatar,
-  Avatar,
   TextField,
   Button,
   IconButton,
@@ -53,10 +52,15 @@ import {
   Notifications as UnmuteIcon,
   Archive as ArchiveIcon,
   Refresh as RefreshIcon,
+  AttachFile as AttachFileIcon,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../contexts/RealtimeContext';
+import UserPresenceIndicator from './UserPresenceIndicator';
+import UserStatusIndicator from './UserStatusIndicator';
+import FileUpload from './FileUpload';
+import MessageAttachment from './MessageAttachment';
 
 const MessagingSystem = () => {
   const navigate = useNavigate();
@@ -79,7 +83,6 @@ const MessagingSystem = () => {
   const [showConversationList, setShowConversationList] = useState(true);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
-  const [onlineUsers, setOnlineUsers] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const [messageActions, setMessageActions] = useState({ anchorEl: null, message: null });
@@ -96,6 +99,8 @@ const MessagingSystem = () => {
   });
   const [showArchived, setShowArchived] = useState(false);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [showFileUpload, setShowFileUpload] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   const messagesEndRef = useRef(null);
 
@@ -106,13 +111,26 @@ const MessagingSystem = () => {
   const emojiList = ['😀','😂','😍','😎','👍','🙏','🎉','🚗','🏆','💬','❤️','😅','😇','😢','😡','😱','🤔','🙌','👏','🔥','🌟'];
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end',
+        inline: 'nearest'
+      });
+    }
   };
 
-  // Only scroll to bottom when new messages are added, not when selecting a conversation
+  // Scroll to bottom when new messages are added or when conversation is first loaded
   useEffect(() => {
-    if (messages.length > previousMessageCount && previousMessageCount > 0) {
-      scrollToBottom();
+    if (messages.length > 0) {
+      // Scroll immediately for new messages, with a small delay for loaded conversations
+      const shouldScrollImmediately = messages.length > previousMessageCount;
+      if (shouldScrollImmediately) {
+        scrollToBottom();
+      } else if (previousMessageCount === 0 && messages.length > 0) {
+        // First time loading messages in a conversation
+        setTimeout(() => scrollToBottom(), 100);
+      }
     }
     setPreviousMessageCount(messages.length);
   }, [messages.length, previousMessageCount]);
@@ -182,6 +200,9 @@ const MessagingSystem = () => {
         const data = await response.json();
         setMessages(data.messages || []);
         setPreviousMessageCount(0); // Reset when loading new conversation
+        
+        // Scroll to bottom after loading messages
+        setTimeout(() => scrollToBottom(), 100);
       }
     } catch (error) {
       console.error('Error loading messages:', error);
@@ -264,7 +285,17 @@ const MessagingSystem = () => {
         socket.off('message-status', handleMessageStatus);
       };
     }
-  }, [currentUser?.uid, isConnected, socket, loadConversations, loadAvailableUsers, selectedConversation]);
+  }, [currentUser?.uid, currentUser?.displayName, currentUser?.email, isConnected, socket, loadConversations, loadAvailableUsers, selectedConversation]);
+
+  // Define handleSelectConversation before it's used in useEffect
+  const handleSelectConversation = useCallback((conversation) => {
+    setSelectedConversation(conversation);
+    setPreviousMessageCount(0); // Reset message count for new conversation
+    loadMessages(conversation.id);
+    if (isMobile) {
+      setShowConversationList(false);
+    }
+  }, [loadMessages, isMobile]);
 
   // Handle conversationId parameter from URL
   useEffect(() => {
@@ -274,7 +305,7 @@ const MessagingSystem = () => {
         handleSelectConversation(conversation);
       }
     }
-  }, [conversationId, conversations, selectedConversation]);
+  }, [conversationId, conversations, selectedConversation, handleSelectConversation]);
 
   // Helper functions to check conversation status for current user
   const isConversationStarred = (conversation) => {
@@ -311,13 +342,14 @@ const MessagingSystem = () => {
   });
 
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || !selectedConversation || sendingMessage) return;
+    if ((!messageInput.trim() && selectedFiles.length === 0) || !selectedConversation || sendingMessage) return;
     
     setSendingMessage(true);
     const tempMessageId = `temp_${Date.now()}`;
     const newMsg = {
       id: tempMessageId,
       content: messageInput,
+      attachments: selectedFiles,
       senderId: currentUser.uid,
       timestamp: new Date().toISOString(),
       status: 'sending'
@@ -326,7 +358,13 @@ const MessagingSystem = () => {
     // Optimistically add message to UI
     setMessages(prev => [...prev, newMsg]);
     const messageContent = messageInput;
+    const messageAttachments = selectedFiles;
     setMessageInput('');
+    setSelectedFiles([]);
+    setShowFileUpload(false);
+    
+    // Scroll to bottom immediately after adding message
+    setTimeout(() => scrollToBottom(), 50);
     
     try {
       const response = await fetch('http://localhost:3001/api/messages', {
@@ -338,7 +376,8 @@ const MessagingSystem = () => {
         body: JSON.stringify({
           conversationId: selectedConversation.id,
           content: messageContent,
-          senderId: currentUser.uid
+          senderId: currentUser.uid,
+          attachments: messageAttachments
         })
       });
       
@@ -359,6 +398,9 @@ const MessagingSystem = () => {
         // Show success notification
         setSuccessMessage('Message sent successfully');
         setTimeout(() => setSuccessMessage(null), 2000);
+        
+        // Ensure scroll to bottom after successful send
+        setTimeout(() => scrollToBottom(), 100);
       } else {
         const errorData = await response.json();
         // If failed, mark message as failed
@@ -426,6 +468,9 @@ const MessagingSystem = () => {
         // Show success notification
         setSuccessMessage('Message sent successfully');
         setTimeout(() => setSuccessMessage(null), 2000);
+        
+        // Ensure scroll to bottom after successful retry
+        setTimeout(() => scrollToBottom(), 100);
       } else {
         const errorData = await response.json();
         if (response.status === 403) {
@@ -500,14 +545,6 @@ const MessagingSystem = () => {
     } catch (error) {
       console.error('Error creating conversation:', error);
       setError('Failed to create conversation');
-    }
-  };
-
-  const handleSelectConversation = (conversation) => {
-    setSelectedConversation(conversation);
-    loadMessages(conversation.id);
-    if (isMobile) {
-      setShowConversationList(false);
     }
   };
 
@@ -952,6 +989,19 @@ const MessagingSystem = () => {
     handleConversationActionClose();
   };
 
+  const handleFilesSelected = (files) => {
+    setSelectedFiles(prev => [...prev, ...files]);
+    setShowFileUpload(false);
+  };
+
+  const handleRemoveAttachment = (fileId) => {
+    setSelectedFiles(prev => prev.filter(file => file.id !== fileId));
+  };
+
+  const handleToggleFileUpload = () => {
+    setShowFileUpload(!showFileUpload);
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4, height: 'calc(100vh - 200px)' }}>
       {/* Success and Error Messages */}
@@ -976,8 +1026,30 @@ const MessagingSystem = () => {
       
       <Box sx={{ display: 'flex', height: '100%', gap: 2 }}>
         {/* Conversation List */}
-        <Paper elevation={2} sx={{ width: { xs: '100%', md: 340 }, minWidth: 0, maxWidth: 400, height: '100%', overflow: 'auto', borderRadius: 4, border: '1px solid #eee', bgcolor: '#fff', p: 0 }}>
-          <Box sx={{ p: 2, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Paper elevation={2} sx={{ 
+          width: { xs: '100%', md: 340 }, 
+          minWidth: 0, 
+          maxWidth: 400, 
+          height: '100%', 
+          borderRadius: 4, 
+          border: '1px solid #eee', 
+          bgcolor: '#fff', 
+          p: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden'
+        }}>
+          {/* Fixed Header */}
+          <Box sx={{ 
+            p: 2, 
+            borderBottom: '1px solid #f0f0f0', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between',
+            bgcolor: '#fff',
+            zIndex: 1,
+            flexShrink: 0
+          }}>
             <Typography variant="h6" fontWeight={600} sx={{ color: 'primary.main' }}>Messages</Typography>
             <Box sx={{ display: 'flex', gap: 1 }}>
               <Tooltip title={showArchived ? "Show Active" : "Show Archived"}>
@@ -999,106 +1071,172 @@ const MessagingSystem = () => {
               </Tooltip>
             </Box>
           </Box>
-          <Divider />
-          <Box sx={{ p: 1, pb: 0 }}>
+          
+          {/* Fixed Search Bar */}
+          <Box sx={{ 
+            p: 1, 
+            borderBottom: '1px solid #f0f0f0',
+            bgcolor: '#fff',
+            zIndex: 1,
+            flexShrink: 0
+          }}>
             <TextField
               size="small"
               fullWidth
-              placeholder="Search..."
+              placeholder="Search conversations..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              sx={{ mb: 1, borderRadius: 2, bgcolor: '#fafafa' }}
+              sx={{ borderRadius: 2, bgcolor: '#fafafa' }}
               InputProps={{
                 startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />,
               }}
             />
           </Box>
-          <List sx={{ p: 0, m: 0 }}>
-            {filteredConversations.length === 0 && (
-              <ListItem sx={{ justifyContent: 'center', py: 4 }}>
-                <Typography color="text.secondary">No conversations</Typography>
-              </ListItem>
-            )}
-            {filteredConversations.map((conv) => {
-              const isSelected = selectedConversation && selectedConversation.id === conv.id;
-              const lastMsg = conv.lastMessage || (conv.messages && conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null);
-              const unreadCount = conv.unreadCount || 0;
-              const otherUser = conv.participants ? getOtherUser(conv.participants) : null;
-              const isOnline = onlineUsers && otherUser?._id && onlineUsers.includes(otherUser._id);
-              return (
-                <ListItem
-                  key={conv.id}
-                  button
-                  selected={isSelected}
-                  onClick={() => handleSelectConversation(conv)}
-                  sx={{
-                    bgcolor: isSelected ? 'rgba(255,56,92,0.08)' : 'transparent',
-                    borderLeft: isSelected ? '4px solid #FF385C' : '4px solid transparent',
-                    transition: 'background 0.2s',
-                    '&:hover': { bgcolor: 'rgba(255,56,92,0.04)' },
-                    alignItems: 'flex-start',
-                    py: 2,
-                    px: 2,
-                  }}
-                >
-                  <ListItemAvatar>
-                    <Badge
-                      color={isOnline ? 'success' : 'default'}
-                      variant="dot"
-                      overlap="circular"
-                      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                    >
-                      <Avatar src={otherUser?.avatarUrl} sx={{ bgcolor: '#FF385C' }}>
-                        {otherUser?.username?.[0]?.toUpperCase() || '?'}
-                      </Avatar>
-                    </Badge>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        <Typography fontWeight={600} sx={{ color: isSelected ? 'primary.main' : 'text.primary' }}>
-                          {otherUser?.username || 'Unknown'}
-                        </Typography>
-                        {isConversationStarred(conv) && (
-                          <StarIcon sx={{ fontSize: 16, color: 'warning.main' }} />
-                        )}
-                        {isConversationMuted(conv) && (
-                          <MuteIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        )}
-                        {isConversationArchived(conv) && (
-                          <ArchiveIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                        )}
-                        {unreadCount > 0 && (
-                          <Badge badgeContent={unreadCount} color="error" sx={{ ml: 1 }} />
-                        )}
-                      </Box>
-                    }
-                    secondary={
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5 }}>
-                        <Typography 
-                          variant="body2" 
-                          color={conv.muted ? 'text.disabled' : 'text.secondary'} 
-                          noWrap 
-                          sx={{ 
-                            flex: 1, 
-                            maxWidth: 160,
-                            opacity: conv.muted ? 0.6 : 1
-                          }}
-                        >
-                          {lastMsg ? (lastMsg.content && lastMsg.content.length > 32 ? lastMsg.content.slice(0, 32) + '…' : lastMsg.content) : 'No messages yet'}
-                        </Typography>
-                        {lastMsg && (
-                          <Typography variant="caption" color="text.disabled" sx={{ minWidth: 60, textAlign: 'right' }}>
-                            {lastMsg.createdAt ? formatTimeAgo(lastMsg.createdAt) : ''}
-                          </Typography>
-                        )}
-                      </Box>
-                    }
-                  />
+          
+          {/* Scrollable Conversation List */}
+          <Box sx={{ 
+            flexGrow: 1, 
+            overflow: 'auto',
+            bgcolor: '#fafafa',
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              background: 'transparent',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              background: 'rgba(0, 0, 0, 0.2)',
+              borderRadius: '4px',
+              opacity: 0,
+              transition: 'opacity 0.3s ease',
+            },
+            '&:hover::-webkit-scrollbar-thumb': {
+              background: 'rgba(0, 0, 0, 0.3)',
+            },
+            '&.scrolling::-webkit-scrollbar-thumb': {
+              background: 'rgba(0, 0, 0, 0.4)',
+            }
+          }}
+          onScroll={(e) => {
+            const element = e.target;
+            element.classList.add('scrolling');
+            clearTimeout(element.scrollTimeout);
+            element.scrollTimeout = setTimeout(() => {
+              element.classList.remove('scrolling');
+            }, 1000);
+          }}
+          >
+            <List sx={{ p: 0, m: 0 }}>
+              {filteredConversations.length === 0 && (
+                <ListItem sx={{ justifyContent: 'center', py: 4 }}>
+                  <Typography color="text.secondary">No conversations</Typography>
                 </ListItem>
-              );
-            })}
-          </List>
+              )}
+              {filteredConversations.map((conv) => {
+                const isSelected = selectedConversation && selectedConversation.id === conv.id;
+                const lastMsg = conv.lastMessage || (conv.messages && conv.messages.length > 0 ? conv.messages[conv.messages.length - 1] : null);
+                const unreadCount = conv.unreadCount || 0;
+                const otherUser = conv.participants ? getOtherUser(conv.participants) : null;
+                return (
+                  <ListItem
+                    key={conv.id}
+                    button
+                    selected={isSelected}
+                    onClick={() => handleSelectConversation(conv)}
+                    sx={{
+                      bgcolor: isSelected ? 'rgba(255,56,92,0.08)' : 'transparent',
+                      borderLeft: isSelected ? '4px solid #FF385C' : '4px solid transparent',
+                      transition: 'background 0.2s',
+                      '&:hover': { bgcolor: 'rgba(255,56,92,0.04)' },
+                      alignItems: 'flex-start',
+                      py: 2,
+                      px: 2,
+                      borderBottom: '1px solid #f0f0f0',
+                      '&:last-child': {
+                        borderBottom: 'none'
+                      }
+                    }}
+                  >
+                    <ListItemAvatar sx={{ minWidth: 48, mr: 2 }}>
+                      <UserPresenceIndicator 
+                        userId={otherUser?.uid} 
+                        username={otherUser?.username} 
+                        size="small"
+                        hideOwnStatus={true}
+                      />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 0.5 }}>
+                          <Typography 
+                            fontWeight={600} 
+                            sx={{ 
+                              color: isSelected ? 'primary.main' : 'text.primary',
+                              fontSize: '0.95rem',
+                              flex: 1,
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap'
+                            }}
+                          >
+                            {otherUser?.username || 'Unknown'}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                            {isConversationStarred(conv) && (
+                              <StarIcon sx={{ fontSize: 14, color: 'warning.main' }} />
+                            )}
+                            {isConversationMuted(conv) && (
+                              <MuteIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                            )}
+                            {isConversationArchived(conv) && (
+                              <ArchiveIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+                            )}
+                            {unreadCount > 0 && (
+                              <Badge badgeContent={unreadCount} color="error" sx={{ ml: 0.5 }} />
+                            )}
+                          </Box>
+                        </Box>
+                      }
+                      secondary={
+                        <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                          <Typography 
+                            variant="body2" 
+                            color={conv.muted ? 'text.disabled' : 'text.secondary'} 
+                            noWrap 
+                            sx={{ 
+                              flex: 1, 
+                              maxWidth: '70%',
+                              opacity: conv.muted ? 0.6 : 1,
+                              fontSize: '0.8rem',
+                              lineHeight: 1.2
+                            }}
+                          >
+                            {lastMsg ? (lastMsg.content && lastMsg.content.length > 25 ? lastMsg.content.slice(0, 25) + '…' : lastMsg.content) : 'No messages yet'}
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                            {lastMsg && (
+                              <Typography variant="caption" color="text.disabled" sx={{ minWidth: 50, textAlign: 'right', fontSize: '0.7rem' }}>
+                                {lastMsg.createdAt ? formatTimeAgo(lastMsg.createdAt) : ''}
+                              </Typography>
+                            )}
+                            {/* Status indicator */}
+                            {otherUser && (
+                              <UserStatusIndicator 
+                                userId={otherUser.uid} 
+                                username={otherUser.username} 
+                                size="small"
+                                showTooltip={false}
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      }
+                    />
+                  </ListItem>
+                );
+              })}
+            </List>
+          </Box>
         </Paper>
 
         {/* Messages Area */}
@@ -1123,9 +1261,12 @@ const MessagingSystem = () => {
                     </IconButton>
                   )}
                   
-                  <Avatar sx={{ bgcolor: 'primary.main' }}>
-                    {getOtherParticipant(selectedConversation)?.username?.charAt(0)?.toUpperCase() || 'U'}
-                  </Avatar>
+                  <UserPresenceIndicator 
+                    userId={getOtherParticipant(selectedConversation)?.uid} 
+                    username={getOtherParticipant(selectedConversation)?.username} 
+                    size="medium"
+                    hideOwnStatus={true}
+                  />
                   
                   <Box sx={{ flexGrow: 1 }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -1142,9 +1283,18 @@ const MessagingSystem = () => {
                         <ArchiveIcon sx={{ fontSize: 20, color: 'text.secondary' }} />
                       )}
                     </Box>
-                    <Typography variant="body2" color="text.secondary">
-                      {selectedConversation.subject}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {selectedConversation.subject}
+                      </Typography>
+                      {/* Status indicator */}
+                      <UserStatusIndicator 
+                        userId={getOtherParticipant(selectedConversation)?.uid} 
+                        username={getOtherParticipant(selectedConversation)?.username} 
+                        size="small"
+                        showTooltip={true}
+                      />
+                    </Box>
                   </Box>
                   
                   <Stack direction="row" spacing={1}>
@@ -1161,7 +1311,38 @@ const MessagingSystem = () => {
               </Box>
 
               {/* Messages */}
-              <Box sx={{ flexGrow: 1, overflow: 'auto', p: 2 }}>
+              <Box sx={{ 
+                flexGrow: 1, 
+                overflow: 'auto', 
+                p: 2,
+                '&::-webkit-scrollbar': {
+                  width: '8px',
+                },
+                '&::-webkit-scrollbar-track': {
+                  background: 'transparent',
+                },
+                '&::-webkit-scrollbar-thumb': {
+                  background: 'rgba(0, 0, 0, 0.2)',
+                  borderRadius: '4px',
+                  opacity: 0,
+                  transition: 'opacity 0.3s ease',
+                },
+                '&:hover::-webkit-scrollbar-thumb': {
+                  background: 'rgba(0, 0, 0, 0.3)',
+                },
+                '&.scrolling::-webkit-scrollbar-thumb': {
+                  background: 'rgba(0, 0, 0, 0.4)',
+                }
+              }}
+              onScroll={(e) => {
+                const element = e.target;
+                element.classList.add('scrolling');
+                clearTimeout(element.scrollTimeout);
+                element.scrollTimeout = setTimeout(() => {
+                  element.classList.remove('scrolling');
+                }, 1000);
+              }}
+              >
                 {loading ? (
                   <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
                     <CircularProgress />
@@ -1236,9 +1417,25 @@ const MessagingSystem = () => {
                                   }}
                                   onContextMenu={(e) => handleMessageAction(e, message)}
                                 >
-                                  <Typography variant="body1" sx={{ mb: 1 }}>
-                                    {message.content}
-                                  </Typography>
+                                  {message.content && (
+                                    <Typography variant="body1" sx={{ mb: 1 }}>
+                                      {message.content}
+                                    </Typography>
+                                  )}
+                                  
+                                  {/* Display attachments */}
+                                  {message.attachments && message.attachments.length > 0 && (
+                                    <Box sx={{ mb: 1 }}>
+                                      {message.attachments.map((attachment) => (
+                                        <MessageAttachment
+                                          key={attachment.id}
+                                          attachment={attachment}
+                                          onDelete={handleRemoveAttachment}
+                                          canDelete={message.senderId === currentUser.uid}
+                                        />
+                                      ))}
+                                    </Box>
+                                  )}
                                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
                                       {message.timestamp ? getDetailedTime(message.timestamp) : ''}
@@ -1288,10 +1485,51 @@ const MessagingSystem = () => {
                     {error}
                   </Alert>
                 )}
+                
+                {/* File Upload Area */}
+                {showFileUpload && (
+                  <Box sx={{ p: 2, borderBottom: '1px solid #eee' }}>
+                    <FileUpload 
+                      onFilesSelected={handleFilesSelected}
+                      maxFiles={5}
+                      maxSize={10}
+                    />
+                  </Box>
+                )}
+                
+                {/* Selected Files Display */}
+                {selectedFiles.length > 0 && (
+                  <Box sx={{ p: 1, borderBottom: '1px solid #eee', bgcolor: '#f8f9fa' }}>
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+                      Attached files ({selectedFiles.length})
+                    </Typography>
+                    {selectedFiles.map((file) => (
+                      <MessageAttachment
+                        key={file.id}
+                        attachment={file}
+                        onDelete={handleRemoveAttachment}
+                        canDelete={true}
+                      />
+                    ))}
+                  </Box>
+                )}
                 <Box sx={{ display: 'flex', alignItems: 'center', p: 2, gap: 1 }}>
                   <IconButton onClick={handleEmojiClick} size="large" color="primary">
                     <EmojiIcon />
                   </IconButton>
+                  <Tooltip title="Attach files">
+                    <IconButton 
+                      onClick={handleToggleFileUpload} 
+                      size="large" 
+                      color={showFileUpload ? "primary" : "default"}
+                      sx={{ 
+                        bgcolor: showFileUpload ? 'rgba(25,118,210,0.1)' : 'transparent',
+                        '&:hover': { bgcolor: showFileUpload ? 'rgba(25,118,210,0.2)' : 'rgba(0,0,0,0.05)' }
+                      }}
+                    >
+                      <AttachFileIcon />
+                    </IconButton>
+                  </Tooltip>
                   <Popover
                     open={Boolean(anchorEl)}
                     anchorEl={anchorEl}
@@ -1323,7 +1561,7 @@ const MessagingSystem = () => {
                   <Button
                     variant="contained"
                     color="primary"
-                    disabled={!messageInput.trim() || sendingMessage}
+                    disabled={(!messageInput.trim() && selectedFiles.length === 0) || sendingMessage}
                     onClick={handleSendMessage}
                     sx={{ ml: 1, borderRadius: 2, minWidth: 80 }}
                   >

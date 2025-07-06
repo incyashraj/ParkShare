@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Container,
@@ -29,143 +29,223 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Badge,
   Divider,
   List,
   ListItem,
   ListItemText,
-  ListItemSecondaryAction
+  ListItemSecondaryAction,
+  Tooltip,
+  LinearProgress
 } from '@mui/material';
 import {
   AdminPanelSettings,
   Support,
   People,
   Dashboard,
-  Close,
-  Reply,
   Delete,
-  Assignment,
   CheckCircle,
-  Warning,
-  Error,
-  Info,
   Refresh,
-  FilterList,
-  Search
+  Visibility,
+  LockOpen,
+  AttachMoney,
+  LocalParking,
+  BookOnline,
+  Person,
+  Cancel,
+  CheckCircleOutline,
+  WarningAmber,
+  ErrorOutline,
+  InfoOutlined
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import UserPresenceIndicator from './UserPresenceIndicator';
 
 const AdminPanel = () => {
   const { currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
-  const [tickets, setTickets] = useState([]);
-  const [users, setUsers] = useState([]);
-  const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
-  const [selectedTicket, setSelectedTicket] = useState(null);
-  const [responseDialog, setResponseDialog] = useState(false);
-  const [responseText, setResponseText] = useState('');
+  const [error, setError] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
 
-  useEffect(() => {
-    if (currentUser) {
-      loadAdminData();
-    }
-  }, [currentUser]);
+  // Dashboard data
+  const [analytics, setAnalytics] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  
+  // Support tickets data
+  const [tickets, setTickets] = useState([]);
+  const [ticketFilter, setTicketFilter] = useState('all');
+  const [ticketSearch, setTicketSearch] = useState('');
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [replyDialog, setReplyDialog] = useState(false);
+  const [replyMessage, setReplyMessage] = useState('');
+  
+  // Users data
+  const [users, setUsers] = useState([]);
+  const [userFilter, setUserFilter] = useState('all');
+  const [userSearch, setUserSearch] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userDetailsDialog, setUserDetailsDialog] = useState(false);
+  const [banDialog, setBanDialog] = useState(false);
+  const [banReason, setBanReason] = useState('');
+  
+  // Spots data
+  const [spots, setSpots] = useState([]);
+  const [spotFilter, setSpotFilter] = useState('all');
+  const [spotSearch, setSpotSearch] = useState('');
+  
+  // Bookings data
+  const [bookings, setBookings] = useState([]);
+  const [bookingFilter, setBookingFilter] = useState('all');
+  const [bookingSearch, setBookingSearch] = useState('');
 
-  const loadAdminData = async () => {
+  const loadAdminData = React.useCallback(async () => {
     try {
       setLoading(true);
       
-      // Load tickets
-      const ticketsResponse = await fetch('/api/support/tickets', {
-        headers: {
-          'Authorization': `Bearer ${currentUser.uid}`
+      // Check if backend server is running
+      try {
+        const healthCheck = await fetch('http://localhost:3001/health');
+        if (!healthCheck.ok) {
+          throw new Error('Backend server is not responding');
         }
-      });
-      const ticketsData = await ticketsResponse.json();
-      setTickets(ticketsData.tickets || []);
+      } catch (healthError) {
+        console.error('Backend server health check failed:', healthError);
+        setError('Backend server is not running. Please start the server at http://localhost:3001');
+        setLoading(false);
+        return;
+      }
+      
+      const headers = { Authorization: `Bearer ${currentUser.uid}` };
+      
+      // Load all data in parallel
+      const [analyticsRes, ticketsRes, usersRes, spotsRes, bookingsRes, onlineUsersRes] = await Promise.all([
+        fetch('http://localhost:3001/api/admin/analytics', { headers }),
+        fetch('http://localhost:3001/api/support/tickets', { headers }),
+        fetch('http://localhost:3001/api/users', { headers }),
+        fetch('http://localhost:3001/api/admin/spots', { headers }),
+        fetch('http://localhost:3001/api/admin/bookings', { headers }),
+        fetch('http://localhost:3001/api/admin/online-users', { headers })
+      ]);
 
-      // Load users
-      const usersResponse = await fetch('/api/users', {
-        headers: {
-          'Authorization': `Bearer ${currentUser.uid}`
-        }
-      });
-      const usersData = await usersResponse.json();
-      setUsers(usersData.users || []);
+      if (analyticsRes.ok) {
+        const analyticsData = await analyticsRes.json();
+        setAnalytics(analyticsData.analytics);
+      } else {
+        console.error('Analytics response not ok:', analyticsRes.status, analyticsRes.statusText);
+      }
 
-      // Calculate stats
-      const stats = {
-        totalTickets: ticketsData.tickets?.length || 0,
-        openTickets: ticketsData.tickets?.filter(t => t.status === 'open').length || 0,
-        resolvedTickets: ticketsData.tickets?.filter(t => t.status === 'resolved').length || 0,
-        totalUsers: usersData.users?.length || 0,
-        activeUsers: usersData.users?.filter(u => u.lastSeen && new Date(u.lastSeen) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length || 0
-      };
-      setStats(stats);
+      if (ticketsRes.ok) {
+        const ticketsData = await ticketsRes.json();
+        setTickets(ticketsData.tickets);
+      } else {
+        console.error('Tickets response not ok:', ticketsRes.status, ticketsRes.statusText);
+      }
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json();
+        setUsers(usersData.users);
+      } else {
+        console.error('Users response not ok:', usersRes.status, usersRes.statusText);
+      }
+
+      if (spotsRes.ok) {
+        const spotsData = await spotsRes.json();
+        setSpots(spotsData.spots);
+      } else {
+        console.error('Spots response not ok:', spotsRes.status, spotsRes.statusText);
+      }
+
+      if (bookingsRes.ok) {
+        const bookingsData = await bookingsRes.json();
+        setBookings(bookingsData.bookings);
+      } else {
+        console.error('Bookings response not ok:', bookingsRes.status, bookingsRes.statusText);
+      }
+
+      if (onlineUsersRes.ok) {
+        const onlineUsersData = await onlineUsersRes.json();
+        setOnlineUsers(onlineUsersData.onlineUsers);
+      } else {
+        console.error('Online users response not ok:', onlineUsersRes.status, onlineUsersRes.statusText);
+      }
+
     } catch (error) {
       console.error('Error loading admin data:', error);
-      setSnackbar({ open: true, message: 'Failed to load admin data', severity: 'error' });
+      if (error.message.includes('Failed to fetch')) {
+        setError('Cannot connect to backend server. Please ensure the server is running at http://localhost:3001');
+      } else {
+        setError(`Failed to load admin data: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
+
+  // Check if user is admin
+  useEffect(() => {
+    if (!currentUser || (!currentUser.isAdmin && currentUser.email !== 'incyashraj@gmail.com')) {
+      setError('Access denied. Admin privileges required.');
+      return;
+    }
+    loadAdminData();
+  }, [currentUser, loadAdminData]);
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
   };
 
-  const handleRespondToTicket = async () => {
-    if (!selectedTicket || !responseText.trim()) return;
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
+  };
 
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  // Support ticket functions
+  const handleReplyToTicket = async () => {
     try {
-      const response = await fetch(`/api/support/tickets/${selectedTicket.id}/respond`, {
+      const response = await fetch(`http://localhost:3001/api/support/tickets/${selectedTicket.id}/respond`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.uid}`
+          Authorization: `Bearer ${currentUser.uid}`
         },
-        body: JSON.stringify({ message: responseText })
+        body: JSON.stringify({ message: replyMessage })
       });
 
       if (response.ok) {
-        setSnackbar({ open: true, message: 'Response sent successfully', severity: 'success' });
-        setResponseDialog(false);
-        setResponseText('');
-        setSelectedTicket(null);
+        showSnackbar('Response sent successfully');
+        setReplyDialog(false);
+        setReplyMessage('');
         loadAdminData(); // Refresh data
       } else {
-        throw new Error('Failed to send response');
+        showSnackbar('Failed to send response', 'error');
       }
     } catch (error) {
-      console.error('Error responding to ticket:', error);
-      setSnackbar({ open: true, message: 'Failed to send response', severity: 'error' });
+      showSnackbar('Error sending response', 'error');
     }
   };
 
   const handleUpdateTicketStatus = async (ticketId, status) => {
     try {
-      const response = await fetch(`/api/support/tickets/${ticketId}`, {
+      const response = await fetch(`http://localhost:3001/api/support/tickets/${ticketId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser.uid}`
+          Authorization: `Bearer ${currentUser.uid}`
         },
         body: JSON.stringify({ status })
       });
 
       if (response.ok) {
-        setSnackbar({ open: true, message: 'Ticket status updated', severity: 'success' });
-        loadAdminData(); // Refresh data
+        showSnackbar(`Ticket ${status} successfully`);
+        loadAdminData();
       } else {
-        throw new Error('Failed to update ticket status');
+        showSnackbar('Failed to update ticket', 'error');
       }
     } catch (error) {
-      console.error('Error updating ticket status:', error);
-      setSnackbar({ open: true, message: 'Failed to update ticket status', severity: 'error' });
+      showSnackbar('Error updating ticket', 'error');
     }
   };
 
@@ -173,29 +253,213 @@ const AdminPanel = () => {
     if (!window.confirm('Are you sure you want to delete this ticket?')) return;
 
     try {
-      const response = await fetch(`/api/support/tickets/${ticketId}`, {
+      const response = await fetch(`http://localhost:3001/api/support/tickets/${ticketId}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${currentUser.uid}`
-        }
+        headers: { Authorization: `Bearer ${currentUser.uid}` }
       });
 
       if (response.ok) {
-        setSnackbar({ open: true, message: 'Ticket deleted successfully', severity: 'success' });
-        loadAdminData(); // Refresh data
+        showSnackbar('Ticket deleted successfully');
+        loadAdminData();
       } else {
-        throw new Error('Failed to delete ticket');
+        showSnackbar('Failed to delete ticket', 'error');
       }
     } catch (error) {
-      console.error('Error deleting ticket:', error);
-      setSnackbar({ open: true, message: 'Failed to delete ticket', severity: 'error' });
+      showSnackbar('Error deleting ticket', 'error');
     }
   };
 
+  // User management functions
+  const handleUpdateUserRole = async (userId, isAdmin) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/users/${userId}/role`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.uid}`
+        },
+        body: JSON.stringify({ isAdmin })
+      });
+
+      if (response.ok) {
+        showSnackbar(`User role updated successfully`);
+        loadAdminData();
+      } else {
+        showSnackbar('Failed to update user role', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Error updating user role', 'error');
+    }
+  };
+
+  const handleBanUser = async (userId, banned) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/users/${userId}/ban`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.uid}`
+        },
+        body: JSON.stringify({ 
+          banned, 
+          reason: banned ? banReason : null 
+        })
+      });
+
+      if (response.ok) {
+        showSnackbar(`User ${banned ? 'banned' : 'unbanned'} successfully`);
+        setBanDialog(false);
+        setBanReason('');
+        loadAdminData();
+      } else {
+        showSnackbar('Failed to update user status', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Error updating user status', 'error');
+    }
+  };
+
+  const handleViewUserDetails = async (userId) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/users/${userId}/details`, {
+        headers: { Authorization: `Bearer ${currentUser.uid}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedUser(data.user);
+        setUserDetailsDialog(true);
+      } else {
+        showSnackbar('Failed to load user details', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Error loading user details', 'error');
+    }
+  };
+
+  // Spot management functions
+  const handleDeleteSpot = async (spotId) => {
+    if (!window.confirm('Are you sure you want to delete this spot? This will cancel all bookings.')) return;
+
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/spots/${spotId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${currentUser.uid}` }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        showSnackbar(`Spot deleted successfully. ${data.cancelledBookings} bookings cancelled.`);
+        loadAdminData();
+      } else {
+        showSnackbar('Failed to delete spot', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Error deleting spot', 'error');
+    }
+  };
+
+  // Booking management functions
+  const handleCancelBooking = async (bookingId, reason) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/admin/bookings/${bookingId}/cancel`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.uid}`
+        },
+        body: JSON.stringify({ reason })
+      });
+
+      if (response.ok) {
+        showSnackbar('Booking cancelled successfully');
+        loadAdminData();
+      } else {
+        showSnackbar('Failed to cancel booking', 'error');
+      }
+    } catch (error) {
+      showSnackbar('Error cancelling booking', 'error');
+    }
+  };
+
+  // Filter functions
+  const getFilteredTickets = () => {
+    let filtered = tickets;
+    
+    if (ticketFilter !== 'all') {
+      filtered = filtered.filter(ticket => ticket.status === ticketFilter);
+    }
+    
+    if (ticketSearch) {
+      filtered = filtered.filter(ticket => 
+        ticket.subject.toLowerCase().includes(ticketSearch.toLowerCase()) ||
+        ticket.user.username.toLowerCase().includes(ticketSearch.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  };
+
+  const getFilteredUsers = () => {
+    let filtered = users;
+    
+    if (userFilter === 'admin') {
+      filtered = filtered.filter(user => user.isAdmin);
+    } else if (userFilter === 'banned') {
+      filtered = filtered.filter(user => user.banned);
+    }
+    
+    if (userSearch) {
+      filtered = filtered.filter(user => 
+        user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+        user.email.toLowerCase().includes(userSearch.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  };
+
+  const getFilteredSpots = () => {
+    let filtered = spots;
+    
+    if (spotFilter === 'active') {
+      filtered = filtered.filter(spot => spot.available);
+    } else if (spotFilter === 'inactive') {
+      filtered = filtered.filter(spot => !spot.available);
+    }
+    
+    if (spotSearch) {
+      filtered = filtered.filter(spot => 
+        spot.location.toLowerCase().includes(spotSearch.toLowerCase()) ||
+        spot.title.toLowerCase().includes(spotSearch.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  };
+
+  const getFilteredBookings = () => {
+    let filtered = bookings;
+    
+    if (bookingFilter !== 'all') {
+      filtered = filtered.filter(booking => booking.status === bookingFilter);
+    }
+    
+    if (bookingSearch) {
+      filtered = filtered.filter(booking => 
+        booking.userDetails?.username.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+        booking.spotDetails?.location.toLowerCase().includes(bookingSearch.toLowerCase())
+      );
+    }
+    
+    return filtered;
+  };
+
+  // Helper functions
   const getStatusColor = (status) => {
     switch (status) {
-      case 'open': return 'warning';
-      case 'in_progress': return 'info';
+      case 'open': return 'error';
+      case 'in_progress': return 'warning';
       case 'resolved': return 'success';
       case 'closed': return 'default';
       default: return 'default';
@@ -204,331 +468,678 @@ const AdminPanel = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'open': return <Warning />;
-      case 'in_progress': return <Info />;
-      case 'resolved': return <CheckCircle />;
-      case 'closed': return <Close />;
-      default: return <Info />;
+      case 'open': return <ErrorOutline />;
+      case 'in_progress': return <WarningAmber />;
+      case 'resolved': return <CheckCircleOutline />;
+      case 'closed': return <InfoOutlined />;
+      default: return <InfoOutlined />;
     }
   };
 
-  const filteredTickets = tickets.filter(ticket => {
-    const matchesStatus = filterStatus === 'all' || ticket.status === filterStatus;
-    const matchesSearch = searchQuery === '' || 
-      ticket.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      ticket.user.username.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesStatus && matchesSearch;
-  });
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString();
+  };
 
-  const DashboardTab = () => (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        Admin Dashboard
-      </Typography>
-      
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Tickets
-              </Typography>
-              <Typography variant="h4">
-                {stats.totalTickets}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Open Tickets
-              </Typography>
-              <Typography variant="h4" color="warning.main">
-                {stats.openTickets}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Resolved Tickets
-              </Typography>
-              <Typography variant="h4" color="success.main">
-                {stats.resolvedTickets}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3}>
-          <Card>
-            <CardContent>
-              <Typography color="textSecondary" gutterBottom>
-                Total Users
-              </Typography>
-              <Typography variant="h4">
-                {stats.totalUsers}
-              </Typography>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
-
-      <Typography variant="h6" gutterBottom>
-        Recent Activity
-      </Typography>
-      
-      <Paper sx={{ p: 2 }}>
-        <List>
-          {tickets.slice(0, 5).map((ticket) => (
-            <ListItem key={ticket.id} divider>
-              <ListItemText
-                primary={ticket.subject}
-                secondary={`By ${ticket.user.username} - ${new Date(ticket.createdAt).toLocaleDateString()}`}
-              />
-              <ListItemSecondaryAction>
-                <Chip
-                  label={ticket.status}
-                  color={getStatusColor(ticket.status)}
-                  size="small"
-                />
-              </ListItemSecondaryAction>
-            </ListItem>
-          ))}
-        </List>
-      </Paper>
-    </Box>
-  );
-
-  const TicketsTab = () => (
-    <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h5">
-          Support Tickets
-        </Typography>
-        <Button
-          variant="outlined"
-          startIcon={<Refresh />}
-          onClick={loadAdminData}
-        >
-          Refresh
-        </Button>
-      </Box>
-
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <TextField
-          placeholder="Search tickets..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          size="small"
-          sx={{ minWidth: 200 }}
-        />
-        <FormControl size="small" sx={{ minWidth: 120 }}>
-          <InputLabel>Status</InputLabel>
-          <Select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            label="Status"
-          >
-            <MenuItem value="all">All</MenuItem>
-            <MenuItem value="open">Open</MenuItem>
-            <MenuItem value="in_progress">In Progress</MenuItem>
-            <MenuItem value="resolved">Resolved</MenuItem>
-            <MenuItem value="closed">Closed</MenuItem>
-          </Select>
-        </FormControl>
-      </Box>
-
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Subject</TableCell>
-              <TableCell>User</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Created</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {filteredTickets.map((ticket) => (
-              <TableRow key={ticket.id}>
-                <TableCell>{ticket.id}</TableCell>
-                <TableCell>{ticket.subject}</TableCell>
-                <TableCell>{ticket.user.username}</TableCell>
-                <TableCell>
-                  <Chip
-                    icon={getStatusIcon(ticket.status)}
-                    label={ticket.status}
-                    color={getStatusColor(ticket.status)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  {new Date(ticket.createdAt).toLocaleDateString()}
-                </TableCell>
-                <TableCell>
-                  <IconButton
-                    size="small"
-                    onClick={() => {
-                      setSelectedTicket(ticket);
-                      setResponseDialog(true);
-                    }}
-                  >
-                    <Reply />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleUpdateTicketStatus(ticket.id, 'resolved')}
-                  >
-                    <CheckCircle />
-                  </IconButton>
-                  <IconButton
-                    size="small"
-                    onClick={() => handleDeleteTicket(ticket.id)}
-                  >
-                    <Delete />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
-  );
-
-  const UsersTab = () => (
-    <Box>
-      <Typography variant="h5" gutterBottom>
-        User Management
-      </Typography>
-      
-      <TableContainer component={Paper}>
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableCell>Username</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Full Name</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {users.map((user) => (
-              <TableRow key={user.uid}>
-                <TableCell>{user.username}</TableCell>
-                <TableCell>{user.email}</TableCell>
-                <TableCell>{user.fullName || user.username}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={user.isAdmin ? 'Admin' : 'User'}
-                    color={user.isAdmin ? 'primary' : 'default'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Button size="small" variant="outlined">
-                    View Details
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
-  );
-
-  if (!currentUser) {
+  if (error) {
     return (
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Alert severity="error">
-          You must be logged in to access the admin panel.
-        </Alert>
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <Alert severity="error">{error}</Alert>
+      </Container>
+    );
+  }
+
+  if (loading) {
+    return (
+      <Container maxWidth="lg" sx={{ mt: 4 }}>
+        <LinearProgress />
+        <Typography variant="h6" sx={{ mt: 2 }}>Loading admin panel...</Typography>
       </Container>
     );
   }
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
-      <Paper sx={{ p: 3 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-          <AdminPanelSettings sx={{ mr: 2, fontSize: 40 }} color="primary" />
-          <Typography variant="h4">
-            Admin Panel
-          </Typography>
-        </Box>
+    <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" gutterBottom>
+          <AdminPanelSettings sx={{ mr: 2, verticalAlign: 'middle' }} />
+          Admin Panel
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Manage users, support tickets, parking spots, and system analytics
+        </Typography>
+      </Box>
 
-        <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 3 }}>
+      <Paper sx={{ width: '100%' }}>
+        <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab icon={<Dashboard />} label="Dashboard" />
           <Tab icon={<Support />} label="Support Tickets" />
-          <Tab icon={<People />} label="Users" />
+          <Tab icon={<People />} label="User Management" />
+          <Tab icon={<LocalParking />} label="Parking Spots" />
+          <Tab icon={<BookOnline />} label="Bookings" />
         </Tabs>
 
-        <Divider sx={{ mb: 3 }} />
+        <Box sx={{ p: 3 }}>
+          {/* Dashboard Tab */}
+          {activeTab === 0 && analytics && (
+            <Box>
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <People sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+                        <Box>
+                          <Typography variant="h4">{analytics.overview.totalUsers}</Typography>
+                          <Typography variant="body2" color="text.secondary">Total Users</Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <LocalParking sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
+                        <Box>
+                          <Typography variant="h4">{analytics.overview.totalSpots}</Typography>
+                          <Typography variant="body2" color="text.secondary">Parking Spots</Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <BookOnline sx={{ fontSize: 40, color: 'warning.main', mr: 2 }} />
+                        <Box>
+                          <Typography variant="h4">{analytics.overview.totalBookings}</Typography>
+                          <Typography variant="body2" color="text.secondary">Total Bookings</Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <AttachMoney sx={{ fontSize: 40, color: 'success.main', mr: 2 }} />
+                        <Box>
+                          <Typography variant="h4">${analytics.overview.totalRevenue}</Typography>
+                          <Typography variant="body2" color="text.secondary">Total Revenue</Typography>
+                        </Box>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
 
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <Typography>Loading...</Typography>
-          </Box>
-        ) : (
-          <Box>
-            {activeTab === 0 && <DashboardTab />}
-            {activeTab === 1 && <TicketsTab />}
-            {activeTab === 2 && <UsersTab />}
-          </Box>
-        )}
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>Online Users ({onlineUsers.length})</Typography>
+                      <List>
+                        {onlineUsers.slice(0, 8).map((user, index) => (
+                          <ListItem key={user.uid}>
+                            <UserPresenceIndicator 
+                              userId={user.uid} 
+                              username={user.username} 
+                              showDetails={true}
+                              size="small"
+                              hideOwnStatus={true}
+                            />
+                            <ListItemSecondaryAction>
+                              <Chip 
+                                label={user.status} 
+                                color={user.status === 'online' ? 'success' : 'warning'}
+                                size="small"
+                              />
+                            </ListItemSecondaryAction>
+                          </ListItem>
+                        ))}
+                        {onlineUsers.length === 0 && (
+                          <ListItem>
+                            <ListItemText
+                              primary="No users online"
+                              secondary="Check back later"
+                            />
+                          </ListItem>
+                        )}
+                      </List>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>Popular Spots</Typography>
+                      <List>
+                        {analytics.popularSpots.map((spot, index) => (
+                          <ListItem key={index}>
+                            <ListItemText
+                              primary={spot.location}
+                              secondary={`${spot.bookings} bookings`}
+                            />
+                            <Chip label={`#${index + 1}`} color="primary" size="small" />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>Recent Activity</Typography>
+                      <List>
+                        {analytics.recentBookings.slice(0, 5).map((booking, index) => (
+                          <ListItem key={index}>
+                            <ListItemText
+                              primary={`Booking by ${booking.userDetails?.username || 'Unknown'}`}
+                              secondary={formatDate(booking.createdAt)}
+                            />
+                            <Chip 
+                              label={booking.status} 
+                              color={booking.status === 'completed' ? 'success' : 'default'}
+                              size="small"
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+
+          {/* Support Tickets Tab */}
+          {activeTab === 1 && (
+            <Box>
+              <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Status Filter</InputLabel>
+                  <Select
+                    value={ticketFilter}
+                    onChange={(e) => setTicketFilter(e.target.value)}
+                    label="Status Filter"
+                  >
+                    <MenuItem value="all">All</MenuItem>
+                    <MenuItem value="open">Open</MenuItem>
+                    <MenuItem value="in_progress">In Progress</MenuItem>
+                    <MenuItem value="resolved">Resolved</MenuItem>
+                    <MenuItem value="closed">Closed</MenuItem>
+                  </Select>
+                </FormControl>
+                <TextField
+                  size="small"
+                  placeholder="Search tickets..."
+                  value={ticketSearch}
+                  onChange={(e) => setTicketSearch(e.target.value)}
+                  sx={{ minWidth: 200 }}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={loadAdminData}
+                >
+                  Refresh
+                </Button>
+              </Box>
+
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>ID</TableCell>
+                      <TableCell>User</TableCell>
+                      <TableCell>Subject</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Created</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {getFilteredTickets().map((ticket) => (
+                      <TableRow key={ticket.id}>
+                        <TableCell>{ticket.id}</TableCell>
+                        <TableCell>{ticket.user.username}</TableCell>
+                        <TableCell>{ticket.subject}</TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={getStatusIcon(ticket.status)}
+                            label={ticket.status}
+                            color={getStatusColor(ticket.status)}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>{formatDate(ticket.createdAt)}</TableCell>
+                        <TableCell>
+                          <Tooltip title="View Details">
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setSelectedTicket(ticket);
+                                setReplyDialog(true);
+                              }}
+                            >
+                              <Visibility />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Mark Resolved">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleUpdateTicketStatus(ticket.id, 'resolved')}
+                            >
+                              <CheckCircle />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Delete">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteTicket(ticket.id)}
+                            >
+                              <Delete />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* User Management Tab */}
+          {activeTab === 2 && (
+            <Box>
+              <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>User Filter</InputLabel>
+                  <Select
+                    value={userFilter}
+                    onChange={(e) => setUserFilter(e.target.value)}
+                    label="User Filter"
+                  >
+                    <MenuItem value="all">All Users</MenuItem>
+                    <MenuItem value="admin">Admins</MenuItem>
+                    <MenuItem value="banned">Banned</MenuItem>
+                  </Select>
+                </FormControl>
+                <TextField
+                  size="small"
+                  placeholder="Search users..."
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                  sx={{ minWidth: 200 }}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={loadAdminData}
+                >
+                  Refresh
+                </Button>
+              </Box>
+
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>User</TableCell>
+                      <TableCell>Email</TableCell>
+                      <TableCell>Role</TableCell>
+                      <TableCell>Presence</TableCell>
+                      <TableCell>Bookings</TableCell>
+                      <TableCell>Spots</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {getFilteredUsers().map((user) => (
+                      <TableRow key={user.uid}>
+                        <TableCell>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <UserPresenceIndicator 
+                              userId={user.uid} 
+                              username={user.username} 
+                              size="small"
+                            />
+                            <Typography variant="body2" sx={{ ml: 1 }}>
+                              {user.username}
+                            </Typography>
+                          </Box>
+                        </TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={user.isAdmin ? 'Admin' : 'User'}
+                            color={user.isAdmin ? 'primary' : 'default'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <UserPresenceIndicator 
+                            userId={user.uid} 
+                            username={user.username} 
+                            size="small"
+                            hideOwnStatus={true}
+                          />
+                        </TableCell>
+                        <TableCell>{user.totalBookings}</TableCell>
+                        <TableCell>{user.totalSpots}</TableCell>
+                        <TableCell>
+                          {user.banned ? (
+                            <Chip label="Banned" color="error" size="small" />
+                          ) : (
+                            <Chip label="Active" color="success" size="small" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Tooltip title="View Details">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewUserDetails(user.uid)}
+                            >
+                              <Visibility />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={user.isAdmin ? 'Remove Admin' : 'Make Admin'}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleUpdateUserRole(user.uid, !user.isAdmin)}
+                            >
+                              {user.isAdmin ? <Person /> : <AdminPanelSettings />}
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={user.banned ? 'Unban User' : 'Ban User'}>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setSelectedUser(user);
+                                setBanDialog(true);
+                              }}
+                            >
+                              <LockOpen />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* Parking Spots Tab */}
+          {activeTab === 3 && (
+            <Box>
+              <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Status Filter</InputLabel>
+                  <Select
+                    value={spotFilter}
+                    onChange={(e) => setSpotFilter(e.target.value)}
+                    label="Status Filter"
+                  >
+                    <MenuItem value="all">All Spots</MenuItem>
+                    <MenuItem value="active">Active</MenuItem>
+                    <MenuItem value="inactive">Inactive</MenuItem>
+                  </Select>
+                </FormControl>
+                <TextField
+                  size="small"
+                  placeholder="Search spots..."
+                  value={spotSearch}
+                  onChange={(e) => setSpotSearch(e.target.value)}
+                  sx={{ minWidth: 200 }}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={loadAdminData}
+                >
+                  Refresh
+                </Button>
+              </Box>
+
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Location</TableCell>
+                      <TableCell>Owner</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Bookings</TableCell>
+                      <TableCell>Revenue</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {getFilteredSpots().map((spot) => (
+                      <TableRow key={spot.id}>
+                        <TableCell>{spot.location}</TableCell>
+                        <TableCell>{spot.ownerDetails?.username || 'Unknown'}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={spot.available ? 'Available' : 'Unavailable'}
+                            color={spot.available ? 'success' : 'default'}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>{spot.totalBookings}</TableCell>
+                        <TableCell>${spot.revenue.toFixed(2)}</TableCell>
+                        <TableCell>
+                          <Tooltip title="Delete Spot">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteSpot(spot.id)}
+                            >
+                              <Delete />
+                            </IconButton>
+                          </Tooltip>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+
+          {/* Bookings Tab */}
+          {activeTab === 4 && (
+            <Box>
+              <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <FormControl size="small" sx={{ minWidth: 150 }}>
+                  <InputLabel>Status Filter</InputLabel>
+                  <Select
+                    value={bookingFilter}
+                    onChange={(e) => setBookingFilter(e.target.value)}
+                    label="Status Filter"
+                  >
+                    <MenuItem value="all">All Bookings</MenuItem>
+                    <MenuItem value="pending">Pending</MenuItem>
+                    <MenuItem value="confirmed">Confirmed</MenuItem>
+                    <MenuItem value="completed">Completed</MenuItem>
+                    <MenuItem value="cancelled">Cancelled</MenuItem>
+                  </Select>
+                </FormControl>
+                <TextField
+                  size="small"
+                  placeholder="Search bookings..."
+                  value={bookingSearch}
+                  onChange={(e) => setBookingSearch(e.target.value)}
+                  sx={{ minWidth: 200 }}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={loadAdminData}
+                >
+                  Refresh
+                </Button>
+              </Box>
+
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>User</TableCell>
+                      <TableCell>Spot</TableCell>
+                      <TableCell>Amount</TableCell>
+                      <TableCell>Status</TableCell>
+                      <TableCell>Created</TableCell>
+                      <TableCell>Actions</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {getFilteredBookings().map((booking) => (
+                      <TableRow key={booking.id}>
+                        <TableCell>{booking.userDetails?.username || 'Unknown'}</TableCell>
+                        <TableCell>{booking.spotDetails?.location || 'Unknown'}</TableCell>
+                        <TableCell>${booking.amount?.toFixed(2) || '0.00'}</TableCell>
+                        <TableCell>
+                          <Chip
+                            label={booking.status}
+                            color={
+                              booking.status === 'completed' ? 'success' :
+                              booking.status === 'cancelled' ? 'error' :
+                              booking.status === 'confirmed' ? 'primary' : 'default'
+                            }
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>{formatDate(booking.createdAt)}</TableCell>
+                        <TableCell>
+                          {booking.status !== 'cancelled' && (
+                            <Tooltip title="Cancel Booking">
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  const reason = prompt('Enter cancellation reason:');
+                                  if (reason) {
+                                    handleCancelBooking(booking.id, reason);
+                                  }
+                                }}
+                              >
+                                <Cancel />
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </Box>
+          )}
+        </Box>
       </Paper>
 
-      {/* Response Dialog */}
-      <Dialog open={responseDialog} onClose={() => setResponseDialog(false)} maxWidth="md" fullWidth>
+      {/* Reply Dialog */}
+      <Dialog open={replyDialog} onClose={() => setReplyDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          Respond to Ticket: {selectedTicket?.subject}
+          Reply to Ticket: {selectedTicket?.subject}
         </DialogTitle>
         <DialogContent>
-          <Box sx={{ mb: 2 }}>
-            <Typography variant="subtitle2" gutterBottom>
-              Original Message:
-            </Typography>
-            <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-              <Typography>{selectedTicket?.message}</Typography>
-            </Paper>
-          </Box>
-          
-          {selectedTicket?.responses?.map((response) => (
-            <Box key={response.id} sx={{ mb: 2 }}>
+          {selectedTicket && (
+            <Box>
               <Typography variant="subtitle2" gutterBottom>
-                {response.user.username} ({new Date(response.createdAt).toLocaleString()}):
+                From: {selectedTicket.user.username} ({selectedTicket.user.email})
               </Typography>
-              <Paper sx={{ p: 2, bgcolor: 'grey.50' }}>
-                <Typography>{response.message}</Typography>
-              </Paper>
+              <Typography variant="body2" sx={{ mb: 2 }}>
+                {selectedTicket.message}
+              </Typography>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="h6" gutterBottom>Your Response:</Typography>
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                value={replyMessage}
+                onChange={(e) => setReplyMessage(e.target.value)}
+                placeholder="Enter your response..."
+              />
             </Box>
-          ))}
-          
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Your Response"
-            value={responseText}
-            onChange={(e) => setResponseText(e.target.value)}
-            sx={{ mt: 2 }}
-          />
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setResponseDialog(false)}>Cancel</Button>
-          <Button onClick={handleRespondToTicket} variant="contained">
+          <Button onClick={() => setReplyDialog(false)}>Cancel</Button>
+          <Button onClick={handleReplyToTicket} variant="contained">
             Send Response
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* User Details Dialog */}
+      <Dialog open={userDetailsDialog} onClose={() => setUserDetailsDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          User Details: {selectedUser?.username}
+        </DialogTitle>
+        <DialogContent>
+          {selectedUser && (
+            <Box>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" gutterBottom>Basic Information</Typography>
+                  <Typography><strong>Username:</strong> {selectedUser.username}</Typography>
+                  <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
+                  <Typography><strong>Full Name:</strong> {selectedUser.fullName}</Typography>
+                  <Typography><strong>Role:</strong> {selectedUser.isAdmin ? 'Admin' : 'User'}</Typography>
+                  <Typography><strong>Verified:</strong> {selectedUser.isVerified ? 'Yes' : 'No'}</Typography>
+                  <Typography><strong>Created:</strong> {formatDate(selectedUser.createdAt)}</Typography>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" gutterBottom>Statistics</Typography>
+                  <Typography><strong>Total Bookings:</strong> {selectedUser.totalBookings}</Typography>
+                  <Typography><strong>Total Spots:</strong> {selectedUser.totalSpots}</Typography>
+                  <Typography><strong>Reports Filed:</strong> {selectedUser.totalReports}</Typography>
+                  <Typography><strong>Reports Against:</strong> {selectedUser.reportsAgainst}</Typography>
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setUserDetailsDialog(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Ban User Dialog */}
+      <Dialog open={banDialog} onClose={() => setBanDialog(false)}>
+        <DialogTitle>
+          {selectedUser?.banned ? 'Unban User' : 'Ban User'}: {selectedUser?.username}
+        </DialogTitle>
+        <DialogContent>
+          {!selectedUser?.banned && (
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              value={banReason}
+              onChange={(e) => setBanReason(e.target.value)}
+              placeholder="Enter ban reason..."
+              sx={{ mt: 1 }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setBanDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={() => handleBanUser(selectedUser?.uid, !selectedUser?.banned)}
+            variant="contained"
+            color={selectedUser?.banned ? 'success' : 'error'}
+          >
+            {selectedUser?.banned ? 'Unban' : 'Ban'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -537,12 +1148,9 @@ const AdminPanel = () => {
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        onClose={handleCloseSnackbar}
       >
-        <Alert
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-        >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity}>
           {snackbar.message}
         </Alert>
       </Snackbar>

@@ -187,8 +187,13 @@ const SearchScreen: React.FC = () => {
       );
     }
 
-    // Sort results
+    // Sort results - always put occupied spots at bottom first, then apply selected sort
     filtered.sort((a, b) => {
+      // First sort by availability (occupied spots at bottom)
+      if (!a.available && b.available) return 1;
+      if (a.available && !b.available) return -1;
+      
+      // Then apply the selected sort criteria
       switch (filters.sortBy) {
         case 'distance':
           return a.distance - b.distance;

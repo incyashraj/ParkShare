@@ -54,5 +54,90 @@
     "content": "Hii",
     "timestamp": "2025-07-06T20:52:16.662Z",
     "read": false
+  },
+  {
+    "id": "msg_1751838130866",
+    "conversationId": "conv_1751838130865",
+    "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "content": "Hi is this available to book?\n",
+    "timestamp": "2025-07-06T21:42:10.866Z",
+    "read": false
+  },
+  {
+    "id": "msg_1751841422335",
+    "conversationId": "conv_1751827230099",
+    "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "content": "🙏",
+    "timestamp": "2025-07-06T22:37:02.335Z",
+    "read": false
+  },
+  {
+    "id": "msg_1751841449574",
+    "conversationId": "conv_1751827230099",
+    "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "content": "",
+    "attachments": [
+      {
+        "id": "file_1751841447706",
+        "originalName": "IMG_0952.jpg",
+        "filename": "attachment-1751841447699-412288402.jpg",
+        "path": "/Users/yashrajpardeshi/ParkShare/backend/uploads/attachments/attachment-1751841447699-412288402.jpg",
+        "url": "/uploads/attachments/attachment-1751841447699-412288402.jpg",
+        "size": 1152566,
+        "mimetype": "image/jpeg",
+        "uploadedBy": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uploadedAt": "2025-07-06T22:37:27.706Z"
+      }
+    ],
+    "timestamp": "2025-07-06T22:37:29.574Z",
+    "read": false
+  },
+  {
+    "id": "msg_1751841639881",
+    "conversationId": "conv_1751827230099",
+    "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "content": "Hi",
+    "attachments": [],
+    "timestamp": "2025-07-06T22:40:39.881Z",
+    "read": false
+  },
+  {
+    "id": "msg_1751841652929",
+    "conversationId": "conv_1751831615525",
+    "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "content": "i",
+    "attachments": [],
+    "timestamp": "2025-07-06T22:40:52.929Z",
+    "read": false
+  },
+  {
+    "id": "msg_1751841658281",
+    "conversationId": "conv_1751831615525",
+    "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "content": "Hi",
+    "attachments": [],
+    "timestamp": "2025-07-06T22:40:58.281Z",
+    "read": false
+  },
+  {
+    "id": "msg_1751841666866",
+    "conversationId": "conv_1751831615525",
+    "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "content": "",
+    "attachments": [
+      {
+        "id": "file_1751841665653",
+        "originalName": "IMG_0952.jpg",
+        "filename": "attachment-1751841665634-400103317.jpg",
+        "path": "/Users/yashrajpardeshi/ParkShare/backend/uploads/attachments/attachment-1751841665634-400103317.jpg",
+        "url": "/uploads/attachments/attachment-1751841665634-400103317.jpg",
+        "size": 1152566,
+        "mimetype": "image/jpeg",
+        "uploadedBy": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uploadedAt": "2025-07-06T22:41:05.653Z"
+      }
+    ],
+    "timestamp": "2025-07-06T22:41:06.866Z",
+    "read": false
   }
 ]

@@ -16,12 +16,9 @@ import {
   Menu,
   MenuItem,
   IconButton,
-  Avatar,
   Divider,
 } from '@mui/material';
 import {
-  AccountCircle,
-  Dashboard as DashboardIcon,
   Search,
   Add,
   BookOnline,
@@ -33,6 +30,7 @@ import {
   Message as MessageIcon,
   Support as SupportIcon,
   AdminPanelSettings,
+  Person,
 } from '@mui/icons-material';
 import Login from './Login';
 import Register from './Register';
@@ -49,14 +47,14 @@ import NotificationsPage from './components/NotificationsPage';
 import MessagingSystem from './components/MessagingSystem';
 import UserProfile from './components/UserProfile';
 import AdvancedSearch from './components/AdvancedSearch';
-import ReviewsAndRatings from './components/ReviewsAndRatings';
-import FavoritesManager from './components/FavoritesManager';
 import ParkingAnalytics from './components/ParkingAnalytics';
 import Dashboard from './components/Dashboard';
 import TestBooking from './TestBooking';
 import DesignSystemDemo from './components/DesignSystemDemo';
 import SupportPanel from './components/SupportPanel';
 import AdminPanel from './components/AdminPanel';
+import UserActivityTracker from './components/UserActivityTracker';
+import UserPresenceIndicator from './components/UserPresenceIndicator';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -364,42 +362,105 @@ function AppContent() {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
           <Router>
+            {/* User Activity Tracker - tracks activity for presence system */}
+            {currentUser && <UserActivityTracker userId={currentUser.uid} />}
             <Box sx={{ flexGrow: 1 }} className="airbnb-app-container">
-              <AppBar position="static" className="airbnb-app-header">
+              <AppBar position="static" className="airbnb-app-header" elevation={0} sx={{ borderBottom: '1px solid', borderColor: 'divider' }}>
                 <Container maxWidth="xl">
-                  <Toolbar disableGutters>
-                    <Typography
-                      variant="h6"
-                      component={Link}
-                      to="/"
-                      sx={{
-                        color: 'primary.main',
-                        textDecoration: 'none',
-                        fontWeight: 'bold',
+                  <Toolbar disableGutters sx={{ minHeight: { xs: 56, md: 64 } }}>
+                    {/* Logo Section */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: { xs: 1, md: 0 } }}>
+                      <Typography
+                        variant="h5"
+                        component={Link}
+                        to="/"
+                        sx={{
+                          color: 'primary.main',
+                          textDecoration: 'none',
+                          fontWeight: 700,
+                          fontSize: { xs: '20px', md: '24px' },
+                          letterSpacing: '-0.5px',
+                          '&:hover': {
+                            color: 'primary.dark',
+                          }
+                        }}
+                      >
+                        ParkShare
+                      </Typography>
+                    </Box>
+
+                    {/* Navigation Section - Centered for logged in users */}
+                    {currentUser && (
+                      <Box sx={{ 
+                        display: { xs: 'none', md: 'flex' }, 
+                        gap: 1, 
+                        alignItems: 'center',
                         flexGrow: 1,
-                        fontSize: '24px',
-                      }}
-                    >
-                      ParkShare
-                    </Typography>
+                        justifyContent: 'center'
+                      }}>
+                        <Button
+                          component={Link}
+                          to="/list"
+                          startIcon={<Add />}
+                          className="airbnb-nav-link"
+                          sx={{ 
+                            color: 'text.primary',
+                            fontWeight: 500,
+                            '&:hover': {
+                              backgroundColor: 'rgba(0,0,0,0.04)',
+                            }
+                          }}
+                        >
+                          List Spot
+                        </Button>
+                        <Button
+                          component={Link}
+                          to="/search"
+                          startIcon={<Search />}
+                          className="airbnb-nav-link"
+                          sx={{ 
+                            color: 'text.primary',
+                            fontWeight: 500,
+                            '&:hover': {
+                              backgroundColor: 'rgba(0,0,0,0.04)',
+                            }
+                          }}
+                        >
+                          Search
+                        </Button>
+                        <Button
+                          component={Link}
+                          to="/bookings"
+                          startIcon={<BookOnline />}
+                          className="airbnb-nav-link"
+                          sx={{ 
+                            color: 'text.primary',
+                            fontWeight: 500,
+                            '&:hover': {
+                              backgroundColor: 'rgba(0,0,0,0.04)',
+                            }
+                          }}
+                        >
+                          Bookings
+                        </Button>
+                      </Box>
+                    )}
+
+                    {/* Right Section */}
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                       {!currentUser && (
                         <>
                           <Button
                             component={Link}
-                            to="/"
-                            className="airbnb-nav-link"
-                            sx={{ color: 'primary.main' }}
-                          >
-                            Home
-                          </Button>
-                          <Button
-                            component={Link}
                             to="/login"
                             className="airbnb-nav-link"
-                            sx={{ color: 'primary.main' }}
+                            sx={{ 
+                              color: 'text.primary',
+                              fontWeight: 500,
+                              display: { xs: 'none', sm: 'inline-flex' }
+                            }}
                           >
-                            Login
+                            Sign In
                           </Button>
                           <Button
                             component={Link}
@@ -408,97 +469,114 @@ function AppContent() {
                             className="airbnb-btn-primary"
                             sx={{
                               color: 'white',
+                              fontWeight: 600,
+                              px: 3,
                               '&:hover': {
                                 backgroundColor: 'primary.dark',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
                               },
                             }}
                           >
-                            Register
+                            Get Started
                           </Button>
                         </>
                       )}
                       {currentUser && (
                         <>
-                          {/* Primary Navigation */}
-                          <Button
-                            component={Link}
-                            to="/"
-                            startIcon={<DashboardIcon />}
-                            className="airbnb-nav-link"
-                            sx={{ color: 'primary.main' }}
-                          >
-                            Dashboard
-                          </Button>
-                          <Button
-                            component={Link}
-                            to="/search"
-                            startIcon={<Search />}
-                            className="airbnb-nav-link"
-                            sx={{ color: 'primary.main' }}
-                          >
-                            Search
-                          </Button>
-                          <Button
-                            component={Link}
-                            to="/list"
-                            variant="contained"
-                            startIcon={<Add />}
-                            className="airbnb-btn-primary"
-                            sx={{
-                              color: 'white',
-                              '&:hover': {
-                                backgroundColor: 'primary.dark',
-                              },
-                            }}
-                          >
-                            List Spot
-                          </Button>
-                          <Button
-                            component={Link}
-                            to="/bookings"
-                            startIcon={<BookOnline />}
-                            className="airbnb-nav-link"
-                            sx={{ color: 'primary.main' }}
-                          >
-                            Bookings
-                          </Button>
-                          
-                          {/* Notification Center */}
-                          <NotificationCenter />
-                          
-                          {/* More Options Menu */}
+                          {/* Mobile Menu Button */}
                           <IconButton
                             onClick={handleMenuClick}
-                            sx={{ color: 'primary.main' }}
+                            sx={{ 
+                              color: 'text.primary',
+                              display: { xs: 'flex', md: 'none' }
+                            }}
                           >
                             <MoreVert />
                           </IconButton>
+
+                          {/* Desktop Actions */}
+                          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 1, alignItems: 'center' }}>
+                            {/* Notification Center */}
+                            <NotificationCenter />
+                            
+                            {/* User Avatar with Presence - Now opens dropdown */}
+                            <IconButton
+                              onClick={handleMenuClick}
+                              sx={{ 
+                                color: 'text.primary',
+                                '&:hover': {
+                                  backgroundColor: 'rgba(0,0,0,0.04)',
+                                }
+                              }}
+                            >
+                              <UserPresenceIndicator 
+                                userId={currentUser.uid} 
+                                username={currentUser.displayName || currentUser.email} 
+                                size="small"
+                                hideOwnStatus={true}
+                              />
+                            </IconButton>
+                          </Box>
                           
-                          {/* User Avatar */}
-                          <IconButton
-                            component={Link}
-                            to="/profile"
-                            sx={{ color: 'primary.main' }}
-                          >
-                            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                              <AccountCircle />
-                            </Avatar>
-                          </IconButton>
-                          
-                          {/* More Options Dropdown */}
+                          {/* Mobile/Desktop Dropdown Menu */}
                           <Menu
                             anchorEl={anchorEl}
                             open={Boolean(anchorEl)}
                             onClose={handleMenuClose}
+                            className="profile-dropdown"
                             PaperProps={{
                               sx: {
                                 mt: 1,
-                                minWidth: 200,
+                                minWidth: 240,
                                 boxShadow: '0 8px 32px rgba(0,0,0,0.12)',
                                 borderRadius: 2,
+                                border: '1px solid',
+                                borderColor: 'divider',
                               }
                             }}
                           >
+                            {/* Mobile Navigation Items */}
+                            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+                              <MenuItem 
+                                component={Link} 
+                                to="/search"
+                                onClick={handleMenuClose}
+                              >
+                                <Search sx={{ mr: 2 }} />
+                                Search Spots
+                              </MenuItem>
+                              <MenuItem 
+                                component={Link} 
+                                to="/bookings"
+                                onClick={handleMenuClose}
+                              >
+                                <BookOnline sx={{ mr: 2 }} />
+                                My Bookings
+                              </MenuItem>
+                              <MenuItem 
+                                component={Link} 
+                                to="/list"
+                                onClick={handleMenuClose}
+                              >
+                                <Add sx={{ mr: 2 }} />
+                                List Spot
+                              </MenuItem>
+                              <Divider />
+                            </Box>
+
+                            {/* Profile Section */}
+                            <MenuItem 
+                              component={Link} 
+                              to="/profile"
+                              onClick={handleMenuClose}
+                            >
+                              <Person sx={{ mr: 2 }} />
+                              My Profile
+                            </MenuItem>
+                            <Divider />
+
+                            {/* Common Menu Items */}
                             <MenuItem 
                               component={Link} 
                               to="/advanced-search"
@@ -506,14 +584,6 @@ function AppContent() {
                             >
                               <Search sx={{ mr: 2 }} />
                               Advanced Search
-                            </MenuItem>
-                            <MenuItem 
-                              component={Link} 
-                              to="/favorites"
-                              onClick={handleMenuClose}
-                            >
-                              <Favorite sx={{ mr: 2 }} />
-                              Favorites
                             </MenuItem>
                             <MenuItem 
                               component={Link} 
@@ -598,7 +668,6 @@ function AppContent() {
                   <Route path="/messages" element={<MessagingSystem />} />
                   <Route path="/messages/:conversationId" element={<MessagingSystem />} />
                   <Route path="/verify" element={<HostVerification />} />
-                  <Route path="/favorites" element={<FavoritesManager />} />
                   <Route path="/analytics" element={<ParkingAnalytics />} />
                   <Route path="/support" element={<SupportPanel />} />
                   <Route path="/admin" element={<AdminPanel />} />

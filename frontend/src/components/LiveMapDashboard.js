@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Box, Container, Grid, Card, CardContent, Typography, Button, Chip, IconButton, Tooltip, Paper, Tabs, Tab, Alert, Fab, Dialog, DialogTitle, DialogContent, DialogActions, TextField, FormControl, InputLabel, Select, MenuItem, Switch, FormControlLabel, Slider, List, ListItem, ListItemText, ListItemIcon, Avatar, Badge } from '@mui/material';
-import { LocalParking, Favorite, FavoriteBorder, Directions, Refresh, MyLocation, Notifications, TrendingUp, TimeIcon, LocationIcon, SecurityIcon, HistoryIcon, SettingsIcon, FilterIcon, ListIcon, MapIcon, StarIcon, MoneyIcon, PersonIcon, AddIcon, EditIcon, DeleteIcon, VisibilityIcon, BookmarkIcon, BookmarkBorderIcon, ParkingIcon } from '@mui/icons-material';
+import { LocalParking, Favorite, FavoriteBorder, Directions, Refresh, MyLocation, Notifications, TrendingUp, TimeIcon, LocationIcon, SecurityIcon, HistoryIcon, SettingsIcon, FilterIcon, ListIcon, MapIcon, StarIcon, MoneyIcon, PersonIcon, AddIcon, EditIcon, DeleteIcon, VisibilityIcon, BookmarkIcon, BookmarkBorderIcon, ParkingIcon, Search as SearchIcon, Analytics as AnalyticsIcon, Favorite as FavoriteIcon } from '@mui/icons-material';
 import { format, subDays } from 'date-fns';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -135,11 +135,11 @@ const LiveMapDashboard = () => {
       action: () => navigate('/list'),
     },
     {
-      title: 'My Favorites',
-      description: 'View saved spots',
+      title: 'My Bookings',
+      description: 'View your bookings',
       icon: BookmarkIcon,
       color: '#F59E0B',
-      action: () => navigate('/favorites'),
+      action: () => navigate('/bookings'),
     },
     {
       title: 'Analytics',

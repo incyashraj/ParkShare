@@ -49,8 +49,7 @@ import {
   LocalTaxi,
   Schedule,
   Star,
-  Bookmark,
-  BookmarkBorder,
+
   Share,
   Phone,
   Email,
@@ -489,6 +488,8 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
           >
             {isFavorite ? <Favorite /> : <FavoriteBorder />}
           </IconButton>
+
+
 
 
 

@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const stripe = require('stripe')('sk_test_51RhGUIFfuH7KoJbsGqc8UHhP2LhkeF9Ysqp4dggt3tKOgcYXpyNDt5HdvHyZ5fq1CBdGIJxsh7QXD6jG8ftdpfcT00Ry6UIfqm');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 const receiptService = require('./services/receiptService');
 const app = express();
 const server = createServer(app);
@@ -37,6 +38,56 @@ const SPOTS_FILE = path.join(DATA_DIR, 'spots.json');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 const CONVERSATIONS_FILE = path.join(DATA_DIR, 'conversations.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+
+// File upload configuration
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
+const ATTACHMENTS_DIR = path.join(UPLOADS_DIR, 'attachments');
+
+// Ensure upload directories exist
+if (!fs.existsSync(UPLOADS_DIR)) {
+  fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+}
+if (!fs.existsSync(ATTACHMENTS_DIR)) {
+  fs.mkdirSync(ATTACHMENTS_DIR, { recursive: true });
+}
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, ATTACHMENTS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, file.fieldname + '-' + uniqueSuffix + ext);
+  }
+});
+
+const fileFilter = (req, file, cb) => {
+  // Allow PDF and image files
+  const allowedTypes = [
+    'image/jpeg',
+    'image/jpg', 
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'application/pdf'
+  ];
+  
+  if (allowedTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error('Invalid file type. Only PDF and image files are allowed.'), false);
+  }
+};
+
+const upload = multer({
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
 
 // ===== Support Ticket System =====
 const SUPPORT_TICKETS_FILE = path.join(DATA_DIR, 'supportTickets.json');
@@ -211,6 +262,7 @@ console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${booki
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
+app.use('/uploads', express.static(UPLOADS_DIR));
 
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
@@ -223,7 +275,8 @@ app.use((req, res, next) => {
 const connectedUsers = new Map(); // socketId -> userData
 const userSessions = new Map(); // userId -> socketId
 const spotWatchers = new Map(); // spotId -> Set of socketIds
-const userPresence = new Map(); // userId -> { online: boolean, lastSeen: Date }
+const userPresence = new Map(); // userId -> { online: boolean, lastSeen: Date, lastActivity: string, status: 'online'|'away'|'offline' }
+const presenceTimeouts = new Map(); // userId -> timeoutId for away status
 
 // Socket.IO connection handling with enhanced features
 io.on('connection', (socket) => {
@@ -236,7 +289,20 @@ io.on('connection', (socket) => {
     // Store user connection data
     connectedUsers.set(socket.id, { uid, username, email });
     userSessions.set(uid, socket.id);
-    userPresence.set(uid, { online: true, lastSeen: new Date() });
+    
+    // Set user as online
+    userPresence.set(uid, { 
+      online: true, 
+      lastSeen: new Date(),
+      lastActivity: 'logged in',
+      status: 'online'
+    });
+    
+    // Clear any existing away timeout
+    if (presenceTimeouts.has(uid)) {
+      clearTimeout(presenceTimeouts.get(uid));
+      presenceTimeouts.delete(uid);
+    }
     
     // Join user's personal room for notifications
     socket.join(`user-${uid}`);
@@ -245,9 +311,9 @@ io.on('connection', (socket) => {
     socket.join('announcements');
     
     // Emit user online status to relevant users
-    emitUserPresenceUpdate(uid, true);
+    emitUserPresenceUpdate(uid, 'online', 'logged in');
     
-    console.log(`User ${username} (${uid}) authenticated`);
+    console.log(`User ${username} (${uid}) authenticated and online`);
     
     // Send current user's data back
     socket.emit('user-authenticated', { uid, username, email });
@@ -412,11 +478,28 @@ io.on('connection', (socket) => {
   socket.on('user-activity', (activity) => {
     const userData = connectedUsers.get(socket.id);
     if (userData) {
-      userPresence.set(userData.uid, { 
-        online: true, 
-        lastSeen: new Date(),
-        lastActivity: activity
-      });
+      const { uid } = userData;
+      
+      // Update presence data
+      const presenceData = userPresence.get(uid) || { online: false, lastSeen: new Date() };
+      presenceData.online = true;
+      presenceData.lastSeen = new Date();
+      presenceData.lastActivity = activity;
+      presenceData.status = 'online';
+      userPresence.set(uid, presenceData);
+      
+      // Clear any existing away timeout
+      if (presenceTimeouts.has(uid)) {
+        clearTimeout(presenceTimeouts.get(uid));
+        presenceTimeouts.delete(uid);
+      }
+      
+      // Set new away timeout (5 minutes of inactivity)
+      const awayTimeout = setTimeout(() => setUserAway(uid), 5 * 60 * 1000);
+      presenceTimeouts.set(uid, awayTimeout);
+      
+      // Emit presence update if status changed
+      emitUserPresenceUpdate(uid, 'online', activity);
     }
   });
 
@@ -427,10 +510,18 @@ io.on('connection', (socket) => {
     if (userData) {
       const { uid } = userData;
       
-      // Update presence
+      // Clear away timeout
+      if (presenceTimeouts.has(uid)) {
+        clearTimeout(presenceTimeouts.get(uid));
+        presenceTimeouts.delete(uid);
+      }
+      
+      // Update presence to offline
       userPresence.set(uid, { 
         online: false, 
-        lastSeen: new Date() 
+        lastSeen: new Date(),
+        lastActivity: 'disconnected',
+        status: 'offline'
       });
       
       // Remove from tracking
@@ -438,9 +529,9 @@ io.on('connection', (socket) => {
       userSessions.delete(uid);
       
       // Emit user offline status
-      emitUserPresenceUpdate(uid, false);
+      emitUserPresenceUpdate(uid, 'offline', 'disconnected');
       
-      console.log(`User ${userData.username} (${uid}) disconnected`);
+      console.log(`User ${userData.username} (${uid}) disconnected and offline`);
     }
     
     // Remove from all spot watchers
@@ -458,17 +549,50 @@ io.on('connection', (socket) => {
 });
 
 // Helper function to emit user presence updates
-function emitUserPresenceUpdate(userId, online) {
+function emitUserPresenceUpdate(userId, status, lastActivity = null) {
   const user = users.find(u => u.uid === userId);
   if (user) {
+    const presenceData = userPresence.get(userId) || { online: false, lastSeen: new Date() };
+    
     // Emit to users who might be interested (e.g., spot owners, message recipients)
     io.emit('user-presence-update', {
       userId,
       username: user.username,
-      online,
-      lastSeen: new Date()
+      status,
+      online: status === 'online',
+      lastSeen: presenceData.lastSeen,
+      lastActivity: lastActivity || presenceData.lastActivity,
+      timestamp: new Date()
     });
   }
+}
+
+// Helper function to set user away status after inactivity
+function setUserAway(userId) {
+  const presenceData = userPresence.get(userId);
+  if (presenceData && presenceData.status === 'online') {
+    presenceData.status = 'away';
+    presenceData.lastSeen = new Date();
+    userPresence.set(userId, presenceData);
+    emitUserPresenceUpdate(userId, 'away');
+  }
+}
+
+// Helper function to get user presence status
+function getUserPresenceStatus(userId) {
+  const presenceData = userPresence.get(userId);
+  if (!presenceData) {
+    return { status: 'offline', lastSeen: null, lastActivity: null };
+  }
+  
+  // Check if user should be marked as away (inactive for 5 minutes)
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+  if (presenceData.status === 'online' && presenceData.lastSeen < fiveMinutesAgo) {
+    presenceData.status = 'away';
+    userPresence.set(userId, presenceData);
+  }
+  
+  return presenceData;
 }
 
 app.post('/register', (req, res) => {
@@ -1761,6 +1885,8 @@ const createTestData = () => {
       price: 15,
       description: 'Premium parking in the heart of downtown with 24/7 security',
       available: true,
+      available24h: true,
+      status: 'available',
       owner: 'user_john_123',
       ownerName: 'John Doe',
       images: [
@@ -1772,7 +1898,6 @@ const createTestData = () => {
       rating: 4.5,
       reviewCount: 12,
       parkingType: 'lot',
-      available24h: true,
       advanceBooking: 24,
       vehicleTypes: ['car', 'suv'],
       createdAt: new Date().toISOString()
@@ -1786,6 +1911,8 @@ const createTestData = () => {
       price: 20,
       description: 'Convenient parking near airport with shuttle service',
       available: true,
+      available24h: true,
+      status: 'available',
       owner: 'user_jane_456',
       ownerName: 'Jane Smith',
       images: [
@@ -1797,7 +1924,6 @@ const createTestData = () => {
       rating: 4.8,
       reviewCount: 25,
       parkingType: 'lot',
-      available24h: true,
       advanceBooking: 48,
       vehicleTypes: ['car', 'suv', 'truck'],
       createdAt: new Date().toISOString()
@@ -1811,6 +1937,8 @@ const createTestData = () => {
       price: 10,
       description: 'Affordable parking near popular shopping mall',
       available: true,
+      available24h: false,
+      status: 'available',
       owner: 'user_mike_789',
       ownerName: 'Mike Wilson',
       images: [
@@ -1822,7 +1950,6 @@ const createTestData = () => {
       rating: 4.2,
       reviewCount: 8,
       parkingType: 'lot',
-      available24h: false,
       advanceBooking: 12,
       vehicleTypes: ['car'],
       createdAt: new Date().toISOString()
@@ -1836,6 +1963,8 @@ const createTestData = () => {
       price: 8,
       description: 'Quiet residential parking with easy access',
       available: true,
+      available24h: true,
+      status: 'available',
       owner: 'user_sarah_101',
       ownerName: 'Sarah Jones',
       images: [
@@ -1847,9 +1976,112 @@ const createTestData = () => {
       rating: 4.0,
       reviewCount: 5,
       parkingType: 'street',
-      available24h: true,
       advanceBooking: 6,
       vehicleTypes: ['car'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_office_005',
+      title: 'Office Building Parking',
+      location: '555 Business Center, Financial District',
+      coordinates: [19.0789, 72.8712],
+      hourlyRate: '$18',
+      price: 18,
+      description: 'Professional parking in business district',
+      available: false,
+      available24h: false,
+      status: 'occupied',
+      owner: 'user_john_123',
+      ownerName: 'John Doe',
+      images: [
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'security_guard', 'fenced'],
+      amenities: ['covered', 'accessible'],
+      rating: 4.3,
+      reviewCount: 15,
+      parkingType: 'covered_lot',
+      advanceBooking: 24,
+      vehicleTypes: ['car', 'suv'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_hospital_006',
+      title: 'Hospital Parking',
+      location: '777 Medical Center Drive',
+      coordinates: [19.0856, 72.8789],
+      hourlyRate: '$12',
+      price: 12,
+      description: 'Convenient parking near medical facilities',
+      available: false,
+      available24h: true,
+      status: 'occupied',
+      owner: 'user_jane_456',
+      ownerName: 'Jane Smith',
+      images: [
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'well_lit'],
+      amenities: ['accessible', 'restroom'],
+      rating: 4.1,
+      reviewCount: 22,
+      parkingType: 'lot',
+      advanceBooking: 12,
+      vehicleTypes: ['car'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_stadium_007',
+      title: 'Stadium Parking',
+      location: '888 Sports Complex Road',
+      coordinates: [19.0698, 72.8845],
+      hourlyRate: '$25',
+      price: 25,
+      description: 'Event parking with easy stadium access',
+      available: true,
+      available24h: false,
+      status: 'available',
+      owner: 'user_mike_789',
+      ownerName: 'Mike Wilson',
+      images: [
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'security_guard'],
+      amenities: ['restroom', 'food_vendors'],
+      rating: 4.6,
+      reviewCount: 18,
+      parkingType: 'lot',
+      advanceBooking: 48,
+      vehicleTypes: ['car', 'suv', 'truck'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_university_008',
+      title: 'University Campus Parking',
+      location: '999 Education Boulevard',
+      coordinates: [19.0723, 72.8678],
+      hourlyRate: '$6',
+      price: 6,
+      description: 'Student-friendly parking near campus',
+      available: false,
+      available24h: false,
+      status: 'occupied',
+      owner: 'user_sarah_101',
+      ownerName: 'Sarah Jones',
+      images: [
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv'],
+      amenities: ['bike_racks', 'accessible'],
+      rating: 3.8,
+      reviewCount: 9,
+      parkingType: 'lot',
+      advanceBooking: 6,
+      vehicleTypes: ['car', 'bike'],
       createdAt: new Date().toISOString()
     }
   ];
@@ -2560,6 +2792,7 @@ app.post('/api/messages', (req, res) => {
       conversationId,
       senderId: userId,
       content,
+      attachments: req.body.attachments || [],
       timestamp: new Date().toISOString(),
       read: false
     };
@@ -2583,6 +2816,90 @@ app.post('/api/messages', (req, res) => {
     res.status(201).json({ message });
   } catch (error) {
     console.error('Error sending message:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Upload file attachment for messages
+app.post('/api/messages/upload-attachment', upload.single('attachment'), (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    const fileInfo = {
+      id: `file_${Date.now()}`,
+      originalName: req.file.originalname,
+      filename: req.file.filename,
+      path: req.file.path,
+      url: `/uploads/attachments/${req.file.filename}`,
+      size: req.file.size,
+      mimetype: req.file.mimetype,
+      uploadedBy: userId,
+      uploadedAt: new Date().toISOString()
+    };
+
+    res.status(201).json({ 
+      message: 'File uploaded successfully',
+      file: fileInfo
+    });
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get file attachment
+app.get('/api/messages/attachment/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const filePath = path.join(ATTACHMENTS_DIR, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    res.sendFile(filePath);
+  } catch (error) {
+    console.error('Error serving file:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Delete file attachment
+app.delete('/api/messages/attachment/:filename', (req, res) => {
+  try {
+    const { filename } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const filePath = path.join(ATTACHMENTS_DIR, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    // Remove file from disk
+    fs.unlinkSync(filePath);
+    
+    res.json({ message: 'File deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting file:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -2618,8 +2935,8 @@ app.put('/api/conversations/:conversationId/read', (req, res) => {
   }
 });
 
-// Get all users (for messaging)
-app.get('/api/users', (req, res) => {
+// Get all users (for messaging - non-admin users)
+app.get('/api/users/messaging', (req, res) => {
   try {
     const userId = req.headers.authorization?.replace('Bearer ', '');
     if (!userId) {
@@ -3184,6 +3501,463 @@ app.get('/api/users', (req, res) => {
     res.json({ users: safeUsers });
   } catch (error) {
     console.error('Error getting users:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get user details (admin only)
+app.get('/api/users/:userId/details', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const adminUserId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!adminUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(adminUserId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const user = users.find(u => u.uid === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get user's bookings
+    const userBookings = bookings.filter(b => b.userId === userId);
+    
+    // Get user's spots
+    const userSpots = parkingSpots.filter(s => s.owner === userId);
+    
+    // Get user's reports (as reporter)
+    const userReports = (global.reports || []).filter(r => r.reporterId === userId);
+    
+    // Get reports against user
+    const reportsAgainstUser = (global.reports || []).filter(r => r.reportedUserId === userId);
+
+    // Get user presence status
+    const presenceStatus = getUserPresenceStatus(userId);
+
+    const userDetails = {
+      uid: user.uid,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName || user.username,
+      isAdmin: user.isAdmin || false,
+      isVerified: user.isVerified || false,
+      createdAt: user.createdAt || user.timestamp,
+      lastSeen: user.lastSeen,
+      totalBookings: userBookings.length,
+      totalSpots: userSpots.length,
+      totalReports: userReports.length,
+      reportsAgainst: reportsAgainstUser.length,
+      bookings: userBookings.slice(0, 10), // Last 10 bookings
+      spots: userSpots.slice(0, 10), // Last 10 spots
+      reports: userReports.slice(0, 10), // Last 10 reports
+      reportsAgainst: reportsAgainstUser.slice(0, 10), // Last 10 reports against
+      // Presence information
+      presence: presenceStatus
+    };
+
+    res.json({ user: userDetails });
+  } catch (error) {
+    console.error('Error getting user details:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get user presence status (public endpoint)
+app.get('/api/users/:userId/presence', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const requestingUserId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!requestingUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = users.find(u => u.uid === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const presenceStatus = getUserPresenceStatus(userId);
+
+    res.json({ 
+      userId,
+      username: user.username,
+      presence: presenceStatus
+    });
+  } catch (error) {
+    console.error('Error getting user presence:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all online users (admin only)
+app.get('/api/admin/online-users', (req, res) => {
+  try {
+    const adminUserId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!adminUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(adminUserId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const onlineUsers = [];
+    userPresence.forEach((presence, userId) => {
+      const user = users.find(u => u.uid === userId);
+      if (user && presence.status !== 'offline') {
+        onlineUsers.push({
+          uid: userId,
+          username: user.username,
+          email: user.email,
+          status: presence.status,
+          lastSeen: presence.lastSeen,
+          lastActivity: presence.lastActivity
+        });
+      }
+    });
+
+    res.json({ 
+      onlineUsers,
+      totalOnline: onlineUsers.length,
+      totalUsers: users.length
+    });
+  } catch (error) {
+    console.error('Error getting online users:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Update user role (admin only)
+app.patch('/api/users/:userId/role', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const adminUserId = req.headers.authorization?.replace('Bearer ', '');
+    const { isAdmin: newAdminStatus } = req.body;
+    
+    if (!adminUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(adminUserId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const user = users.find(u => u.uid === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.isAdmin = newAdminStatus;
+    saveData(USERS_FILE, users);
+
+    res.json({ 
+      message: 'User role updated successfully',
+      user: {
+        uid: user.uid,
+        username: user.username,
+        email: user.email,
+        isAdmin: user.isAdmin
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user role:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Ban/Unban user (admin only)
+app.patch('/api/users/:userId/ban', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const adminUserId = req.headers.authorization?.replace('Bearer ', '');
+    const { banned, reason } = req.body;
+    
+    if (!adminUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(adminUserId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const user = users.find(u => u.uid === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    user.banned = banned;
+    user.bannedAt = banned ? new Date().toISOString() : null;
+    user.banReason = banned ? reason : null;
+    user.bannedBy = banned ? adminUserId : null;
+    
+    saveData(USERS_FILE, users);
+
+    res.json({ 
+      message: `User ${banned ? 'banned' : 'unbanned'} successfully`,
+      user: {
+        uid: user.uid,
+        username: user.username,
+        email: user.email,
+        banned: user.banned,
+        bannedAt: user.bannedAt,
+        banReason: user.banReason
+      }
+    });
+  } catch (error) {
+    console.error('Error updating user ban status:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get system analytics (admin only)
+app.get('/api/admin/analytics', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(userId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    // Calculate analytics
+    const totalUsers = users.length;
+    const totalSpots = parkingSpots.length;
+    const totalBookings = bookings.length;
+    const totalTickets = supportTickets.length;
+    const totalReports = (global.reports || []).length;
+
+    // Active users (users with bookings in last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const activeUsers = users.filter(user => {
+      const userBookings = bookings.filter(b => b.userId === user.uid);
+      return userBookings.some(b => new Date(b.createdAt) > thirtyDaysAgo);
+    }).length;
+
+    // Revenue analytics (if payment data exists)
+    const totalRevenue = bookings.reduce((sum, booking) => {
+      return sum + (booking.amount || 0);
+    }, 0);
+
+    // Popular spots
+    const spotBookings = {};
+    bookings.forEach(booking => {
+      if (booking.spotId) {
+        spotBookings[booking.spotId] = (spotBookings[booking.spotId] || 0) + 1;
+      }
+    });
+
+    const popularSpots = Object.entries(spotBookings)
+      .sort(([,a], [,b]) => b - a)
+      .slice(0, 5)
+      .map(([spotId, count]) => {
+        const spot = parkingSpots.find(s => s.id === spotId);
+        return {
+          spotId,
+          location: spot?.location || 'Unknown',
+          bookings: count
+        };
+      });
+
+    // Recent activity
+    const recentBookings = bookings
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10);
+
+    const recentTickets = supportTickets
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      .slice(0, 10);
+
+    const analytics = {
+      overview: {
+        totalUsers,
+        totalSpots,
+        totalBookings,
+        totalTickets,
+        totalReports,
+        activeUsers,
+        totalRevenue: totalRevenue.toFixed(2)
+      },
+      popularSpots,
+      recentBookings,
+      recentTickets,
+      generatedAt: new Date().toISOString()
+    };
+
+    res.json({ analytics });
+  } catch (error) {
+    console.error('Error getting analytics:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all parking spots (admin only)
+app.get('/api/admin/spots', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(userId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const spotsWithDetails = parkingSpots.map(spot => {
+      const owner = users.find(u => u.uid === spot.owner);
+      const spotBookings = bookings.filter(b => b.spotId === spot.id);
+      
+      return {
+        ...spot,
+        ownerDetails: owner ? {
+          uid: owner.uid,
+          username: owner.username,
+          email: owner.email
+        } : null,
+        totalBookings: spotBookings.length,
+        revenue: spotBookings.reduce((sum, b) => sum + (b.amount || 0), 0)
+      };
+    });
+
+    res.json({ spots: spotsWithDetails });
+  } catch (error) {
+    console.error('Error getting spots:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all bookings (admin only)
+app.get('/api/admin/bookings', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(userId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const bookingsWithDetails = bookings.map(booking => {
+      const user = users.find(u => u.uid === booking.userId);
+      const spot = parkingSpots.find(s => s.id === booking.spotId);
+      const owner = spot ? users.find(u => u.uid === spot.owner) : null;
+      
+      return {
+        ...booking,
+        userDetails: user ? {
+          uid: user.uid,
+          username: user.username,
+          email: user.email
+        } : null,
+        spotDetails: spot ? {
+          id: spot.id,
+          location: spot.location,
+          title: spot.title
+        } : null,
+        ownerDetails: owner ? {
+          uid: owner.uid,
+          username: owner.username,
+          email: owner.email
+        } : null
+      };
+    });
+
+    res.json({ bookings: bookingsWithDetails });
+  } catch (error) {
+    console.error('Error getting bookings:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Delete spot (admin only)
+app.delete('/api/admin/spots/:spotId', (req, res) => {
+  try {
+    const { spotId } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(userId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const spotIndex = parkingSpots.findIndex(s => s.id === spotId);
+    if (spotIndex === -1) {
+      return res.status(404).json({ message: 'Spot not found' });
+    }
+
+    // Remove spot
+    parkingSpots.splice(spotIndex, 1);
+    saveData(SPOTS_FILE, parkingSpots);
+
+    // Cancel all bookings for this spot
+    const spotBookings = bookings.filter(b => b.spotId === spotId);
+    spotBookings.forEach(booking => {
+      booking.status = 'cancelled';
+      booking.cancelledAt = new Date().toISOString();
+      booking.cancelledBy = userId;
+      booking.cancelReason = 'Spot removed by admin';
+    });
+    saveData(BOOKINGS_FILE, bookings);
+
+    res.json({ 
+      message: 'Spot deleted successfully',
+      cancelledBookings: spotBookings.length
+    });
+  } catch (error) {
+    console.error('Error deleting spot:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Cancel booking (admin only)
+app.patch('/api/admin/bookings/:bookingId/cancel', (req, res) => {
+  try {
+    const { bookingId } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    const { reason } = req.body;
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(userId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    const booking = bookings.find(b => b.id === bookingId);
+    if (!booking) {
+      return res.status(404).json({ message: 'Booking not found' });
+    }
+
+    booking.status = 'cancelled';
+    booking.cancelledAt = new Date().toISOString();
+    booking.cancelledBy = userId;
+    booking.cancelReason = reason || 'Cancelled by admin';
+
+    saveData(BOOKINGS_FILE, bookings);
+
+    res.json({ 
+      message: 'Booking cancelled successfully',
+      booking
+    });
+  } catch (error) {
+    console.error('Error cancelling booking:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

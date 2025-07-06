@@ -38,6 +38,92 @@ a {
   background: #1E40AF;
 }
 
+/* Enhanced Header Styles */
+.airbnb-app-header {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease-in-out;
+}
+
+.airbnb-app-header:hover {
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+/* Centered Navigation */
+.header-navigation-center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-grow: 1;
+}
+
+/* Navigation link animations */
+.airbnb-nav-link {
+  position: relative;
+  transition: all 0.2s ease-in-out;
+}
+
+.airbnb-nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: #1E3A8A;
+  transition: all 0.3s ease-in-out;
+  transform: translateX(-50%);
+}
+
+.airbnb-nav-link:hover::after {
+  width: 100%;
+}
+
+/* Profile Dropdown Enhancements */
+.profile-dropdown {
+  min-width: 240px !important;
+}
+
+.profile-dropdown .MuiMenuItem-root {
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin: 2px 8px;
+  transition: all 0.2s ease-in-out;
+}
+
+.profile-dropdown .MuiMenuItem-root:hover {
+  background-color: rgba(30, 58, 138, 0.08);
+  transform: translateX(4px);
+}
+
+.profile-dropdown .MuiDivider-root {
+  margin: 8px 0;
+}
+
+/* Primary button enhancements */
+.airbnb-btn-primary {
+  transition: all 0.3s ease-in-out !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.airbnb-btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s ease-in-out;
+}
+
+.airbnb-btn-primary:hover::before {
+  left: 100%;
+}
+
 /* Image upload preview styles */
 .image-preview-container {
   display: flex;
@@ -103,4 +189,82 @@ footer {
   width: 100%;
   background: white;
   box-shadow: 0 -1px 0 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced responsive design */
+@media (max-width: 768px) {
+  .airbnb-app-header {
+    background: rgba(255, 255, 255, 0.98) !important;
+  }
+  
+  .airbnb-nav-link::after {
+    display: none;
+  }
+}
+
+/* Smooth page transitions */
+.page-transition {
+  transition: opacity 0.3s ease-in-out;
+}
+
+.page-transition-enter {
+  opacity: 0;
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+}
+
+.page-transition-exit {
+  opacity: 1;
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+}
+
+/* Enhanced focus states for accessibility */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 2px solid #1E3A8A;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Loading spinner enhancements */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Card hover effects */
+.hover-card {
+  transition: all 0.3s ease-in-out;
+}
+
+.hover-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Text selection styling */
+::selection {
+  background: rgba(30, 58, 138, 0.2);
+  color: #1E3A8A;
+}
+
+::-moz-selection {
+  background: rgba(30, 58, 138, 0.2);
+  color: #1E3A8A;
 }

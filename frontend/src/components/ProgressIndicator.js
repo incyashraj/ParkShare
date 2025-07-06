@@ -1,6 +1,3 @@
-import { Box, LinearProgress, Typography, Paper, Fade, Slide,  } from '@mui/material';
-import { CheckCircle as CheckIcon, Error as ErrorIcon, Info as InfoIcon,  } from '@mui/icons-material';
-
 import {
   Box,
   LinearProgress,
