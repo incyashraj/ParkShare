@@ -38,6 +38,138 @@ const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 const CONVERSATIONS_FILE = path.join(DATA_DIR, 'conversations.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 
+// ===== Support Ticket System =====
+const SUPPORT_TICKETS_FILE = path.join(DATA_DIR, 'supportTickets.json');
+let supportTickets = [];
+
+function saveSupportTickets() {
+  saveData(SUPPORT_TICKETS_FILE, supportTickets);
+}
+
+function isAdmin(userId) {
+  const user = users.find(u => u.uid === userId);
+  return user && (user.isAdmin || user.email === 'incyashraj@gmail.com');
+}
+
+// Create a new support ticket
+app.post('/api/support/tickets', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const user = users.find(u => u.uid === userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    const { subject, message } = req.body;
+    if (!subject || !message) return res.status(400).json({ message: 'Subject and message required' });
+    const ticket = {
+      id: `ticket_${Date.now()}`,
+      userId,
+      user: { uid: user.uid, username: user.username, email: user.email },
+      subject,
+      message,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      assignedTo: null,
+      responses: []
+    };
+    supportTickets.push(ticket);
+    saveSupportTickets();
+    res.status(201).json({ message: 'Ticket submitted', ticket });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to submit ticket' });
+  }
+});
+
+// List all tickets (admin) or own tickets (user)
+app.get('/api/support/tickets', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const admin = isAdmin(userId);
+    let tickets = admin ? supportTickets : supportTickets.filter(t => t.userId === userId);
+    res.json({ tickets });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch tickets' });
+  }
+});
+
+// Get single ticket (admin or owner)
+app.get('/api/support/tickets/:id', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const ticket = supportTickets.find(t => t.id === req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    if (!isAdmin(userId) && ticket.userId !== userId) return res.status(403).json({ message: 'Forbidden' });
+    res.json({ ticket });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch ticket' });
+  }
+});
+
+// Respond to a ticket (admin or user)
+app.post('/api/support/tickets/:id/respond', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    const ticket = supportTickets.find(t => t.id === req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    if (!isAdmin(userId) && ticket.userId !== userId) return res.status(403).json({ message: 'Forbidden' });
+    const user = users.find(u => u.uid === userId);
+    const { message } = req.body;
+    if (!message) return res.status(400).json({ message: 'Message required' });
+    const response = {
+      id: `resp_${Date.now()}`,
+      userId,
+      user: { uid: user.uid, username: user.username, email: user.email },
+      message,
+      createdAt: new Date().toISOString()
+    };
+    ticket.responses.push(response);
+    ticket.updatedAt = new Date().toISOString();
+    saveSupportTickets();
+    res.json({ message: 'Response added', response });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to add response' });
+  }
+});
+
+// Update ticket (status, assignment)
+app.patch('/api/support/tickets/:id', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!isAdmin(userId)) return res.status(403).json({ message: 'Forbidden' });
+    const ticket = supportTickets.find(t => t.id === req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    const { status, assignedTo } = req.body;
+    if (status) ticket.status = status;
+    if (assignedTo) ticket.assignedTo = assignedTo;
+    ticket.updatedAt = new Date().toISOString();
+    saveSupportTickets();
+    res.json({ message: 'Ticket updated', ticket });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update ticket' });
+  }
+});
+
+// Delete ticket (admin only)
+app.delete('/api/support/tickets/:id', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    if (!isAdmin(userId)) return res.status(403).json({ message: 'Forbidden' });
+    const idx = supportTickets.findIndex(t => t.id === req.params.id);
+    if (idx === -1) return res.status(404).json({ message: 'Ticket not found' });
+    supportTickets.splice(idx, 1);
+    saveSupportTickets();
+    res.json({ message: 'Ticket deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to delete ticket' });
+  }
+});
+// ===================================
+
 // Ensure data directory exists
 if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -71,9 +203,10 @@ let parkingSpots = loadData(SPOTS_FILE, []);
 let bookings = loadData(BOOKINGS_FILE, []);
 let conversations = loadData(CONVERSATIONS_FILE, []);
 let messages = loadData(MESSAGES_FILE, []);
+supportTickets = loadData(SUPPORT_TICKETS_FILE, []);
 let verificationCodes = {}; // Store verification codes temporarily
 
-console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings, ${conversations.length} conversations, ${messages.length} messages`);
+console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings, ${conversations.length} conversations, ${messages.length} messages, ${supportTickets.length} support tickets`);
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -3017,6 +3150,40 @@ app.get('/api/users/:userId/blocked', (req, res) => {
     res.json({ blockedUsers });
   } catch (error) {
     console.error('Error getting blocked users:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Get all users (admin only)
+app.get('/api/users', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (!isAdmin(userId)) {
+      return res.status(403).json({ message: 'Forbidden - Admin access required' });
+    }
+
+    // Return users with sensitive data filtered out
+    const safeUsers = users.map(user => ({
+      uid: user.uid,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName || user.username,
+      isAdmin: user.isAdmin || false,
+      createdAt: user.createdAt || user.timestamp,
+      lastSeen: user.lastSeen,
+      isVerified: user.isVerified || false,
+      totalBookings: bookings.filter(b => b.userId === user.uid).length,
+      totalSpots: parkingSpots.filter(s => s.owner === user.uid).length
+    }));
+
+    res.json({ users: safeUsers });
+  } catch (error) {
+    console.error('Error getting users:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
 });

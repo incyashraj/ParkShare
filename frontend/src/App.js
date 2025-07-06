@@ -32,6 +32,7 @@ import {
   VerifiedUser,
   Message as MessageIcon,
   Support as SupportIcon,
+  AdminPanelSettings,
 } from '@mui/icons-material';
 import Login from './Login';
 import Register from './Register';
@@ -55,6 +56,7 @@ import Dashboard from './components/Dashboard';
 import TestBooking from './TestBooking';
 import DesignSystemDemo from './components/DesignSystemDemo';
 import SupportPanel from './components/SupportPanel';
+import AdminPanel from './components/AdminPanel';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -537,6 +539,16 @@ function AppContent() {
                               <SupportIcon sx={{ mr: 2 }} />
                               Support Panel
                             </MenuItem>
+                            {currentUser && (currentUser.isAdmin || currentUser.email === 'incyashraj@gmail.com') && (
+                              <MenuItem 
+                                component={Link} 
+                                to="/admin"
+                                onClick={handleMenuClose}
+                              >
+                                <AdminPanelSettings sx={{ mr: 2 }} />
+                                Admin Panel
+                              </MenuItem>
+                            )}
                             <MenuItem 
                               component={Link} 
                               to="/verify"
@@ -589,6 +601,7 @@ function AppContent() {
                   <Route path="/favorites" element={<FavoritesManager />} />
                   <Route path="/analytics" element={<ParkingAnalytics />} />
                   <Route path="/support" element={<SupportPanel />} />
+                  <Route path="/admin" element={<AdminPanel />} />
                   <Route path="/test-booking" element={<TestBooking />} />
                   <Route path="/design-demo" element={<DesignSystemDemo />} />
                   <Route path="/login" element={<Login />} />

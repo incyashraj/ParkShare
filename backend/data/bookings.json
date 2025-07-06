@@ -165,5 +165,30 @@
         72.9089
       ]
     }
+  },
+  {
+    "id": "booking_1751835428301",
+    "spotId": "spot_residential_004",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "Mblue",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-05T20:57:00.000Z",
+    "endTime": "2025-07-06T20:57:00.000Z",
+    "hours": 24,
+    "totalPrice": 192,
+    "hourlyRate": "$8",
+    "status": "confirmed",
+    "createdAt": "2025-07-06T20:57:08.301Z",
+    "spotOwner": "user_sarah_101",
+    "spotOwnerName": "Sarah Jones",
+    "location": "321 Oak Street, Residential Area",
+    "spotDetails": {
+      "location": "321 Oak Street, Residential Area",
+      "hourlyRate": "$8",
+      "coordinates": [
+        19.0736,
+        72.8816
+      ]
+    }
   }
 ]
