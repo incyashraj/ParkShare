@@ -53,6 +53,7 @@ import {
   Archive as ArchiveIcon,
   Refresh as RefreshIcon,
   AttachFile as AttachFileIcon,
+  LocalParking,
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
@@ -1198,36 +1199,75 @@ const MessagingSystem = () => {
                         </Box>
                       }
                       secondary={
-                        <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
-                          <Typography 
-                            variant="body2" 
-                            color={conv.muted ? 'text.disabled' : 'text.secondary'} 
-                            noWrap 
-                            sx={{ 
-                              flex: 1, 
-                              maxWidth: '70%',
-                              opacity: conv.muted ? 0.6 : 1,
-                              fontSize: '0.8rem',
-                              lineHeight: 1.2
-                            }}
-                          >
-                            {lastMsg ? (lastMsg.content && lastMsg.content.length > 25 ? lastMsg.content.slice(0, 25) + '…' : lastMsg.content) : 'No messages yet'}
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
-                            {lastMsg && (
-                              <Typography variant="caption" color="text.disabled" sx={{ minWidth: 50, textAlign: 'right', fontSize: '0.7rem' }}>
-                                {lastMsg.createdAt ? formatTimeAgo(lastMsg.createdAt) : ''}
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          {/* Spot information if available */}
+                          {conv.spotDetails && (
+                            <Box sx={{ 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 1, 
+                              bgcolor: 'rgba(25, 118, 210, 0.08)', 
+                              px: 1, 
+                              py: 0.5, 
+                              borderRadius: 1,
+                              border: '1px solid rgba(25, 118, 210, 0.2)'
+                            }}>
+                              <LocalParking sx={{ fontSize: 14, color: 'primary.main' }} />
+                              <Typography 
+                                variant="caption" 
+                                color="primary.main" 
+                                sx={{ 
+                                  fontWeight: 500,
+                                  fontSize: '0.7rem',
+                                  flex: 1,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap'
+                                }}
+                              >
+                                {conv.spotDetails.title}
                               </Typography>
-                            )}
-                            {/* Status indicator */}
-                            {otherUser && (
-                              <UserStatusIndicator 
-                                userId={otherUser.uid} 
-                                username={otherUser.username} 
-                                size="small"
-                                showTooltip={false}
+                              <Chip 
+                                label={conv.spotDetails.available ? 'Available' : 'Occupied'} 
+                                size="small" 
+                                color={conv.spotDetails.available ? 'success' : 'default'}
+                                sx={{ height: 16, fontSize: '0.6rem' }}
                               />
-                            )}
+                            </Box>
+                          )}
+                          
+                          {/* Message content */}
+                          <Box sx={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+                            <Typography 
+                              variant="body2" 
+                              color={conv.muted ? 'text.disabled' : 'text.secondary'} 
+                              noWrap 
+                              sx={{ 
+                                flex: 1, 
+                                maxWidth: '70%',
+                                opacity: conv.muted ? 0.6 : 1,
+                                fontSize: '0.8rem',
+                                lineHeight: 1.2
+                              }}
+                            >
+                              {lastMsg ? (lastMsg.content && lastMsg.content.length > 25 ? lastMsg.content.slice(0, 25) + '…' : lastMsg.content) : 'No messages yet'}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
+                              {lastMsg && (
+                                <Typography variant="caption" color="text.disabled" sx={{ minWidth: 50, textAlign: 'right', fontSize: '0.7rem' }}>
+                                  {lastMsg.createdAt ? formatTimeAgo(lastMsg.createdAt) : ''}
+                                </Typography>
+                              )}
+                              {/* Status indicator */}
+                              {otherUser && (
+                                <UserStatusIndicator 
+                                  userId={otherUser.uid} 
+                                  username={otherUser.username} 
+                                  size="small"
+                                  showTooltip={false}
+                                />
+                              )}
+                            </Box>
                           </Box>
                         </Box>
                       }
@@ -1295,6 +1335,36 @@ const MessagingSystem = () => {
                         showTooltip={true}
                       />
                     </Box>
+                    
+                    {/* Spot information if available */}
+                    {selectedConversation.spotDetails && (
+                      <Box sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 1, 
+                        mt: 1,
+                        bgcolor: 'rgba(25, 118, 210, 0.08)', 
+                        px: 2, 
+                        py: 1, 
+                        borderRadius: 2,
+                        border: '1px solid rgba(25, 118, 210, 0.2)'
+                      }}>
+                        <LocalParking sx={{ fontSize: 16, color: 'primary.main' }} />
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="body2" color="primary.main" fontWeight={500}>
+                            {selectedConversation.spotDetails.title}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {selectedConversation.spotDetails.location} • {selectedConversation.spotDetails.hourlyRate}
+                          </Typography>
+                        </Box>
+                        <Chip 
+                          label={selectedConversation.spotDetails.available ? 'Available' : 'Occupied'} 
+                          size="small" 
+                          color={selectedConversation.spotDetails.available ? 'success' : 'default'}
+                        />
+                      </Box>
+                    )}
                   </Box>
                   
                   <Stack direction="row" spacing={1}>

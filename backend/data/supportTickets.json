@@ -1,1 +1,60 @@
-[] 
+[
+  {
+    "id": "ticket_001",
+    "userId": "user_john_123",
+    "username": "john_doe",
+    "email": "john@example.com",
+    "subject": "Payment Issue",
+    "message": "I'm having trouble with the payment system. It keeps showing an error when I try to book a spot.",
+    "status": "open",
+    "priority": "high",
+    "category": "payment",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2024-01-15T10:30:00Z",
+    "responses": []
+  },
+  {
+    "id": "ticket_002",
+    "userId": "user_jane_456",
+    "username": "jane_smith",
+    "email": "jane@example.com",
+    "subject": "Spot Not Available",
+    "message": "I booked a spot but when I arrived, it was already occupied by another car. This is very frustrating.",
+    "status": "in_progress",
+    "priority": "medium",
+    "category": "booking",
+    "createdAt": "2024-01-14T15:45:00Z",
+    "updatedAt": "2024-01-15T09:20:00Z",
+    "responses": [
+      {
+        "id": "resp_001",
+        "adminId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "adminName": "Yashraj Pardeshi",
+        "message": "We apologize for this inconvenience. We're investigating the issue and will get back to you within 24 hours.",
+        "createdAt": "2024-01-15T09:20:00Z"
+      }
+    ]
+  },
+  {
+    "id": "ticket_003",
+    "userId": "user_mike_789",
+    "username": "mike_wilson",
+    "email": "mike@example.com",
+    "subject": "App Not Working",
+    "message": "The mobile app keeps crashing when I try to view my bookings. I've tried reinstalling but the problem persists.",
+    "status": "resolved",
+    "priority": "high",
+    "category": "technical",
+    "createdAt": "2024-01-13T08:15:00Z",
+    "updatedAt": "2024-01-14T16:30:00Z",
+    "responses": [
+      {
+        "id": "resp_002",
+        "adminId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "adminName": "Yashraj Pardeshi",
+        "message": "This issue has been resolved in our latest app update. Please update your app to version 2.1.0.",
+        "createdAt": "2024-01-14T16:30:00Z"
+      }
+    ]
+  }
+] 

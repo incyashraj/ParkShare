@@ -31,6 +31,7 @@ import {
   Support as SupportIcon,
   AdminPanelSettings,
   Person,
+  Logout,
 } from '@mui/icons-material';
 import Login from './Login';
 import Register from './Register';
@@ -55,6 +56,8 @@ import SupportPanel from './components/SupportPanel';
 import AdminPanel from './components/AdminPanel';
 import UserActivityTracker from './components/UserActivityTracker';
 import UserPresenceIndicator from './components/UserPresenceIndicator';
+import ProtectedRoute from './components/ProtectedRoute';
+import NotFound from './components/NotFound';
 import { RealtimeProvider } from './contexts/RealtimeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
@@ -339,7 +342,7 @@ const theme = createTheme({
 });
 
 function AppContent() {
-  const { currentUser } = useAuth();
+  const { currentUser, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
 
   console.log('AppContent rendered, currentUser:', currentUser);
@@ -350,6 +353,15 @@ function AppContent() {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      handleMenuClose();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -636,6 +648,14 @@ function AppContent() {
                               <SettingsIcon sx={{ mr: 2 }} />
                               Settings
                             </MenuItem>
+                            <Divider />
+                            <MenuItem 
+                              onClick={handleLogout}
+                              sx={{ color: 'error.main' }}
+                            >
+                              <Logout sx={{ mr: 2 }} />
+                              Sign Out
+                            </MenuItem>
                           </Menu>
                         </>
                       )}
@@ -646,6 +666,7 @@ function AppContent() {
 
               <Container component="main" className="airbnb-main-content" sx={{ mt: 2, pt: { xs: 8, md: 10 } }}>
                 <Routes>
+                  {/* Public Routes */}
                   <Route
                     path="/"
                     element={
@@ -656,25 +677,98 @@ function AppContent() {
                       )
                     }
                   />
-                  <Route path="/search" element={<ParkingSpotList />} />
-                  <Route path="/advanced-search" element={<AdvancedSearch />} />
-                  <Route path="/list" element={<ParkingSpotForm />} />
-                  <Route path="/spot/:spotId" element={<ParkingSpotDetail />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route path="/user-profile/:userId" element={<UserProfile />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="/bookings" element={<BookingManagement />} />
-                  <Route path="/notifications" element={<NotificationsPage />} />
-                  <Route path="/messages" element={<MessagingSystem />} />
-                  <Route path="/messages/:conversationId" element={<MessagingSystem />} />
-                  <Route path="/verify" element={<HostVerification />} />
-                  <Route path="/analytics" element={<ParkingAnalytics />} />
-                  <Route path="/support" element={<SupportPanel />} />
-                  <Route path="/admin" element={<AdminPanel />} />
-                  <Route path="/test-booking" element={<TestBooking />} />
-                  <Route path="/design-demo" element={<DesignSystemDemo />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
+                  <Route path="/spot/:spotId" element={<ParkingSpotDetail />} />
+                  
+                  {/* Protected Routes - Require Authentication */}
+                  <Route path="/search" element={
+                    <ProtectedRoute>
+                      <ParkingSpotList />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/advanced-search" element={
+                    <ProtectedRoute>
+                      <AdvancedSearch />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/list" element={
+                    <ProtectedRoute>
+                      <ParkingSpotForm />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/profile" element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/user-profile/:userId" element={
+                    <ProtectedRoute>
+                      <UserProfile />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/settings" element={
+                    <ProtectedRoute>
+                      <Settings />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/bookings" element={
+                    <ProtectedRoute>
+                      <BookingManagement />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/notifications" element={
+                    <ProtectedRoute>
+                      <NotificationsPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/messages" element={
+                    <ProtectedRoute>
+                      <MessagingSystem />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/messages/:conversationId" element={
+                    <ProtectedRoute>
+                      <MessagingSystem />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/verify" element={
+                    <ProtectedRoute>
+                      <HostVerification />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/analytics" element={
+                    <ProtectedRoute>
+                      <ParkingAnalytics />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/support" element={
+                    <ProtectedRoute>
+                      <SupportPanel />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Admin Routes - Require Admin Privileges */}
+                  <Route path="/admin" element={
+                    <ProtectedRoute adminOnly={true}>
+                      <AdminPanel />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Development/Test Routes */}
+                  <Route path="/test-booking" element={
+                    <ProtectedRoute>
+                      <TestBooking />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/design-demo" element={
+                    <ProtectedRoute>
+                      <DesignSystemDemo />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* 404 Route - Must be last */}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Container>
               <Footer />

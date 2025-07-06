@@ -80,8 +80,6 @@ const UserProfile = () => {
   useEffect(() => {
     if (userId) {
       loadUserProfile();
-      loadUserSpots();
-      loadUserReviews();
     }
   }, [userId]);
 
@@ -98,6 +96,8 @@ const UserProfile = () => {
       if (response.ok) {
         const data = await response.json();
         setUserProfile(data.profile);
+        setUserSpots(data.profile.spots || []);
+        setUserReviews(data.profile.reviews || []);
       } else {
         setError('Failed to load user profile');
       }
@@ -106,44 +106,6 @@ const UserProfile = () => {
       setError('Failed to load user profile');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadUserSpots = async () => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/spots?hostId=${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.uid}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUserSpots(data.spots || []);
-      }
-    } catch (error) {
-      console.error('Error loading user spots:', error);
-    }
-  };
-
-  const loadUserReviews = async () => {
-    try {
-      const response = await fetch(`http://localhost:3001/api/reviews?userId=${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.uid}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setUserReviews(data.reviews || []);
-      }
-    } catch (error) {
-      console.error('Error loading user reviews:', error);
     }
   };
 
@@ -341,6 +303,24 @@ const UserProfile = () => {
               {userProfile.username}
             </Typography>
             
+            {/* User Tier Badge */}
+            {userProfile.userTier && (
+              <Box sx={{ mb: 2 }}>
+                <Chip
+                  icon={<span style={{ fontSize: '1.2rem' }}>{userProfile.userTier.badge}</span>}
+                  label={userProfile.userTier.name}
+                  sx={{ 
+                    backgroundColor: userProfile.userTier.color,
+                    color: 'white',
+                    fontWeight: 'bold',
+                    '& .MuiChip-icon': {
+                      color: 'white'
+                    }
+                  }}
+                />
+              </Box>
+            )}
+            
             {userProfile.verified && (
               <Chip
                 icon={<VerifiedIcon />}
@@ -454,6 +434,42 @@ const UserProfile = () => {
             )}
           </Paper>
 
+          {/* User Tier Benefits */}
+          {userProfile.userTier && isOwnProfile && (
+            <Paper sx={{ p: 3, borderRadius: 3, mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <span style={{ fontSize: '1.5rem', marginRight: '8px' }}>{userProfile.userTier.badge}</span>
+                <Typography variant="h6" fontWeight="bold">
+                  {userProfile.userTier.name} Benefits
+                </Typography>
+              </Box>
+              <Grid container spacing={2}>
+                {userProfile.userTier.benefits.map((benefit, index) => (
+                  <Grid item xs={12} sm={6} key={index}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      p: 1.5, 
+                      borderRadius: 1,
+                      backgroundColor: 'rgba(25, 118, 210, 0.08)',
+                      border: '1px solid rgba(25, 118, 210, 0.2)'
+                    }}>
+                      <CheckCircleIcon sx={{ color: userProfile.userTier.color, mr: 1 }} />
+                      <Typography variant="body2">
+                        {benefit}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+              <Box sx={{ mt: 2, p: 2, backgroundColor: 'rgba(255, 193, 7, 0.1)', borderRadius: 1 }}>
+                <Typography variant="body2" color="text.secondary">
+                  <strong>How to level up:</strong> Maintain high ratings and complete more bookings to unlock additional benefits!
+                </Typography>
+              </Box>
+            </Paper>
+          )}
+
           {/* Parking Spots */}
           <Paper sx={{ p: 3, borderRadius: 3, mb: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -470,13 +486,14 @@ const UserProfile = () => {
             ) : (
               <Grid container spacing={2}>
                 {userSpots.slice(0, 3).map((spot) => (
-                  <Grid item xs={12} sm={6} md={4} key={spot._id}>
+                  <Grid item xs={12} sm={6} md={4} key={spot.id}>
                     <Card sx={{ height: '100%' }}>
                       <CardMedia
                         component="img"
                         height="140"
-                        image={spot.images?.[0] || '/default-parking.jpg'}
+                        image={spot.image || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop'}
                         alt={spot.title}
+                        sx={{ objectFit: 'cover' }}
                       />
                       <CardContent>
                         <Typography variant="h6" noWrap>
@@ -493,7 +510,7 @@ const UserProfile = () => {
                           size="small"
                           fullWidth
                           sx={{ mt: 1 }}
-                          onClick={() => navigate(`/spot/${spot._id}`)}
+                          onClick={() => navigate(`/spot/${spot.id}`)}
                         >
                           View Details
                         </Button>
@@ -518,17 +535,17 @@ const UserProfile = () => {
             ) : (
               <List>
                 {userReviews.slice(0, 5).map((review) => (
-                  <ListItem key={review._id} sx={{ px: 0 }}>
+                  <ListItem key={review.id} sx={{ px: 0 }}>
                     <ListItemAvatar>
-                      <Avatar src={review.reviewer?.avatarUrl}>
-                        {review.reviewer?.username?.[0]?.toUpperCase() || 'U'}
+                      <Avatar>
+                        {review.reviewer?.[0]?.toUpperCase() || 'U'}
                       </Avatar>
                     </ListItemAvatar>
                     <ListItemText
                       primary={
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                           <Typography variant="subtitle2">
-                            {review.reviewer?.username || 'Anonymous'}
+                            {review.reviewer || 'Anonymous'}
                           </Typography>
                           <Rating value={review.rating} readOnly size="small" />
                         </Box>
@@ -539,7 +556,7 @@ const UserProfile = () => {
                             {review.comment}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {new Date(review.createdAt).toLocaleDateString()}
+                            {new Date(review.date).toLocaleDateString()}
                           </Typography>
                         </Box>
                       }

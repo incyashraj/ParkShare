@@ -1,5 +1,160 @@
 [
   {
+    "id": "booking_1751835428301",
+    "spotId": "spot_residential_004",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "Mblue",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-05T20:57:00.000Z",
+    "endTime": "2025-07-06T20:57:00.000Z",
+    "hours": 24,
+    "totalPrice": 192,
+    "hourlyRate": "$8",
+    "status": "cancelled",
+    "createdAt": "2025-07-06T20:57:08.301Z",
+    "spotOwner": "user_sarah_101",
+    "spotOwnerName": "Sarah Jones",
+    "location": "321 Oak Street, Residential Area",
+    "spotDetails": {
+      "location": "321 Oak Street, Residential Area",
+      "hourlyRate": "$8",
+      "coordinates": [
+        19.0736,
+        72.8816
+      ]
+    },
+    "cancelledAt": "2025-07-06T23:37:07.212Z",
+    "cancelledBy": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "cancelReason": "No reason"
+  },
+  {
+    "id": "booking_1751825113569",
+    "spotId": "spot_mumbai_powai_005",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-06T18:05:00.000Z",
+    "endTime": "2025-07-07T18:05:00.000Z",
+    "hours": 24,
+    "totalPrice": 840,
+    "hourlyRate": "₹35",
+    "status": "confirmed",
+    "createdAt": "2025-07-06T18:05:13.569Z",
+    "spotOwner": "user_powai_host",
+    "spotOwnerName": "Rajesh Kumar",
+    "location": "Powai Lake Road, Near IIT Bombay",
+    "spotDetails": {
+      "location": "Powai Lake Road, Near IIT Bombay",
+      "hourlyRate": "₹35",
+      "coordinates": [
+        19.1197,
+        72.9089
+      ]
+    }
+  },
+  {
+    "id": "booking_1751821403228",
+    "spotId": "spot_mumbai_bandra_001",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-06T17:03:00.000Z",
+    "endTime": "2025-07-07T17:03:00.000Z",
+    "hours": 24,
+    "totalPrice": 1200,
+    "hourlyRate": "₹50",
+    "status": "cancelled",
+    "createdAt": "2025-07-06T17:03:23.228Z",
+    "spotOwner": "user_bandra_host",
+    "spotOwnerName": "Rahul Sharma",
+    "location": "Linking Road, Bandra West, Mumbai",
+    "spotDetails": {
+      "location": "Linking Road, Bandra West, Mumbai",
+      "hourlyRate": "₹50",
+      "coordinates": [
+        19.0596,
+        72.8295
+      ]
+    },
+    "cancelledAt": "2025-07-06T17:03:36.848Z"
+  },
+  {
+    "id": "booking_1751820458274",
+    "spotId": "spot_mumbai_juhu_004",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "Mblue",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-06T16:47:00.000Z",
+    "endTime": "2025-07-07T16:47:00.000Z",
+    "hours": 24,
+    "totalPrice": 960,
+    "hourlyRate": "₹40",
+    "status": "confirmed",
+    "createdAt": "2025-07-06T16:47:38.274Z",
+    "spotOwner": "user_juhu_host",
+    "spotOwnerName": "Sunita Desai",
+    "location": "Juhu Beach Road, Mumbai",
+    "spotDetails": {
+      "location": "Juhu Beach Road, Mumbai",
+      "hourlyRate": "₹40",
+      "coordinates": [
+        19.0996,
+        72.8295
+      ]
+    }
+  },
+  {
+    "id": "booking_1751819123269",
+    "spotId": "spot_mumbai_andheri_002",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "Mblue",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-06T16:25:00.000Z",
+    "endTime": "2025-07-07T16:25:00.000Z",
+    "hours": 24,
+    "totalPrice": 720,
+    "hourlyRate": "₹30",
+    "status": "confirmed",
+    "createdAt": "2025-07-06T16:25:23.269Z",
+    "spotOwner": "user_andheri_host",
+    "spotOwnerName": "Priya Patel",
+    "location": "Near Andheri Railway Station, Mumbai",
+    "spotDetails": {
+      "location": "Near Andheri Railway Station, Mumbai",
+      "hourlyRate": "₹30",
+      "coordinates": [
+        19.1197,
+        72.8464
+      ]
+    }
+  },
+  {
+    "id": "booking_1751818979630",
+    "spotId": "spot_mumbai_bandra_001",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "Mblue",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-06T16:22:00.000Z",
+    "endTime": "2025-07-07T16:22:00.000Z",
+    "hours": 24,
+    "totalPrice": 1200,
+    "hourlyRate": "₹50",
+    "status": "cancelled",
+    "createdAt": "2025-07-06T16:22:59.630Z",
+    "spotOwner": "user_bandra_host",
+    "spotOwnerName": "Rahul Sharma",
+    "location": "Linking Road, Bandra West, Mumbai",
+    "spotDetails": {
+      "location": "Linking Road, Bandra West, Mumbai",
+      "hourlyRate": "₹50",
+      "coordinates": [
+        19.0596,
+        72.8295
+      ]
+    },
+    "cancelledAt": "2025-07-06T16:52:41.620Z"
+  },
+  {
     "id": "booking_colaba_001",
     "spotId": "spot_mumbai_colaba_003",
     "userId": "tourist_001",
@@ -40,155 +195,114 @@
     "hourlyRate": "₹70"
   },
   {
-    "id": "booking_1751818979630",
-    "spotId": "spot_mumbai_bandra_001",
-    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "userName": "Mblue",
-    "userEmail": "123@gmail.com",
-    "startTime": "2025-07-06T16:22:00.000Z",
-    "endTime": "2025-07-07T16:22:00.000Z",
-    "hours": 24,
-    "totalPrice": 1200,
-    "hourlyRate": "₹50",
+    "id": "booking_new_001",
+    "spotId": "spot_new_001",
+    "userId": "user_jane_456",
+    "spotOwner": "user_new_004",
+    "startTime": "2025-07-04T23:24:21.614Z",
+    "endTime": "2025-07-05T00:24:21.614Z",
+    "totalPrice": 8,
+    "amount": 8,
     "status": "cancelled",
-    "createdAt": "2025-07-06T16:22:59.630Z",
-    "spotOwner": "user_bandra_host",
-    "spotOwnerName": "Rahul Sharma",
-    "location": "Linking Road, Bandra West, Mumbai",
-    "spotDetails": {
-      "location": "Linking Road, Bandra West, Mumbai",
-      "hourlyRate": "₹50",
-      "coordinates": [
-        19.0596,
-        72.8295
-      ]
+    "createdAt": "2025-07-04T23:24:21.614Z",
+    "review": {
+      "rating": 3,
+      "comment": "Basic parking spot, needs improvement.",
+      "reviewer": "Jane Smith",
+      "date": "2025-07-05T23:24:21.614Z"
     },
-    "cancelledAt": "2025-07-06T16:52:41.620Z"
+    "cancelledAt": "2025-07-06T23:37:20.083Z",
+    "cancelledBy": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "cancelReason": "No reason"
   },
   {
-    "id": "booking_1751819123269",
-    "spotId": "spot_mumbai_andheri_002",
-    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "userName": "Mblue",
-    "userEmail": "123@gmail.com",
-    "startTime": "2025-07-06T16:25:00.000Z",
-    "endTime": "2025-07-07T16:25:00.000Z",
-    "hours": 24,
-    "totalPrice": 720,
-    "hourlyRate": "₹30",
-    "status": "confirmed",
-    "createdAt": "2025-07-06T16:25:23.269Z",
-    "spotOwner": "user_andheri_host",
-    "spotOwnerName": "Priya Patel",
-    "location": "Near Andheri Railway Station, Mumbai",
-    "spotDetails": {
-      "location": "Near Andheri Railway Station, Mumbai",
-      "hourlyRate": "₹30",
-      "coordinates": [
-        19.1197,
-        72.8464
-      ]
+    "id": "booking_regular_001",
+    "spotId": "spot_regular_001",
+    "userId": "user_john_123",
+    "spotOwner": "user_regular_003",
+    "startTime": "2025-07-03T23:24:21.614Z",
+    "endTime": "2025-07-04T01:24:21.614Z",
+    "totalPrice": 30,
+    "amount": 30,
+    "status": "completed",
+    "createdAt": "2025-07-03T23:24:21.614Z",
+    "review": {
+      "rating": 4,
+      "comment": "Decent parking spot for the price.",
+      "reviewer": "John Doe",
+      "date": "2025-07-04T23:24:21.614Z"
     }
   },
   {
-    "id": "booking_1751820458274",
-    "spotId": "spot_mumbai_juhu_004",
-    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "userName": "Mblue",
-    "userEmail": "123@gmail.com",
-    "startTime": "2025-07-06T16:47:00.000Z",
-    "endTime": "2025-07-07T16:47:00.000Z",
-    "hours": 24,
-    "totalPrice": 960,
-    "hourlyRate": "₹40",
-    "status": "confirmed",
-    "createdAt": "2025-07-06T16:47:38.274Z",
-    "spotOwner": "user_juhu_host",
-    "spotOwnerName": "Sunita Desai",
-    "location": "Juhu Beach Road, Mumbai",
-    "spotDetails": {
-      "location": "Juhu Beach Road, Mumbai",
-      "hourlyRate": "₹40",
-      "coordinates": [
-        19.0996,
-        72.8295
-      ]
+    "id": "booking_trusted_001",
+    "spotId": "spot_trusted_001",
+    "userId": "user_mike_789",
+    "spotOwner": "user_trusted_002",
+    "startTime": "2025-07-01T23:24:21.614Z",
+    "endTime": "2025-07-02T01:24:21.614Z",
+    "totalPrice": 50,
+    "amount": 50,
+    "status": "completed",
+    "createdAt": "2025-07-01T23:24:21.614Z",
+    "review": {
+      "rating": 5,
+      "comment": "Very reliable and secure parking spot.",
+      "reviewer": "Mike Wilson",
+      "date": "2025-07-02T23:24:21.614Z"
     }
   },
   {
-    "id": "booking_1751821403228",
-    "spotId": "spot_mumbai_bandra_001",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-06T17:03:00.000Z",
-    "endTime": "2025-07-07T17:03:00.000Z",
-    "hours": 24,
-    "totalPrice": 1200,
-    "hourlyRate": "₹50",
-    "status": "cancelled",
-    "createdAt": "2025-07-06T17:03:23.228Z",
-    "spotOwner": "user_bandra_host",
-    "spotOwnerName": "Rahul Sharma",
-    "location": "Linking Road, Bandra West, Mumbai",
-    "spotDetails": {
-      "location": "Linking Road, Bandra West, Mumbai",
-      "hourlyRate": "₹50",
-      "coordinates": [
-        19.0596,
-        72.8295
-      ]
-    },
-    "cancelledAt": "2025-07-06T17:03:36.848Z"
-  },
-  {
-    "id": "booking_1751825113569",
-    "spotId": "spot_mumbai_powai_005",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-06T18:05:00.000Z",
-    "endTime": "2025-07-07T18:05:00.000Z",
-    "hours": 24,
-    "totalPrice": 840,
-    "hourlyRate": "₹35",
-    "status": "confirmed",
-    "createdAt": "2025-07-06T18:05:13.569Z",
-    "spotOwner": "user_powai_host",
-    "spotOwnerName": "Rajesh Kumar",
-    "location": "Powai Lake Road, Near IIT Bombay",
-    "spotDetails": {
-      "location": "Powai Lake Road, Near IIT Bombay",
-      "hourlyRate": "₹35",
-      "coordinates": [
-        19.1197,
-        72.9089
-      ]
+    "id": "booking_premium_001",
+    "spotId": "spot_premium_001",
+    "userId": "user_john_123",
+    "spotOwner": "user_premium_001",
+    "startTime": "2025-06-29T23:24:21.614Z",
+    "endTime": "2025-06-30T01:24:21.614Z",
+    "totalPrice": 100,
+    "amount": 100,
+    "status": "completed",
+    "createdAt": "2025-06-29T23:24:21.614Z",
+    "review": {
+      "rating": 5,
+      "comment": "Excellent premium service! Valet was very professional.",
+      "reviewer": "John Doe",
+      "date": "2025-06-30T23:24:21.614Z"
     }
   },
   {
-    "id": "booking_1751835428301",
-    "spotId": "spot_residential_004",
-    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
-    "userName": "Mblue",
-    "userEmail": "123@gmail.com",
-    "startTime": "2025-07-05T20:57:00.000Z",
-    "endTime": "2025-07-06T20:57:00.000Z",
-    "hours": 24,
-    "totalPrice": 192,
-    "hourlyRate": "$8",
-    "status": "confirmed",
-    "createdAt": "2025-07-06T20:57:08.301Z",
-    "spotOwner": "user_sarah_101",
-    "spotOwnerName": "Sarah Jones",
-    "location": "321 Oak Street, Residential Area",
-    "spotDetails": {
-      "location": "321 Oak Street, Residential Area",
-      "hourlyRate": "$8",
-      "coordinates": [
-        19.0736,
-        72.8816
-      ]
+    "id": "booking_trusted_002",
+    "spotId": "spot_trusted_001",
+    "userId": "user_sarah_101",
+    "spotOwner": "user_trusted_002",
+    "startTime": "2025-06-26T23:24:21.614Z",
+    "endTime": "2025-06-27T00:24:21.614Z",
+    "totalPrice": 25,
+    "amount": 25,
+    "status": "completed",
+    "createdAt": "2025-06-26T23:24:21.614Z",
+    "review": {
+      "rating": 4,
+      "comment": "Good parking spot, well maintained.",
+      "reviewer": "Sarah Jones",
+      "date": "2025-06-27T23:24:21.614Z"
+    }
+  },
+  {
+    "id": "booking_premium_002",
+    "spotId": "spot_premium_001",
+    "userId": "user_jane_456",
+    "spotOwner": "user_premium_001",
+    "startTime": "2025-06-22T23:24:21.614Z",
+    "endTime": "2025-06-23T02:24:21.614Z",
+    "totalPrice": 150,
+    "amount": 150,
+    "status": "completed",
+    "createdAt": "2025-06-22T23:24:21.614Z",
+    "review": {
+      "rating": 5,
+      "comment": "Amazing luxury parking experience!",
+      "reviewer": "Jane Smith",
+      "date": "2025-06-23T23:24:21.614Z"
     }
   }
 ]

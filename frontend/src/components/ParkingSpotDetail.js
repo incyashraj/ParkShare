@@ -215,7 +215,8 @@ const ParkingSpotDetail = () => {
         body: JSON.stringify({
           participants: [currentUser.uid, spot.owner],
           subject: `Inquiry about ${spot.title}`,
-          initialMessage: contactMessage
+          initialMessage: contactMessage,
+          spotId: spot.id
         })
       });
 
@@ -585,14 +586,16 @@ const ParkingSpotDetail = () => {
                     </Box>
                   </Box>
                   <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      startIcon={<Message />}
-                      onClick={handleContactHost}
-                    >
-                      Contact Owner
-                    </Button>
+                    {!isOwner && (
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        startIcon={<Message />}
+                        onClick={handleContactHost}
+                      >
+                        Contact Owner
+                      </Button>
+                    )}
                     <Button
                       variant="outlined"
                       size="small"

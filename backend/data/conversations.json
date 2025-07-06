@@ -17,7 +17,7 @@
     ],
     "subject": "Hi",
     "createdAt": "2025-07-06T18:40:30.099Z",
-    "lastActivity": "2025-07-06T22:40:39.881Z"
+    "lastActivity": "2025-07-06T23:21:49.696Z"
   },
   {
     "id": "conv_1751827921253",
@@ -127,5 +127,26 @@
     "subject": "Inquiry about Downtown Premium Parking",
     "createdAt": "2025-07-06T21:42:10.865Z",
     "lastActivity": "2025-07-06T21:42:10.867Z"
+  },
+  {
+    "id": "conv_1751844349443",
+    "participants": [
+      {
+        "id": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "user_premium_001",
+        "uid": "user_premium_001",
+        "username": "premium_host",
+        "email": "premium@example.com"
+      }
+    ],
+    "subject": "Inquiry about Premium Luxury Parking",
+    "spotId": "spot_premium_001",
+    "createdAt": "2025-07-06T23:25:49.443Z",
+    "lastActivity": "2025-07-06T23:25:49.444Z"
   }
 ]

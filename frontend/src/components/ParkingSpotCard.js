@@ -575,6 +575,50 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
               {calculateDistance(spot.distance)}
             </Typography>
           </Box>
+
+          {/* Owner Information with Tier */}
+          {spot.ownerName && (
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
+              <Avatar 
+                sx={{ 
+                  width: 20, 
+                  height: 20, 
+                  fontSize: '0.75rem',
+                  mr: 1,
+                  bgcolor: 'primary.main'
+                }}
+              >
+                {spot.ownerName[0]?.toUpperCase() || 'U'}
+              </Avatar>
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: '#717171',
+                  fontSize: '0.85rem',
+                  fontWeight: 400,
+                  mr: 1
+                }}
+              >
+                {spot.ownerName}
+              </Typography>
+              {spot.ownerTier && (
+                <Chip
+                  icon={<span style={{ fontSize: '0.8rem' }}>{spot.ownerTier.badge}</span>}
+                  label={spot.ownerTier.name}
+                  size="small"
+                  sx={{ 
+                    backgroundColor: spot.ownerTier.color,
+                    color: 'white',
+                    fontSize: '0.7rem',
+                    height: '20px',
+                    '& .MuiChip-icon': {
+                      color: 'white'
+                    }
+                  }}
+                />
+              )}
+            </Box>
+          )}
         </CardContent>
       </Card>
 

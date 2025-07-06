@@ -10,7 +10,8 @@
     "verified": true,
     "hostSince": "2023-01-15",
     "totalSpots": 1,
-    "rating": 4.7
+    "rating": 4.7,
+    "isAdmin": false
   },
   {
     "username": "priya_patel",
@@ -62,7 +63,8 @@
     "verified": true,
     "hostSince": "2023-02-18",
     "totalSpots": 1,
-    "rating": 4.6
+    "rating": 4.6,
+    "blockedAt": {}
   },
   {
     "username": "meera_iyer",
@@ -155,6 +157,31 @@
     "email": "incyashraj@gmail.com",
     "password": "",
     "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "isAdmin": true,
     "blockedUsers": []
+  },
+  {
+    "username": "premium_host",
+    "email": "premium@example.com",
+    "uid": "user_premium_001",
+    "fullName": "Premium Host"
+  },
+  {
+    "username": "trusted_host",
+    "email": "trusted@example.com",
+    "uid": "user_trusted_002",
+    "fullName": "Trusted Host"
+  },
+  {
+    "username": "regular_host",
+    "email": "regular@example.com",
+    "uid": "user_regular_003",
+    "fullName": "Regular Host"
+  },
+  {
+    "username": "new_host",
+    "email": "new@example.com",
+    "uid": "user_new_004",
+    "fullName": "New Host"
   }
 ]

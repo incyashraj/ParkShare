@@ -99,7 +99,10 @@ function saveSupportTickets() {
 
 function isAdmin(userId) {
   const user = users.find(u => u.uid === userId);
-  return user && (user.isAdmin || user.email === 'incyashraj@gmail.com');
+  return user && (user.isAdmin || 
+                 user.email === 'incyashraj@gmail.com' || 
+                 user.email === 'yashrajpardeshi@gmail.com' ||
+                 userId === 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2'); // Yashraj's UID
 }
 
 // Create a new support ticket
@@ -719,6 +722,51 @@ function isSpotAvailable(spotId, startTime, endTime) {
   });
 }
 
+// Calculate user tier based on rating and activity
+function calculateUserTier(averageRating, totalBookings, totalSpots) {
+  if (averageRating >= 4.8 && totalBookings >= 2) {
+    return {
+      level: 'superuser',
+      name: 'Super User',
+      badge: '⭐',
+      color: '#FFD700',
+      benefits: ['Priority support', 'Reduced fees', 'Exclusive features', 'Early access']
+    };
+  } else if (averageRating >= 4.5 && totalBookings >= 2) {
+    return {
+      level: 'premium',
+      name: 'Premium User',
+      badge: '👑',
+      color: '#C0C0C0',
+      benefits: ['Priority support', 'Reduced fees']
+    };
+  } else if (averageRating >= 4.0 && totalBookings >= 1) {
+    return {
+      level: 'trusted',
+      name: 'Trusted User',
+      badge: '✓',
+      color: '#90EE90',
+      benefits: ['Verified badge', 'Trusted status']
+    };
+  } else if (averageRating >= 3.5) {
+    return {
+      level: 'regular',
+      name: 'Regular User',
+      badge: '•',
+      color: '#87CEEB',
+      benefits: ['Standard features']
+    };
+  } else {
+    return {
+      level: 'new',
+      name: 'New User',
+      badge: '🌱',
+      color: '#DDA0DD',
+      benefits: ['Welcome bonus']
+    };
+  }
+}
+
 app.post('/parking-spots', async (req, res) => {
   const {
     location,
@@ -829,10 +877,30 @@ app.get('/parking-spots', (req, res) => {
     // Spot is available if it has no active bookings
     const isActuallyAvailable = activeBookings.length === 0;
     
+    // Get owner information and tier
+    const owner = users.find(u => u.uid === spot.owner);
+    let ownerTier = null;
+    
+    if (owner) {
+      // Calculate owner's stats for tier
+      const ownerReviews = bookings
+        .filter(booking => booking.spotOwner === spot.owner && booking.review)
+        .map(booking => booking.review.rating);
+      
+      const ownerTotalBookings = bookings.filter(b => b.spotOwner === spot.owner).length;
+      const ownerTotalSpots = parkingSpots.filter(s => s.owner === spot.owner).length;
+      const ownerAverageRating = ownerReviews.length > 0 
+        ? ownerReviews.reduce((sum, rating) => sum + rating, 0) / ownerReviews.length 
+        : 0;
+      
+      ownerTier = calculateUserTier(ownerAverageRating, ownerTotalBookings, ownerTotalSpots);
+    }
+    
     return {
       ...spot,
       isOwner: spot.owner === userId,
       available: isActuallyAvailable,
+      ownerTier,
       // Allow booking only if: user is logged in, spot is not owned by user, and spot is actually available
       canBook: userId && spot.owner !== userId && isActuallyAvailable
     };
@@ -911,11 +979,31 @@ app.get('/parking-spots/:spotId', (req, res) => {
   // Spot is available if it has no active bookings
   const isActuallyAvailable = activeBookings.length === 0;
   
+  // Get owner information and tier
+  const owner = users.find(u => u.uid === spot.owner);
+  let ownerTier = null;
+  
+  if (owner) {
+    // Calculate owner's stats for tier
+    const ownerReviews = bookings
+      .filter(booking => booking.spotOwner === spot.owner && booking.review)
+      .map(booking => booking.review.rating);
+    
+    const ownerTotalBookings = bookings.filter(b => b.spotOwner === spot.owner).length;
+    const ownerTotalSpots = parkingSpots.filter(s => s.owner === spot.owner).length;
+    const ownerAverageRating = ownerReviews.length > 0 
+      ? ownerReviews.reduce((sum, rating) => sum + rating, 0) / ownerReviews.length 
+      : 0;
+    
+    ownerTier = calculateUserTier(ownerAverageRating, ownerTotalBookings, ownerTotalSpots);
+  }
+  
   // Add owner information and booking permissions
   const spotWithDetails = {
     ...spot,
     isOwner: spot.owner === userId,
     available: isActuallyAvailable,
+    ownerTier,
     canBook: userId && spot.owner !== userId && isActuallyAvailable
   };
   
@@ -1866,12 +1954,17 @@ app.get('/', (req, res) => {
 const createTestData = () => {
   console.log('Creating test data...');
   
-  // Test users
+  // Test users with different tiers
   const testUsers = [
     { username: 'john_doe', email: 'john@example.com', uid: 'user_john_123' },
     { username: 'jane_smith', email: 'jane@example.com', uid: 'user_jane_456' },
     { username: 'mike_wilson', email: 'mike@example.com', uid: 'user_mike_789' },
-    { username: 'sarah_jones', email: 'sarah@example.com', uid: 'user_sarah_101' }
+    { username: 'sarah_jones', email: 'sarah@example.com', uid: 'user_sarah_101' },
+    // New users with different ratings for tier testing
+    { username: 'premium_host', email: 'premium@example.com', uid: 'user_premium_001', fullName: 'Premium Host' },
+    { username: 'trusted_host', email: 'trusted@example.com', uid: 'user_trusted_002', fullName: 'Trusted Host' },
+    { username: 'regular_host', email: 'regular@example.com', uid: 'user_regular_003', fullName: 'Regular Host' },
+    { username: 'new_host', email: 'new@example.com', uid: 'user_new_004', fullName: 'New Host' }
   ];
   
   // Test parking spots
@@ -2083,6 +2176,111 @@ const createTestData = () => {
       advanceBooking: 6,
       vehicleTypes: ['car', 'bike'],
       createdAt: new Date().toISOString()
+    },
+    // Test spots for tier demonstration
+    {
+      id: 'spot_premium_001',
+      title: 'Premium Luxury Parking',
+      location: '1000 Luxury Avenue, Premium District',
+      coordinates: [19.0800, 72.8800],
+      hourlyRate: '$50',
+      price: 50,
+      description: 'Exclusive premium parking with valet service',
+      available: true,
+      available24h: true,
+      status: 'available',
+      owner: 'user_premium_001',
+      ownerName: 'Premium Host',
+      images: [
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'security_guard', 'fenced', 'valet'],
+      amenities: ['covered', 'ev_charging', 'car_wash', 'valet_service'],
+      rating: 4.9,
+      reviewCount: 45,
+      parkingType: 'covered_lot',
+      advanceBooking: 72,
+      vehicleTypes: ['car', 'suv', 'luxury'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_trusted_001',
+      title: 'Trusted Community Parking',
+      location: '2000 Community Street, Trusted Area',
+      coordinates: [19.0750, 72.8750],
+      hourlyRate: '$25',
+      price: 25,
+      description: 'Reliable parking in a trusted community',
+      available: true,
+      available24h: true,
+      status: 'available',
+      owner: 'user_trusted_002',
+      ownerName: 'Trusted Host',
+      images: [
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'security_guard'],
+      amenities: ['covered', 'accessible'],
+      rating: 4.6,
+      reviewCount: 28,
+      parkingType: 'lot',
+      advanceBooking: 48,
+      vehicleTypes: ['car', 'suv'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_regular_001',
+      title: 'Regular Street Parking',
+      location: '3000 Regular Road, Standard Area',
+      coordinates: [19.0700, 72.8700],
+      hourlyRate: '$15',
+      price: 15,
+      description: 'Standard parking in a regular neighborhood',
+      available: true,
+      available24h: false,
+      status: 'available',
+      owner: 'user_regular_003',
+      ownerName: 'Regular Host',
+      images: [
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['well_lit'],
+      amenities: ['accessible'],
+      rating: 4.2,
+      reviewCount: 12,
+      parkingType: 'street',
+      advanceBooking: 24,
+      vehicleTypes: ['car'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_new_001',
+      title: 'New Host Parking',
+      location: '4000 New Street, Beginner Area',
+      coordinates: [19.0650, 72.8650],
+      hourlyRate: '$8',
+      price: 8,
+      description: 'Simple parking for new hosts',
+      available: true,
+      available24h: false,
+      status: 'available',
+      owner: 'user_new_004',
+      ownerName: 'New Host',
+      images: [
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: [],
+      amenities: [],
+      rating: 3.2,
+      reviewCount: 3,
+      parkingType: 'street',
+      advanceBooking: 12,
+      vehicleTypes: ['car'],
+      createdAt: new Date().toISOString()
     }
   ];
   
@@ -2102,11 +2300,136 @@ const createTestData = () => {
     }
   });
   
+  // Create test bookings with reviews to establish user ratings
+  const testBookings = [
+    // Premium Host - 4.9 rating, 45 reviews (Super User tier)
+    {
+      id: 'booking_premium_001',
+      spotId: 'spot_premium_001',
+      userId: 'user_john_123',
+      spotOwner: 'user_premium_001',
+      startTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 100,
+      amount: 100,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 5,
+        comment: 'Excellent premium service! Valet was very professional.',
+        reviewer: 'John Doe',
+        date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    {
+      id: 'booking_premium_002',
+      spotId: 'spot_premium_001',
+      userId: 'user_jane_456',
+      spotOwner: 'user_premium_001',
+      startTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 150,
+      amount: 150,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 5,
+        comment: 'Amazing luxury parking experience!',
+        reviewer: 'Jane Smith',
+        date: new Date(Date.now() - 13 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    // Trusted Host - 4.6 rating, 28 reviews (Premium User tier)
+    {
+      id: 'booking_trusted_001',
+      spotId: 'spot_trusted_001',
+      userId: 'user_mike_789',
+      spotOwner: 'user_trusted_002',
+      startTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 50,
+      amount: 50,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 5,
+        comment: 'Very reliable and secure parking spot.',
+        reviewer: 'Mike Wilson',
+        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    {
+      id: 'booking_trusted_002',
+      spotId: 'spot_trusted_001',
+      userId: 'user_sarah_101',
+      spotOwner: 'user_trusted_002',
+      startTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000 + 1 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 25,
+      amount: 25,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 4,
+        comment: 'Good parking spot, well maintained.',
+        reviewer: 'Sarah Jones',
+        date: new Date(Date.now() - 9 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    // Regular Host - 4.2 rating, 12 reviews (Trusted User tier)
+    {
+      id: 'booking_regular_001',
+      spotId: 'spot_regular_001',
+      userId: 'user_john_123',
+      spotOwner: 'user_regular_003',
+      startTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 30,
+      amount: 30,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 4,
+        comment: 'Decent parking spot for the price.',
+        reviewer: 'John Doe',
+        date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    // New Host - 3.2 rating, 3 reviews (New User tier)
+    {
+      id: 'booking_new_001',
+      spotId: 'spot_new_001',
+      userId: 'user_jane_456',
+      spotOwner: 'user_new_004',
+      startTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000 + 1 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 8,
+      amount: 8,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 3,
+        comment: 'Basic parking spot, needs improvement.',
+        reviewer: 'Jane Smith',
+        date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    }
+  ];
+  
+  // Add test bookings if they don't exist
+  testBookings.forEach(booking => {
+    if (!bookings.find(b => b.id === booking.id)) {
+      bookings.push(booking);
+      console.log(`Added test booking: ${booking.id}`);
+    }
+  });
+  
   // Save to files
   saveData(USERS_FILE, users);
   saveData(SPOTS_FILE, parkingSpots);
+  saveData(BOOKINGS_FILE, bookings);
   
-  console.log(`Test data created: ${users.length} users, ${parkingSpots.length} spots`);
+  console.log(`Test data created: ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings`);
 };
 
 // Call createTestData on server start
@@ -2568,7 +2891,7 @@ app.get('/api/conversations', (req, res) => {
       conv.participants.some(p => p.id === userId || p.uid === userId)
     );
 
-    // Add last message and unread count to each conversation
+    // Add last message, unread count, and spot details to each conversation
     const conversationsWithDetails = userConversations.map(conv => {
       const convMessages = messages.filter(m => m.conversationId === conv.id);
       const lastMessage = convMessages.length > 0 
@@ -2579,10 +2902,27 @@ app.get('/api/conversations', (req, res) => {
         m.senderId !== userId && !m.read
       ).length;
 
+      // Get spot details if conversation has a spotId
+      let spotDetails = null;
+      if (conv.spotId) {
+        const spot = parkingSpots.find(s => s.id === conv.spotId);
+        if (spot) {
+          spotDetails = {
+            id: spot.id,
+            title: spot.title,
+            location: spot.location,
+            hourlyRate: spot.hourlyRate,
+            available: spot.available,
+            images: spot.images || []
+          };
+        }
+      }
+
       return {
         ...conv,
         lastMessage,
-        unreadCount
+        unreadCount,
+        spotDetails
       };
     });
 
@@ -2628,7 +2968,7 @@ app.get('/api/conversations/:conversationId/messages', (req, res) => {
 // Create a new conversation or find existing one
 app.post('/api/conversations', (req, res) => {
   try {
-    const { participants, subject, initialMessage } = req.body;
+    const { participants, subject, initialMessage, spotId } = req.body;
     const userId = req.headers.authorization?.replace('Bearer ', '');
     
     if (!userId) {
@@ -2695,6 +3035,7 @@ app.post('/api/conversations', (req, res) => {
         id: `conv_${Date.now()}`,
         participants: participantDetails,
         subject: subject || 'New Conversation',
+        spotId: spotId || null,
         createdAt: new Date().toISOString(),
         lastActivity: new Date().toISOString()
       };
@@ -3012,6 +3353,9 @@ app.get('/api/users/:userId/profile', (req, res) => {
       ? userReviews.reduce((sum, review) => sum + review.rating, 0) / userReviews.length 
       : 0;
 
+    // Calculate user tier
+    const userTier = calculateUserTier(averageRating, totalBookings, totalSpots);
+
     const profile = {
       uid: user.uid,
       username: user.username || 'Unknown User',
@@ -3025,6 +3369,7 @@ app.get('/api/users/:userId/profile', (req, res) => {
       totalSpots,
       totalBookings,
       averageRating: Math.round(averageRating * 10) / 10,
+      userTier,
       reviews: userReviews,
       spots: userSpots.map(spot => ({
         id: spot.id,
@@ -3032,7 +3377,7 @@ app.get('/api/users/:userId/profile', (req, res) => {
         location: spot.location,
         price: spot.price,
         available: spot.available,
-        image: spot.image
+        image: spot.images && spot.images.length > 0 ? spot.images[0] : null
       }))
     };
 

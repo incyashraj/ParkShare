@@ -2,7 +2,7 @@ import { Box, TextField, Button, Typography, Container, Paper, Divider, Link, Al
 import { styled } from '@mui/material/styles';
 import { auth } from './firebase';
 import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AppleIcon from '@mui/icons-material/Apple';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useState } from 'react';
@@ -30,6 +30,10 @@ function Login() {
   const [message, setMessage] = useState('');
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get the intended destination from location state, or default to home
+  const from = location.state?.from || '/';
 
   const loginToBackend = async (uid) => {
     try {
@@ -50,7 +54,7 @@ function Login() {
       setOpenSnackbar(true);
       
       setTimeout(() => {
-        navigate('/');
+        navigate(from);
       }, 1500);
     } catch (error) {
       setError('Failed to authenticate with server');

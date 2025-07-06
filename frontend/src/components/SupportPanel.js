@@ -1,450 +1,357 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Container,
-  Typography,
   Box,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
+  Typography,
+  TextField,
   Button,
+  Card,
+  CardContent,
+  List,
+  ListItem,
+  ListItemText,
+  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
-  TextField,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Alert,
-  IconButton,
-  Tooltip,
-  Badge,
-  Card,
-  CardContent,
-  Grid,
   Divider,
-  useTheme,
+  Paper
 } from '@mui/material';
-import {
-  Support as SupportIcon,
-  Warning as WarningIcon,
-  CheckCircle as CheckCircleIcon,
-  Close as CloseIcon,
-  Refresh as RefreshIcon,
-  Email as EmailIcon,
-  Person as PersonIcon,
-  Schedule as ScheduleIcon,
-  PriorityHigh as PriorityHighIcon,
-} from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { 
+  Support as SupportIcon,
+  Add as AddIcon,
+  Message as MessageIcon,
+  PriorityHigh as PriorityHighIcon,
+  Schedule as ScheduleIcon
+} from '@mui/icons-material';
 
 const SupportPanel = () => {
   const { currentUser } = useAuth();
-  const theme = useTheme();
-  
-  const [reports, setReports] = useState([]);
+  const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [actionDialog, setActionDialog] = useState({ open: false, report: null, action: '' });
-  const [responseText, setResponseText] = useState('');
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    resolved: 0,
-    urgent: 0
+  const [error, setError] = useState(null);
+  const [createDialog, setCreateDialog] = useState(false);
+  const [viewDialog, setViewDialog] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  
+  // New ticket form
+  const [newTicket, setNewTicket] = useState({
+    subject: '',
+    message: '',
+    category: 'general',
+    priority: 'medium'
   });
 
   useEffect(() => {
-    if (currentUser?.uid) {
-      loadReports();
-      loadStats();
+    if (currentUser) {
+      loadTickets();
     }
-  }, [currentUser?.uid]);
+  }, [currentUser]);
 
-  const loadReports = async () => {
-    setLoading(true);
+  const loadTickets = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/support/reports', {
-        method: 'GET',
+      setLoading(true);
+      const response = await fetch(`http://localhost:3001/api/support/tickets/user/${currentUser.uid}`, {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.uid}`
+          Authorization: `Bearer ${currentUser.uid}`
         }
       });
-      
+
       if (response.ok) {
         const data = await response.json();
-        setReports(data.reports || []);
+        setTickets(data.tickets || []);
+      } else {
+        setError('Failed to load tickets');
       }
     } catch (error) {
-      console.error('Error loading reports:', error);
+      setError('Error loading tickets');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadStats = async () => {
+  const handleCreateTicket = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/support/stats', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.uid}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setStats(data.stats || { total: 0, pending: 0, resolved: 0, urgent: 0 });
-      }
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
-  };
-
-  const handleAction = (report, action) => {
-    setActionDialog({ open: true, report, action });
-    setResponseText('');
-  };
-
-  const handleSubmitAction = async () => {
-    if (!actionDialog.report || !responseText.trim()) return;
-    
-    try {
-      const response = await fetch(`http://localhost:3001/api/support/reports/${actionDialog.report.id}/${actionDialog.action}`, {
+      const response = await fetch('http://localhost:3001/api/support/tickets', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${currentUser?.uid}`
+          Authorization: `Bearer ${currentUser.uid}`
         },
         body: JSON.stringify({
-          response: responseText,
-          action: actionDialog.action
+          ...newTicket,
+          userId: currentUser.uid,
+          username: currentUser.username || currentUser.email,
+          email: currentUser.email
         })
       });
-      
+
       if (response.ok) {
-        setActionDialog({ open: false, report: null, action: '' });
-        setResponseText('');
-        loadReports();
-        loadStats();
+        setCreateDialog(false);
+        setNewTicket({ subject: '', message: '', category: 'general', priority: 'medium' });
+        loadTickets();
+        setError(null);
+      } else {
+        setError('Failed to create ticket');
       }
     } catch (error) {
-      console.error('Error updating report:', error);
+      setError('Error creating ticket');
     }
+  };
+
+  const handleViewTicket = (ticket) => {
+    setSelectedTicket(ticket);
+    setViewDialog(true);
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending': return 'warning';
+      case 'open': return 'error';
+      case 'in_progress': return 'warning';
       case 'resolved': return 'success';
-      case 'urgent': return 'error';
       default: return 'default';
     }
   };
 
-  const getPriorityIcon = (priority) => {
+  const getPriorityColor = (priority) => {
     switch (priority) {
-      case 'high': return <PriorityHighIcon sx={{ color: 'error.main' }} />;
-      case 'medium': return <WarningIcon sx={{ color: 'warning.main' }} />;
-      case 'low': return <CheckCircleIcon sx={{ color: 'success.main' }} />;
-      default: return null;
+      case 'high': return 'error';
+      case 'medium': return 'warning';
+      case 'low': return 'success';
+      default: return 'default';
     }
   };
 
-  const formatDate = (timestamp) => {
-    return new Date(timestamp).toLocaleString();
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleString();
   };
 
+  if (!currentUser) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="info">Please log in to access support.</Alert>
+      </Box>
+    );
+  }
+
   return (
-    <Container maxWidth="xl" sx={{ py: 4 }}>
-      <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" fontWeight="bold" sx={{ color: 'primary.main', mb: 2 }}>
-          <SupportIcon sx={{ mr: 2, verticalAlign: 'middle' }} />
-          Support Panel
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage user reports and support requests
+    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+        <SupportIcon sx={{ mr: 2, fontSize: 32 }} />
+        <Typography variant="h4" component="h1">
+          Support Center
         </Typography>
       </Box>
 
-      {/* Stats Cards */}
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'primary.main', color: 'white' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">{stats.total}</Typography>
-                  <Typography variant="body2">Total Reports</Typography>
-                </Box>
-                <SupportIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'warning.main', color: 'white' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">{stats.pending}</Typography>
-                  <Typography variant="body2">Pending</Typography>
-                </Box>
-                <ScheduleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'success.main', color: 'white' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">{stats.resolved}</Typography>
-                  <Typography variant="body2">Resolved</Typography>
-                </Box>
-                <CheckCircleIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        <Grid item xs={12} sm={6} md={3}>
-          <Card sx={{ bgcolor: 'error.main', color: 'white' }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box>
-                  <Typography variant="h4" fontWeight="bold">{stats.urgent}</Typography>
-                  <Typography variant="body2">Urgent</Typography>
-                </Box>
-                <PriorityHighIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-      {/* Reports Table */}
-      <Paper elevation={2} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-        <Box sx={{ p: 3, borderBottom: '1px solid #f0f0f0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Typography variant="h6" fontWeight={600}>User Reports</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+        <Typography variant="h6">
+          My Support Tickets ({tickets.length})
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => setCreateDialog(true)}
+        >
+          Create New Ticket
+        </Button>
+      </Box>
+
+      {loading ? (
+        <Typography>Loading tickets...</Typography>
+      ) : tickets.length === 0 ? (
+        <Paper sx={{ p: 3, textAlign: 'center' }}>
+          <MessageIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+          <Typography variant="h6" color="text.secondary" gutterBottom>
+            No support tickets yet
+          </Typography>
+          <Typography color="text.secondary" sx={{ mb: 2 }}>
+            Create your first support ticket if you need help
+          </Typography>
           <Button
-            startIcon={<RefreshIcon />}
-            onClick={loadReports}
-            disabled={loading}
-            variant="outlined"
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setCreateDialog(true)}
           >
-            Refresh
+            Create Ticket
           </Button>
-        </Box>
-        
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow sx={{ bgcolor: '#fafafa' }}>
-                <TableCell>User</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Priority</TableCell>
-                <TableCell>Date</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {reports.map((report) => (
-                <TableRow key={report.id} hover>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <PersonIcon sx={{ color: 'text.secondary' }} />
-                      <Typography variant="body2" fontWeight={500}>
-                        {report.reportedUser?.username || 'Unknown User'}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{report.reason}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {report.description}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Chip 
-                      label={report.status} 
-                      color={getStatusColor(report.status)}
+        </Paper>
+      ) : (
+        <List>
+          {tickets.map((ticket) => (
+            <Card key={ticket.id} sx={{ mb: 2 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                  <Typography variant="h6" component="div">
+                    {ticket.subject}
+                  </Typography>
+                  <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Chip
+                      label={ticket.status.replace('_', ' ')}
+                      color={getStatusColor(ticket.status)}
                       size="small"
                     />
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      {getPriorityIcon(report.priority)}
-                      <Typography variant="body2" sx={{ textTransform: 'capitalize' }}>
-                        {report.priority}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2">{formatDate(report.createdAt)}</Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
-                      <Tooltip title="View Details">
-                        <IconButton 
-                          size="small" 
-                          onClick={() => setSelectedReport(report)}
-                        >
-                          <EmailIcon />
-                        </IconButton>
-                      </Tooltip>
-                      {report.status === 'pending' && (
-                        <>
-                          <Tooltip title="Mark as Resolved">
-                            <IconButton 
-                              size="small" 
-                              color="success"
-                              onClick={() => handleAction(report, 'resolve')}
-                            >
-                              <CheckCircleIcon />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Mark as Urgent">
-                            <IconButton 
-                              size="small" 
-                              color="error"
-                              onClick={() => handleAction(report, 'urgent')}
-                            >
-                              <PriorityHighIcon />
-                            </IconButton>
-                          </Tooltip>
-                        </>
-                      )}
-                    </Box>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Paper>
+                    <Chip
+                      label={ticket.priority}
+                      color={getPriorityColor(ticket.priority)}
+                      size="small"
+                      icon={<PriorityHighIcon />}
+                    />
+                  </Box>
+                </Box>
+                
+                <Typography color="text.secondary" sx={{ mb: 2 }}>
+                  {ticket.message.substring(0, 100)}...
+                </Typography>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <Typography variant="caption" color="text.secondary">
+                    Created: {formatDate(ticket.createdAt)}
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={() => handleViewTicket(ticket)}
+                  >
+                    View Details
+                  </Button>
+                </Box>
+              </CardContent>
+            </Card>
+          ))}
+        </List>
+      )}
 
-      {/* Report Details Dialog */}
-      <Dialog 
-        open={!!selectedReport} 
-        onClose={() => setSelectedReport(null)}
-        maxWidth="md"
-        fullWidth
-      >
-        {selectedReport && (
+      {/* Create Ticket Dialog */}
+      <Dialog open={createDialog} onClose={() => setCreateDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Create Support Ticket</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Subject"
+            value={newTicket.subject}
+            onChange={(e) => setNewTicket({ ...newTicket, subject: e.target.value })}
+            sx={{ mb: 2, mt: 1 }}
+          />
+          
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Category</InputLabel>
+            <Select
+              value={newTicket.category}
+              onChange={(e) => setNewTicket({ ...newTicket, category: e.target.value })}
+              label="Category"
+            >
+              <MenuItem value="general">General</MenuItem>
+              <MenuItem value="payment">Payment</MenuItem>
+              <MenuItem value="booking">Booking</MenuItem>
+              <MenuItem value="technical">Technical</MenuItem>
+              <MenuItem value="account">Account</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Priority</InputLabel>
+            <Select
+              value={newTicket.priority}
+              onChange={(e) => setNewTicket({ ...newTicket, priority: e.target.value })}
+              label="Priority"
+            >
+              <MenuItem value="low">Low</MenuItem>
+              <MenuItem value="medium">Medium</MenuItem>
+              <MenuItem value="high">High</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <TextField
+            fullWidth
+            label="Message"
+            multiline
+            rows={4}
+            value={newTicket.message}
+            onChange={(e) => setNewTicket({ ...newTicket, message: e.target.value })}
+            placeholder="Describe your issue in detail..."
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCreateDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={handleCreateTicket}
+            variant="contained"
+            disabled={!newTicket.subject || !newTicket.message}
+          >
+            Create Ticket
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* View Ticket Dialog */}
+      <Dialog open={viewDialog} onClose={() => setViewDialog(false)} maxWidth="md" fullWidth>
+        {selectedTicket && (
           <>
             <DialogTitle>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Typography variant="h6">Report Details</Typography>
-                <IconButton onClick={() => setSelectedReport(null)}>
-                  <CloseIcon />
-                </IconButton>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Typography variant="h6">{selectedTicket.subject}</Typography>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Chip
+                    label={selectedTicket.status.replace('_', ' ')}
+                    color={getStatusColor(selectedTicket.status)}
+                  />
+                  <Chip
+                    label={selectedTicket.priority}
+                    color={getPriorityColor(selectedTicket.priority)}
+                  />
+                </Box>
               </Box>
             </DialogTitle>
             <DialogContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="text.secondary">Reported User</Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {selectedReport.reportedUser?.username || 'Unknown User'}
-                  </Typography>
-                  
-                  <Typography variant="subtitle2" color="text.secondary">Reason</Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {selectedReport.reason}
-                  </Typography>
-                  
-                  <Typography variant="subtitle2" color="text.secondary">Description</Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {selectedReport.description}
-                  </Typography>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle2" color="text.secondary">Status</Typography>
-                  <Chip 
-                    label={selectedReport.status} 
-                    color={getStatusColor(selectedReport.status)}
-                    sx={{ mb: 2 }}
-                  />
-                  
-                  <Typography variant="subtitle2" color="text.secondary">Priority</Typography>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                    {getPriorityIcon(selectedReport.priority)}
-                    <Typography variant="body1" sx={{ textTransform: 'capitalize' }}>
-                      {selectedReport.priority}
-                    </Typography>
-                  </Box>
-                  
-                  <Typography variant="subtitle2" color="text.secondary">Reported On</Typography>
-                  <Typography variant="body1" sx={{ mb: 2 }}>
-                    {formatDate(selectedReport.createdAt)}
-                  </Typography>
-                  
-                  {selectedReport.response && (
-                    <>
-                      <Typography variant="subtitle2" color="text.secondary">Response</Typography>
-                      <Typography variant="body1">
-                        {selectedReport.response}
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {selectedTicket.message}
+              </Typography>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              {selectedTicket.responses && selectedTicket.responses.length > 0 ? (
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 2 }}>Responses</Typography>
+                  {selectedTicket.responses.map((response, index) => (
+                    <Paper key={index} sx={{ p: 2, mb: 2, bgcolor: 'grey.50' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                        <Typography variant="subtitle2" color="primary">
+                          {response.adminName}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {formatDate(response.createdAt)}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2">
+                        {response.message}
                       </Typography>
-                    </>
-                  )}
-                </Grid>
-              </Grid>
+                    </Paper>
+                  ))}
+                </Box>
+              ) : (
+                <Typography color="text.secondary">
+                  No responses yet. We'll get back to you soon.
+                </Typography>
+              )}
             </DialogContent>
             <DialogActions>
-              <Button onClick={() => setSelectedReport(null)}>Close</Button>
+              <Button onClick={() => setViewDialog(false)}>Close</Button>
             </DialogActions>
           </>
         )}
       </Dialog>
-
-      {/* Action Dialog */}
-      <Dialog 
-        open={actionDialog.open} 
-        onClose={() => setActionDialog({ open: false, report: null, action: '' })}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          {actionDialog.action === 'resolve' ? 'Resolve Report' : 'Mark as Urgent'}
-        </DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            multiline
-            rows={4}
-            label="Response/Notes"
-            value={responseText}
-            onChange={(e) => setResponseText(e.target.value)}
-            sx={{ mt: 2 }}
-            placeholder="Add any notes or response to the user..."
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setActionDialog({ open: false, report: null, action: '' })}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmitAction}
-            variant="contained"
-            color={actionDialog.action === 'resolve' ? 'success' : 'error'}
-          >
-            {actionDialog.action === 'resolve' ? 'Resolve' : 'Mark Urgent'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Container>
+    </Box>
   );
 };
 

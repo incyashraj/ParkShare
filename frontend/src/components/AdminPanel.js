@@ -101,32 +101,47 @@ const AdminPanel = () => {
   const loadAdminData = React.useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Check if backend server is running
+      // Check if backend server is running with a simpler approach
       try {
-        const healthCheck = await fetch('http://localhost:3001/health');
+        const healthCheck = await fetch('http://localhost:3001/health', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
         if (!healthCheck.ok) {
-          throw new Error('Backend server is not responding');
+          throw new Error(`Backend server responded with status: ${healthCheck.status}`);
         }
+        
+        console.log('Backend server is running');
       } catch (healthError) {
         console.error('Backend server health check failed:', healthError);
-        setError('Backend server is not running. Please start the server at http://localhost:3001');
+        setError('Cannot connect to backend server. Please ensure the server is running at http://localhost:3001');
         setLoading(false);
         return;
       }
       
-      const headers = { Authorization: `Bearer ${currentUser.uid}` };
+      const headers = { 
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${currentUser.uid}` 
+      };
       
-      // Load all data in parallel
-      const [analyticsRes, ticketsRes, usersRes, spotsRes, bookingsRes, onlineUsersRes] = await Promise.all([
-        fetch('http://localhost:3001/api/admin/analytics', { headers }),
-        fetch('http://localhost:3001/api/support/tickets', { headers }),
-        fetch('http://localhost:3001/api/users', { headers }),
-        fetch('http://localhost:3001/api/admin/spots', { headers }),
-        fetch('http://localhost:3001/api/admin/bookings', { headers }),
-        fetch('http://localhost:3001/api/admin/online-users', { headers })
-      ]);
+      // Load all data in parallel with better error handling
+      const promises = [
+        fetch('http://localhost:3001/api/admin/analytics', { headers }).catch(e => ({ ok: false, error: e })),
+        fetch('http://localhost:3001/api/support/tickets', { headers }).catch(e => ({ ok: false, error: e })),
+        fetch('http://localhost:3001/api/users', { headers }).catch(e => ({ ok: false, error: e })),
+        fetch('http://localhost:3001/api/admin/spots', { headers }).catch(e => ({ ok: false, error: e })),
+        fetch('http://localhost:3001/api/admin/bookings', { headers }).catch(e => ({ ok: false, error: e })),
+        fetch('http://localhost:3001/api/admin/online-users', { headers }).catch(e => ({ ok: false, error: e }))
+      ];
 
+      const [analyticsRes, ticketsRes, usersRes, spotsRes, bookingsRes, onlineUsersRes] = await Promise.all(promises);
+
+      // Handle each response individually
       if (analyticsRes.ok) {
         const analyticsData = await analyticsRes.json();
         setAnalytics(analyticsData.analytics);
@@ -181,12 +196,25 @@ const AdminPanel = () => {
     }
   }, [currentUser]);
 
-  // Check if user is admin
+  // Check if user is admin - improved logic
   useEffect(() => {
-    if (!currentUser || (!currentUser.isAdmin && currentUser.email !== 'incyashraj@gmail.com')) {
+    if (!currentUser) {
+      setError('Please log in to access admin panel.');
+      return;
+    }
+    
+    // Check for admin privileges - multiple ways to be admin
+    const isAdminUser = currentUser.isAdmin || 
+                       currentUser.email === 'incyashraj@gmail.com' ||
+                       currentUser.uid === 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2' || // Yashraj's UID
+                       currentUser.email === 'yashrajpardeshi@gmail.com';
+    
+    if (!isAdminUser) {
       setError('Access denied. Admin privileges required.');
       return;
     }
+    
+    console.log('Admin access granted for user:', currentUser.username || currentUser.email);
     loadAdminData();
   }, [currentUser, loadAdminData]);
 
