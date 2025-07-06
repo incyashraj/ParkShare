@@ -381,7 +381,7 @@ const ParkingSpotList = () => {
     // Sort spots
     const sorted = sortSpots(filtered);
     return sorted;
-  }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking, sortBy]);
+  }, [spots, searchTerm, priceRange, ratingFilter, availabilityFilter, selectedAmenities, vehicleType, parkingType, instantBooking, sortBy, sortSpots]);
 
   const handleLocationClick = () => {
     if (navigator.geolocation) {

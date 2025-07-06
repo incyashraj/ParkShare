@@ -1,0 +1,71 @@
+[
+  {
+    "id": "conv_1751827209055",
+    "participants": [
+      {
+        "id": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "uid": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+        "username": "Mblue",
+        "email": "123@gmail.com"
+      }
+    ],
+    "subject": "Inquiry about Downtown Premium Parking",
+    "createdAt": "2025-07-06T18:40:09.055Z",
+    "lastActivity": "2025-07-06T19:07:56.814Z",
+    "starred": {
+      "oefQiaqHBQUkJxJIo2yhn3m6k9j1": true
+    },
+    "muted": {
+      "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
+    },
+    "archived": {
+      "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
+    }
+  },
+  {
+    "id": "conv_1751827230099",
+    "participants": [
+      {
+        "id": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "user_powai_host",
+        "uid": "user_powai_host",
+        "username": "rajesh_kumar",
+        "email": "rajesh.kumar@email.com"
+      }
+    ],
+    "subject": "Hi",
+    "createdAt": "2025-07-06T18:40:30.099Z",
+    "lastActivity": "2025-07-06T18:40:30.099Z"
+  },
+  {
+    "id": "conv_1751827921253",
+    "participants": [
+      {
+        "id": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "user_juhu_host",
+        "uid": "user_juhu_host",
+        "username": "sunita_desai",
+        "email": "sunita.desai@email.com"
+      }
+    ],
+    "subject": "Hey",
+    "createdAt": "2025-07-06T18:52:01.253Z",
+    "lastActivity": "2025-07-06T18:52:01.253Z"
+  }
+]

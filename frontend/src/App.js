@@ -45,6 +45,7 @@ import Settings from './components/Settings';
 import NotificationCenter from './components/NotificationCenter';
 import NotificationsPage from './components/NotificationsPage';
 import MessagingSystem from './components/MessagingSystem';
+import UserProfile from './components/UserProfile';
 import AdvancedSearch from './components/AdvancedSearch';
 import ReviewsAndRatings from './components/ReviewsAndRatings';
 import FavoritesManager from './components/FavoritesManager';
@@ -568,6 +569,7 @@ function AppContent() {
                   <Route path="/list" element={<ParkingSpotForm />} />
                   <Route path="/spot/:spotId" element={<ParkingSpotDetail />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/user-profile/:userId" element={<UserProfile />} />
                   <Route path="/settings" element={<Settings />} />
                   <Route path="/bookings" element={<BookingManagement />} />
                   <Route path="/notifications" element={<NotificationsPage />} />

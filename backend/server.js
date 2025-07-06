@@ -2438,6 +2438,320 @@ app.get('/api/users', (req, res) => {
   }
 });
 
+// Get user profile by ID
+app.get('/api/users/:userId/profile', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const currentUserId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!currentUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const user = users.find(u => u.uid === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Get user's parking spots
+    const userSpots = parkingSpots.filter(spot => spot.owner === userId);
+    
+    // Get user's reviews (from bookings)
+    const userReviews = bookings
+      .filter(booking => booking.spotOwner === userId && booking.review)
+      .map(booking => ({
+        id: booking.id,
+        rating: booking.review.rating,
+        comment: booking.review.comment,
+        reviewer: users.find(u => u.uid === booking.userId)?.username || 'Unknown',
+        date: booking.review.date || booking.createdAt
+      }));
+
+    // Calculate user stats
+    const totalSpots = userSpots.length;
+    const totalBookings = bookings.filter(b => b.spotOwner === userId).length;
+    const averageRating = userReviews.length > 0 
+      ? userReviews.reduce((sum, review) => sum + review.rating, 0) / userReviews.length 
+      : 0;
+
+    const profile = {
+      uid: user.uid,
+      username: user.username || 'Unknown User',
+      email: user.email || '',
+      fullName: user.fullName || user.username || 'Unknown User',
+      phone: user.phone || '',
+      location: user.location || '',
+      verified: user.verified || false,
+      hostSince: user.hostSince || '',
+      createdAt: user.createdAt || user.hostSince || new Date().toISOString(),
+      totalSpots,
+      totalBookings,
+      averageRating: Math.round(averageRating * 10) / 10,
+      reviews: userReviews,
+      spots: userSpots.map(spot => ({
+        id: spot.id,
+        title: spot.title,
+        location: spot.location,
+        price: spot.price,
+        available: spot.available,
+        image: spot.image
+      }))
+    };
+
+    res.json({ profile });
+  } catch (error) {
+    console.error('Error fetching user profile:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Star/Unstar conversation
+app.post('/api/conversations/:conversationId/star', (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Check if user is a participant
+    const isParticipant = conversation.participants.some(p => p.id === userId || p.uid === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Toggle starred status
+    if (!conversation.starred) {
+      conversation.starred = {};
+    }
+    conversation.starred[userId] = !conversation.starred[userId];
+    
+    saveData(CONVERSATIONS_FILE, conversations);
+    
+    res.json({ 
+      conversation,
+      starred: conversation.starred[userId]
+    });
+  } catch (error) {
+    console.error('Error starring conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Mute/Unmute conversation
+app.post('/api/conversations/:conversationId/mute', (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { muted } = req.body;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Check if user is a participant
+    const isParticipant = conversation.participants.some(p => p.id === userId || p.uid === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Set muted status
+    if (!conversation.muted) {
+      conversation.muted = {};
+    }
+    conversation.muted[userId] = muted;
+    
+    saveData(CONVERSATIONS_FILE, conversations);
+    
+    res.json({ 
+      conversation,
+      muted: conversation.muted[userId]
+    });
+  } catch (error) {
+    console.error('Error muting conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Archive/Unarchive conversation
+app.post('/api/conversations/:conversationId/archive', (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const { archived } = req.body;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Check if user is a participant
+    const isParticipant = conversation.participants.some(p => p.id === userId || p.uid === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Set archived status
+    if (!conversation.archived) {
+      conversation.archived = {};
+    }
+    conversation.archived[userId] = archived;
+    
+    saveData(CONVERSATIONS_FILE, conversations);
+    
+    res.json({ 
+      conversation,
+      archived: conversation.archived[userId]
+    });
+  } catch (error) {
+    console.error('Error archiving conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Block/Unblock user
+app.post('/api/users/:userId/block', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { blocked } = req.body;
+    const currentUserId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!currentUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (userId === currentUserId) {
+      return res.status(400).json({ message: 'Cannot block yourself' });
+    }
+
+    const currentUser = users.find(u => u.uid === currentUserId);
+    if (!currentUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Initialize blocked users array if it doesn't exist
+    if (!currentUser.blockedUsers) {
+      currentUser.blockedUsers = [];
+    }
+
+    if (blocked) {
+      // Add to blocked users if not already blocked
+      if (!currentUser.blockedUsers.includes(userId)) {
+        currentUser.blockedUsers.push(userId);
+      }
+    } else {
+      // Remove from blocked users
+      currentUser.blockedUsers = currentUser.blockedUsers.filter(id => id !== userId);
+    }
+    
+    saveData(USERS_FILE, users);
+    
+    res.json({ 
+      blocked,
+      blockedUsers: currentUser.blockedUsers
+    });
+  } catch (error) {
+    console.error('Error blocking user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Report user
+app.post('/api/users/:userId/report', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { reason, description } = req.body;
+    const currentUserId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!currentUserId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    if (userId === currentUserId) {
+      return res.status(400).json({ message: 'Cannot report yourself' });
+    }
+
+    const report = {
+      id: `report_${Date.now()}`,
+      reporterId: currentUserId,
+      reportedUserId: userId,
+      reason,
+      description,
+      timestamp: new Date().toISOString(),
+      status: 'pending'
+    };
+
+    // Initialize reports array if it doesn't exist
+    if (!global.reports) {
+      global.reports = [];
+    }
+    
+    global.reports.push(report);
+    
+    // Save reports to file
+    const REPORTS_FILE = path.join(DATA_DIR, 'reports.json');
+    saveData(REPORTS_FILE, global.reports);
+    
+    res.status(201).json({ 
+      message: 'User reported successfully',
+      report
+    });
+  } catch (error) {
+    console.error('Error reporting user:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
+// Delete conversation
+app.delete('/api/conversations/:conversationId', (req, res) => {
+  try {
+    const { conversationId } = req.params;
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      return res.status(404).json({ message: 'Conversation not found' });
+    }
+
+    // Check if user is a participant
+    const isParticipant = conversation.participants.some(p => p.id === userId || p.uid === userId);
+    if (!isParticipant) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Remove conversation and all its messages
+    conversations = conversations.filter(c => c.id !== conversationId);
+    messages = messages.filter(m => m.conversationId !== conversationId);
+    
+    saveData(CONVERSATIONS_FILE, conversations);
+    saveData(MESSAGES_FILE, messages);
+    
+    res.json({ message: 'Conversation deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 server.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });

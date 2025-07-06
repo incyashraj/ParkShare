@@ -34,12 +34,15 @@ import {
   AccessTime as TimeIcon,
 } from '@mui/icons-material';
 import { useRealtime } from '../contexts/RealtimeContext';
+import NotificationPopup from './NotificationPopup';
 
 const NotificationCenter = () => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState(null);
   const [showSnackbar, setShowSnackbar] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
+  const [selectedNotification, setSelectedNotification] = useState(null);
+  const [showPopup, setShowPopup] = useState(false);
   
   const {
     notifications,
@@ -74,25 +77,45 @@ const NotificationCenter = () => {
       markNotificationAsRead(notification.id);
     }
     
+    // Set the selected notification and show popup
+    setSelectedNotification(notification);
+    setShowPopup(true);
+    handleClose();
+  };
+
+  const handlePopupClose = () => {
+    setShowPopup(false);
+    setSelectedNotification(null);
+  };
+
+  const handleNotificationAction = (notification) => {
     // Handle different notification types
     switch (notification.type) {
       case 'booking':
         // Navigate to booking details
         console.log('Navigate to booking:', notification.data);
+        navigate('/bookings');
         break;
       case 'message':
         // Open chat with sender
         console.log('Open chat with:', notification.data.senderId);
+        navigate('/messages');
         break;
       case 'availability':
         // Navigate to spot details
         console.log('Navigate to spot:', notification.data.spotId);
+        navigate('/search');
+        break;
+      case 'payment':
+        // Navigate to payment/receipt page
+        console.log('Navigate to payment:', notification.data);
+        navigate('/bookings');
         break;
       default:
         console.log('Handle notification:', notification);
     }
     
-    handleClose();
+    handlePopupClose();
   };
 
   const markAllAsRead = () => {
@@ -110,8 +133,8 @@ const NotificationCenter = () => {
         id: Date.now(),
         type: 'booking',
         title: 'New Booking Received',
-        message: 'You have a new booking for your parking spot in Bandra West.',
-        data: { spotId: 'spot_mumbai_bandra_001' },
+        message: 'You have a new booking for your parking spot in Bandra West. The booking is confirmed and payment has been processed successfully.',
+        data: { spotId: 'spot_mumbai_bandra_001', amount: 150 },
         timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
         read: false
       },
@@ -119,8 +142,8 @@ const NotificationCenter = () => {
         id: Date.now() + 1,
         type: 'message',
         title: 'New Message from John',
-        message: 'Hi! I have a question about your parking spot availability.',
-        data: { senderId: 'user_john_123' },
+        message: 'Hi! I have a question about your parking spot availability. Can you please let me know if it\'s available for tomorrow?',
+        data: { senderId: 'user_john_123', conversationId: 'conv_123' },
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
         read: false
       },
@@ -128,8 +151,8 @@ const NotificationCenter = () => {
         id: Date.now() + 2,
         type: 'payment',
         title: 'Payment Received',
-        message: 'Payment of ₹150 has been received for your parking spot.',
-        data: { amount: 150, spotId: 'spot_mumbai_bandra_001' },
+        message: 'Payment of ₹150 has been received for your parking spot. The transaction has been completed successfully.',
+        data: { amount: 150, spotId: 'spot_mumbai_bandra_001', transactionId: 'txn_123' },
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
         read: true
       },
@@ -137,8 +160,8 @@ const NotificationCenter = () => {
         id: Date.now() + 3,
         type: 'announcement',
         title: 'System Maintenance',
-        message: 'Scheduled maintenance will occur tonight from 2-4 AM.',
-        data: {},
+        message: 'Scheduled maintenance will occur tonight from 2-4 AM. During this time, some features may be temporarily unavailable.',
+        data: { maintenanceType: 'scheduled', duration: '2 hours' },
         timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
         read: true
       }
@@ -445,6 +468,14 @@ const NotificationCenter = () => {
           </Box>
         )}
       </Menu>
+
+      {/* Notification Popup Modal */}
+      <NotificationPopup
+        notification={selectedNotification}
+        open={showPopup}
+        onClose={handlePopupClose}
+        onAction={handleNotificationAction}
+      />
 
       <Snackbar
         open={showSnackbar}

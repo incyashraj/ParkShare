@@ -349,7 +349,7 @@ const NotificationsPage = () => {
         {/* Stats Cards */}
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 2, mb: 3 }}>
           <Card sx={{ 
-            background: 'linear-gradient(135deg, #FF385C 0%, #E31C5F 100%)',
+            background: 'linear-gradient(135deg, #FF385C 0%, #FF5A5F 100%)',
             color: 'white',
             borderRadius: 3,
             transition: 'transform 0.2s ease',
@@ -371,7 +371,7 @@ const NotificationsPage = () => {
           </Card>
 
           <Card sx={{ 
-            background: 'linear-gradient(135deg, #00A699 0%, #008489 100%)',
+            background: 'linear-gradient(135deg, #00A699 0%, #00D1C1 100%)',
             color: 'white',
             borderRadius: 3,
             transition: 'transform 0.2s ease',
@@ -387,15 +387,13 @@ const NotificationsPage = () => {
                     Unread
                   </Typography>
                 </Box>
-                <Badge badgeContent={unreadNotifications.length} color="error">
-                  <NotificationsIcon sx={{ fontSize: 40, opacity: 0.8 }} />
-                </Badge>
+                <NotificationsIcon sx={{ fontSize: 40, opacity: 0.8 }} />
               </Box>
             </CardContent>
           </Card>
 
           <Card sx={{ 
-            background: 'linear-gradient(135deg, #007A87 0%, #005F6B 100%)',
+            background: 'linear-gradient(135deg, #007A87 0%, #0099A8 100%)',
             color: 'white',
             borderRadius: 3,
             transition: 'transform 0.2s ease',
@@ -429,9 +427,10 @@ const NotificationsPage = () => {
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
-                  backgroundColor: '#00A699',
-                  '&:hover': { backgroundColor: '#008489' },
-                  boxShadow: '0 2px 8px rgba(0, 166, 153, 0.3)'
+                  backgroundColor: '#FF385C',
+                  color: 'white',
+                  '&:hover': { backgroundColor: '#E31C5F' },
+                  boxShadow: '0 2px 8px rgba(255, 56, 92, 0.15)'
                 }}
               >
                 Mark All Read
@@ -445,11 +444,13 @@ const NotificationsPage = () => {
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
-                  borderColor: '#007A87',
-                  color: '#007A87',
+                  borderColor: '#FF385C',
+                  color: '#FF385C',
+                  backgroundColor: 'white',
                   '&:hover': {
-                    borderColor: '#005F6B',
-                    backgroundColor: 'rgba(0, 122, 135, 0.08)'
+                    borderColor: '#E31C5F',
+                    color: '#E31C5F',
+                    backgroundColor: 'rgba(255, 56, 92, 0.08)'
                   }
                 }}
               >
@@ -465,9 +466,10 @@ const NotificationsPage = () => {
                   sx={{ 
                     borderRadius: 2,
                     textTransform: 'none',
-                    backgroundColor: '#FF5A5F',
+                    backgroundColor: '#FF385C',
+                    color: 'white',
                     '&:hover': { backgroundColor: '#E31C5F' },
-                    boxShadow: '0 2px 8px rgba(255, 90, 95, 0.3)'
+                    boxShadow: '0 2px 8px rgba(255, 56, 92, 0.15)'
                   }}
                 >
                   Delete Selected ({selectedNotifications.length})
@@ -484,11 +486,13 @@ const NotificationsPage = () => {
                 sx={{ 
                   borderRadius: 2,
                   textTransform: 'none',
-                  borderColor: '#FF5A5F',
-                  color: '#FF5A5F',
+                  borderColor: '#FF385C',
+                  color: '#FF385C',
+                  backgroundColor: 'white',
                   '&:hover': {
                     borderColor: '#E31C5F',
-                    backgroundColor: 'rgba(255, 90, 95, 0.08)'
+                    color: '#E31C5F',
+                    backgroundColor: 'rgba(255, 56, 92, 0.08)'
                   }
                 }}
               >
@@ -525,17 +529,41 @@ const NotificationsPage = () => {
         >
           <Tab 
             label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                Unread
-                <Badge badgeContent={unreadNotifications.length} color="error" max={99} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
+                <Typography>Unread</Typography>
+                <Badge 
+                  badgeContent={unreadNotifications.length} 
+                  color="error" 
+                  max={99}
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      fontSize: '12px',
+                      height: '20px',
+                      minWidth: '20px',
+                      padding: '0 6px'
+                    }
+                  }}
+                />
               </Box>
             } 
           />
           <Tab 
             label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                Read
-                <Badge badgeContent={readNotifications.length} color="default" max={99} />
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, position: 'relative' }}>
+                <Typography>Read</Typography>
+                <Badge 
+                  badgeContent={readNotifications.length} 
+                  color="default" 
+                  max={99}
+                  sx={{
+                    '& .MuiBadge-badge': {
+                      fontSize: '12px',
+                      height: '20px',
+                      minWidth: '20px',
+                      padding: '0 6px'
+                    }
+                  }}
+                />
               </Box>
             } 
           />
