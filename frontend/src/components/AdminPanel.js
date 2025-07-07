@@ -64,7 +64,8 @@ import {
   InfoOutlined,
   Notifications,
   Security as SecurityIcon,
-  Description as DocumentIcon
+  Description as DocumentIcon,
+  Info as InfoIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../contexts/RealtimeContext';
@@ -121,6 +122,11 @@ const AdminPanel = () => {
   const [reviewNotes, setReviewNotes] = useState('');
   const [reviewStatus, setReviewStatus] = useState('approved');
   const [reviewingVerification, setReviewingVerification] = useState(false);
+
+  // Announcement state
+  const [announcementTitle, setAnnouncementTitle] = useState('');
+  const [announcementMessage, setAnnouncementMessage] = useState('');
+  const [publishing, setPublishing] = useState(false);
 
   const loadAdminData = React.useCallback(async () => {
     try {
@@ -747,6 +753,29 @@ const AdminPanel = () => {
     }
   };
 
+  const handlePublishAnnouncement = async () => {
+    setPublishing(true);
+    try {
+      const res = await fetch(`${API_BASE}/api/announcements`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.uid}`
+        },
+        credentials: 'include',
+        body: JSON.stringify({ title: announcementTitle, message: announcementMessage })
+      });
+      if (!res.ok) throw new Error('Failed to publish announcement');
+      setSnackbar({ open: true, message: 'Announcement published!', severity: 'success' });
+      setAnnouncementTitle('');
+      setAnnouncementMessage('');
+    } catch (err) {
+      setSnackbar({ open: true, message: err.message, severity: 'error' });
+    } finally {
+      setPublishing(false);
+    }
+  };
+
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -798,6 +827,7 @@ const AdminPanel = () => {
             } 
             label="Host Verification" 
           />
+          <Tab icon={<InfoIcon />} label="System Announcements" />
         </Tabs>
 
         <Box sx={{ p: 3 }}>
@@ -1403,6 +1433,40 @@ const AdminPanel = () => {
                   </TableBody>
                 </Table>
               </TableContainer>
+            </Box>
+          )}
+
+          {/* System Announcements Tab */}
+          {activeTab === 6 && (
+            <Box sx={{ p: 4 }}>
+              <Typography variant="h6" gutterBottom>Publish System Announcement</Typography>
+              <TextField
+                label="Title"
+                value={announcementTitle}
+                onChange={e => setAnnouncementTitle(e.target.value)}
+                fullWidth
+                margin="normal"
+                required
+              />
+              <TextField
+                label="Message"
+                value={announcementMessage}
+                onChange={e => setAnnouncementMessage(e.target.value)}
+                fullWidth
+                margin="normal"
+                multiline
+                minRows={3}
+                required
+              />
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={handlePublishAnnouncement}
+                disabled={publishing || !announcementTitle || !announcementMessage}
+                sx={{ mt: 2 }}
+              >
+                {publishing ? 'Publishing...' : 'Publish Announcement'}
+              </Button>
             </Box>
           )}
         </Box>

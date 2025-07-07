@@ -12,7 +12,30 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  console.log('AuthProvider rendered, loading:', loading, 'currentUser:', currentUser);
+  // Location state
+  const [location, setLocation] = useState(null); // [lat, lng]
+  const [locationError, setLocationError] = useState('');
+
+  // Request location function
+  function requestLocation() {
+    if (!navigator.geolocation) {
+      setLocationError('Geolocation is not supported by your browser.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocation([position.coords.latitude, position.coords.longitude]);
+        setLocationError('');
+      },
+      (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+          setLocationError('Could not get your location. Using default location.');
+        } else {
+          setLocationError('Could not get your location. Using default location.');
+        }
+      }
+    );
+  }
 
   function signup(email, password) {
     return createUserWithEmailAndPassword(auth, email, password);
@@ -45,7 +68,10 @@ export function AuthProvider({ children }) {
     signup,
     login,
     logout,
-    updateUserProfile
+    updateUserProfile,
+    location,
+    locationError,
+    requestLocation,
   };
 
   return (

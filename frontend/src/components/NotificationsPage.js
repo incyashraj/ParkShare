@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Container,
   Typography,
@@ -10,9 +10,7 @@ import {
   ListItemIcon,
   Chip,
   Button,
-  Divider,
   IconButton,
-  Alert,
   CircularProgress,
   Tabs,
   Tab,
@@ -20,14 +18,11 @@ import {
   Card,
   CardContent,
   Avatar,
-  Fade,
-  Slide,
   Grow,
   useTheme,
   useMediaQuery,
   Stack,
   Tooltip,
-  Fab,
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
@@ -44,19 +39,12 @@ import {
   Security as SecurityIcon,
   Info as InfoIcon,
   CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
-  Error as ErrorIcon,
   Message as MessageIcon,
   Cancel as CancelIcon,
-  Star as StarIcon,
   AccessTime as TimeIcon,
   Delete as DeleteIcon,
   MarkEmailRead as MarkReadIcon,
   ArrowBack as ArrowBackIcon,
-  FilterList as FilterIcon,
-  Sort as SortIcon,
-  Search as SearchIcon,
-  MoreVert as MoreIcon,
   Favorite as FavoriteIcon,
   FavoriteBorder as FavoriteBorderIcon,
   ClearAll as ClearAllIcon,
@@ -64,7 +52,6 @@ import {
   UnfoldMore as UnfoldMoreIcon,
   UnfoldLess as UnfoldLessIcon,
   Refresh as RefreshIcon,
-  Settings as SettingsIcon,
   Close as CloseIcon,
   Visibility as VisibilityIcon,
   Support as SupportIcon,
@@ -89,8 +76,6 @@ const NotificationsPage = () => {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedNotifications, setSelectedNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState('all');
   const [expandedNotifications, setExpandedNotifications] = useState(new Set());
   const [showSpeedDial, setShowSpeedDial] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState(null);
@@ -99,15 +84,7 @@ const NotificationsPage = () => {
   const unreadNotifications = notifications.filter(n => !n.read);
   const readNotifications = notifications.filter(n => n.read);
 
-  const filteredNotifications = activeTab === 0 
-    ? unreadNotifications.filter(n => 
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : readNotifications.filter(n => 
-        n.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        n.message.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  const filteredNotifications = activeTab === 0 ? unreadNotifications : readNotifications;
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -256,26 +233,9 @@ const NotificationsPage = () => {
     }
   };
 
-  const getNotificationPriority = (notification) => {
-    switch (notification.type) {
-      case 'booking':
-      case 'message':
-      case 'support-ticket':
-        return 1;
-      case 'cancellation':
-      case 'security':
-        return 2;
-      case 'availability':
-      case 'payment':
-        return 3;
-      default:
-        return 4;
-    }
-  };
+
 
   const sortedNotifications = [...filteredNotifications].sort((a, b) => {
-    const priorityDiff = getNotificationPriority(a) - getNotificationPriority(b);
-    if (priorityDiff !== 0) return priorityDiff;
     return new Date(b.timestamp) - new Date(a.timestamp);
   });
 

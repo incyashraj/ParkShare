@@ -54,6 +54,7 @@ const SPOTS_FILE = path.join(DATA_DIR, 'spots.json');
 const BOOKINGS_FILE = path.join(DATA_DIR, 'bookings.json');
 const CONVERSATIONS_FILE = path.join(DATA_DIR, 'conversations.json');
 const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
+const NOTIFICATIONS_FILE = path.join(DATA_DIR, 'notifications.json');
 
 // File upload configuration
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
@@ -133,6 +134,47 @@ const verificationUpload = multer({
 // ===== Support Ticket System =====
 const SUPPORT_TICKETS_FILE = path.join(DATA_DIR, 'supportTickets.json');
 let supportTickets = [];
+
+// ===== Notification Tracking System =====
+let notifications = [];
+
+function saveNotifications() {
+  saveData(NOTIFICATIONS_FILE, notifications);
+}
+
+function markNotificationAsSeen(userId, notificationId) {
+  const userNotifications = notifications.find(n => n.userId === userId);
+  if (userNotifications) {
+    if (!userNotifications.seenNotifications) {
+      userNotifications.seenNotifications = [];
+    }
+    if (!userNotifications.seenNotifications.includes(notificationId)) {
+      userNotifications.seenNotifications.push(notificationId);
+      saveNotifications();
+    }
+  }
+}
+
+function hasUserSeenNotification(userId, notificationId) {
+  const userNotifications = notifications.find(n => n.userId === userId);
+  if (userNotifications && userNotifications.seenNotifications) {
+    return userNotifications.seenNotifications.includes(notificationId);
+  }
+  return false;
+}
+
+function createUserNotificationRecord(userId) {
+  const existingRecord = notifications.find(n => n.userId === userId);
+  if (!existingRecord) {
+    const newRecord = {
+      userId,
+      seenNotifications: [],
+      createdAt: new Date().toISOString()
+    };
+    notifications.push(newRecord);
+    saveNotifications();
+  }
+}
 
 function saveSupportTickets() {
   saveData(SUPPORT_TICKETS_FILE, supportTickets);
@@ -508,9 +550,10 @@ let bookings = loadData(BOOKINGS_FILE, []);
 let conversations = loadData(CONVERSATIONS_FILE, []);
 let messages = loadData(MESSAGES_FILE, []);
 supportTickets = loadData(SUPPORT_TICKETS_FILE, []);
+notifications = loadData(NOTIFICATIONS_FILE, []);
 let verificationCodes = {}; // Store verification codes temporarily
 
-console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings, ${conversations.length} conversations, ${messages.length} messages, ${supportTickets.length} support tickets`);
+console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings, ${conversations.length} conversations, ${messages.length} messages, ${supportTickets.length} support tickets, ${notifications.length} notification records`);
 
 app.use('/uploads', express.static(UPLOADS_DIR));
 
@@ -546,6 +589,9 @@ io.on('connection', (socket) => {
       clearTimeout(presenceTimeouts.get(uid));
       presenceTimeouts.delete(uid);
     }
+    
+    // Create notification record for user if it doesn't exist
+    createUserNotificationRecord(uid);
     
     // Join user's personal room for notifications
     socket.join(`user-${uid}`);
@@ -679,6 +725,13 @@ io.on('connection', (socket) => {
   socket.on('typing-stop', (data) => {
     const { recipientId, senderId } = data;
     io.to(`user-${recipientId}`).emit('user-typing', { senderId, typing: false });
+  });
+
+  // Handle marking notifications as seen
+  socket.on('mark-notification-seen', (data) => {
+    const { userId, notificationId } = data;
+    markNotificationAsSeen(userId, notificationId);
+    socket.emit('notification-marked-seen', { notificationId });
   });
 
   // Handle real-time spot search/filtering
@@ -875,6 +928,13 @@ app.post('/register', (req, res) => {
   console.log('Registration attempt received:', { username, email, uid });
   console.log('Current users in system:', users.map(u => ({ uid: u.uid, username: u.username, email: u.email })));
   
+  // Additional debugging for Google auth issues
+  if (email === 'incyashraj@gmail.com') {
+    console.log('🔍 Debug: Processing registration for incyashraj@gmail.com');
+    console.log('🔍 Debug: Requested UID:', uid);
+    console.log('🔍 Debug: Existing users with this email:', users.filter(u => u.email === email));
+  }
+  
   if (!username || !email || !uid) {
     console.log('Registration failed: Missing required fields');
     return res.status(400).json({ message: 'Username, email and user ID are required' });
@@ -887,10 +947,15 @@ app.post('/register', (req, res) => {
     return res.status(200).json({ message: 'User already registered', ok: true });
   }
 
+  // Check if email exists with a different UID
   const emailExists = users.find((user) => user.email === email && user.uid !== uid);
   if (emailExists) {
-    console.log('Registration failed: Email already registered with different account');
-    return res.status(400).json({ message: 'Email already registered with different account' });
+    console.log('Email already registered with different UID. Updating UID for existing user.');
+    // Update the existing user's UID to the new one (this handles Firebase UID changes)
+    emailExists.uid = uid;
+    saveData(USERS_FILE, users);
+    console.log('UID updated for existing user:', emailExists.username);
+    return res.status(200).json({ message: 'User account updated successfully', ok: true });
   }
 
   const user = { username, email, password: password || '', uid };
@@ -918,7 +983,7 @@ app.post('/login', (req, res) => {
   const user = users.find((user) => user.uid === uid);
   if (!user) {
     console.log('Login failed: User not found for UID:', uid);
-    // Try to auto-register Google users if they exist in Firebase but not in our backend
+    // For Google users, we might need to register them first
     return res.status(401).json({ 
       message: 'User not found. Please register first', 
       ok: false,
@@ -1796,25 +1861,37 @@ app.post('/proxy-payment', async (req, res) => {
     saveData(SPOTS_FILE, parkingSpots);
     saveData(BOOKINGS_FILE, bookings);
 
-    // Emit real-time notifications
+    // Emit real-time notifications with tracking
     if (spot) {
-      io.to(`user-${spot.owner}`).emit('payment-received', {
-        type: 'payment',
-        title: 'Payment Received',
-        message: `Payment of $${amount} received for booking at ${spot.location}`,
-        booking: booking,
-        spot: spot,
-        timestamp: new Date()
-      });
-
-      io.to(`user-${userId}`).emit('payment-success', {
-        type: 'payment',
-        title: 'Payment Successful',
-        message: `Your payment of $${amount} has been processed successfully`,
-        booking: booking,
-        spot: spot,
-        timestamp: new Date()
-      });
+      // Create unique notification IDs
+      const paymentReceivedId = `payment_received_${booking.id}_${spot.owner}`;
+      const paymentSuccessId = `payment_success_${booking.id}_${userId}`;
+      
+      // Only send payment received notification if user hasn't seen it
+      if (!hasUserSeenNotification(spot.owner, paymentReceivedId)) {
+        io.to(`user-${spot.owner}`).emit('payment-received', {
+          id: paymentReceivedId,
+          type: 'payment',
+          title: 'Payment Received',
+          message: `Payment of ₹${amount} has been received for your parking spot. The transaction has been completed successfully.`,
+          booking: booking,
+          spot: spot,
+          timestamp: new Date()
+        });
+      }
+      
+      // Only send payment success notification if user hasn't seen it
+      if (!hasUserSeenNotification(userId, paymentSuccessId)) {
+        io.to(`user-${userId}`).emit('payment-success', {
+          id: paymentSuccessId,
+          type: 'payment',
+          title: 'Payment Successful',
+          message: `Your payment of ₹${amount} has been processed successfully`,
+          booking: booking,
+          spot: spot,
+          timestamp: new Date()
+        });
+      }
 
       io.to(`spot-${spotId}`).emit('booking-status-updated', {
         spotId: spotId,
@@ -1881,121 +1958,13 @@ app.post('/create-payment-intent', async (req, res) => {
   }
 });
 
-// Stripe webhook endpoint
-app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  const endpointSecret = 'whsec_test_endpoint_secret'; // You'll need to set this up in Stripe dashboard
+// Stripe webhook endpoint - REMOVED DUPLICATE
+// This endpoint was causing duplicate payment processing
+// The webhook is now handled by /api/payments/webhook endpoint
 
-  let event;
-
-  try {
-    // For testing, if endpoint secret is not configured, try to parse without verification
-    if (endpointSecret === 'whsec_test_endpoint_secret') {
-      event = JSON.parse(req.body);
-      console.log('Webhook received (test mode):', event.type);
-    } else {
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
-    }
-  } catch (err) {
-    console.error('Webhook signature verification failed:', err.message);
-    return res.status(400).send(`Webhook Error: ${err.message}`);
-  }
-
-  // Handle the event
-  switch (event.type) {
-    case 'payment_intent.succeeded':
-      const paymentIntent = event.data.object;
-      await handlePaymentSuccess(paymentIntent);
-      break;
-    case 'payment_intent.payment_failed':
-      const failedPayment = event.data.object;
-      await handlePaymentFailure(failedPayment);
-      break;
-    default:
-      console.log(`Unhandled event type ${event.type}`);
-  }
-
-  res.json({ received: true });
-});
-
-// Handle successful payment
-async function handlePaymentSuccess(paymentIntent) {
-  const { bookingId, spotId, userId } = paymentIntent.metadata;
-  
-  try {
-    // Find and update the booking
-    const booking = bookings.find(b => b.id === bookingId);
-    if (booking) {
-      booking.status = 'paid';
-      booking.paymentId = paymentIntent.id;
-      booking.paidAt = new Date();
-      booking.paymentAmount = paymentIntent.amount / 100; // Convert from cents
-
-      // Find the spot
-      const spot = parkingSpots.find(s => s.id === spotId);
-      if (spot) {
-        // Emit real-time payment success notification to spot owner
-        io.to(`user-${spot.owner}`).emit('payment-received', {
-          type: 'payment',
-          title: 'Payment Received',
-          message: `Payment of $${booking.paymentAmount} received for booking at ${spot.location}`,
-          booking: booking,
-          spot: spot,
-          timestamp: new Date()
-        });
-
-        // Emit payment success notification to the booker
-        io.to(`user-${userId}`).emit('payment-success', {
-          type: 'payment',
-          title: 'Payment Successful',
-          message: `Your payment of $${booking.paymentAmount} has been processed successfully`,
-          booking: booking,
-          spot: spot,
-          timestamp: new Date()
-        });
-
-        // Emit booking status update to all users watching this spot
-        io.to(`spot-${spotId}`).emit('booking-status-updated', {
-          spotId: spotId,
-          bookingId: bookingId,
-          status: 'paid',
-          timestamp: new Date()
-        });
-      }
-
-      console.log(`Payment successful for booking ${bookingId}: $${booking.paymentAmount}`);
-    }
-  } catch (error) {
-    console.error('Error handling payment success:', error);
-  }
-}
-
-// Handle failed payment
-async function handlePaymentFailure(paymentIntent) {
-  const { bookingId, spotId, userId } = paymentIntent.metadata;
-  
-  try {
-    // Find and update the booking
-    const booking = bookings.find(b => b.id === bookingId);
-    if (booking) {
-      booking.status = 'payment_failed';
-      booking.paymentFailureReason = paymentIntent.last_payment_error?.message || 'Payment failed';
-
-      // Emit payment failure notification to the booker
-      io.to(`user-${userId}`).emit('payment-failed', {
-        type: 'payment',
-        title: 'Payment Failed',
-        message: `Your payment failed: ${booking.paymentFailureReason}`,
-        booking: booking,
-        timestamp: new Date()
-      });
-
-      console.log(`Payment failed for booking ${bookingId}: ${booking.paymentFailureReason}`);
-    }
-  } catch (error) {
-    console.error('Error handling payment failure:', error);
-  }
-}
+// Payment handling functions - REMOVED DUPLICATE
+// These functions were causing duplicate payment processing
+// Payment handling is now done in the receiptService webhook handler
 
 // Get payment status for a booking
 app.get('/bookings/:bookingId/payment-status', (req, res) => {
@@ -2014,6 +1983,30 @@ app.get('/bookings/:bookingId/payment-status', (req, res) => {
     paymentAmount: booking.paymentAmount,
     paymentFailureReason: booking.paymentFailureReason
   });
+});
+
+// Mark notification as seen
+app.post('/api/notifications/mark-seen', (req, res) => {
+  const { userId, notificationId } = req.body;
+  
+  if (!userId || !notificationId) {
+    return res.status(400).json({ error: 'Missing userId or notificationId' });
+  }
+  
+  markNotificationAsSeen(userId, notificationId);
+  res.json({ success: true, message: 'Notification marked as seen' });
+});
+
+// Get user's seen notifications
+app.get('/api/notifications/:userId/seen', (req, res) => {
+  const { userId } = req.params;
+  
+  const userNotifications = notifications.find(n => n.userId === userId);
+  if (!userNotifications) {
+    return res.json({ seenNotifications: [] });
+  }
+  
+  res.json({ seenNotifications: userNotifications.seenNotifications || [] });
 });
 
 // Create a new booking with payment
@@ -5343,6 +5336,30 @@ app.post('/api/payments/confirm-session', async (req, res) => {
     console.error('Error confirming Stripe session:', err);
     res.status(500).json({ message: 'Failed to confirm payment session' });
   }
+});
+
+// System Announcements - Admin Only
+app.post('/api/announcements', (req, res) => {
+  const userId = req.headers.authorization?.replace('Bearer ', '');
+  if (!userId || !isAdmin(userId)) {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  const { title, message } = req.body;
+  if (!title || !message) {
+    return res.status(400).json({ message: 'Title and message are required' });
+  }
+  const announcement = {
+    id: `announcement_${Date.now()}`,
+    type: 'announcement',
+    title,
+    message,
+    timestamp: new Date().toISOString(),
+    publishedBy: userId
+  };
+  // Broadcast to all users in the 'announcements' room
+  io.to('announcements').emit('announcement', announcement);
+  // Optionally: save to file/db for persistence (future enhancement)
+  res.status(201).json({ message: 'Announcement published', announcement });
 });
 
 server.listen(port, '0.0.0.0', () => {

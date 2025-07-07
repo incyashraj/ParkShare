@@ -1,5 +1,177 @@
 [
   {
+    "id": "booking_1751910159528",
+    "spotId": "spot_university_008",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-07T17:41:00.000Z",
+    "endTime": "2025-07-08T17:41:00.000Z",
+    "hours": 24,
+    "totalPrice": 144,
+    "createdAt": "2025-07-07T17:42:39.529Z",
+    "status": "paid",
+    "paymentId": "pi_3RiJ3cFfuH7KoJbs0JXiaPYa",
+    "sessionId": "cs_test_a1awiafjZ4nOHYmPS1LGQO1ir9FQBjoi0CahJBSmPZqZqfouc0YaQcZ8V3",
+    "paidAt": "2025-07-07T17:42:39.529Z",
+    "paymentAmount": 144,
+    "spotOwner": "user_sarah_101",
+    "spotOwnerName": "Sarah Jones",
+    "location": "999 Education Boulevard",
+    "spotDetails": {
+      "location": "999 Education Boulevard",
+      "hourlyRate": "$6"
+    }
+  },
+  {
+    "id": "booking_1751909114656",
+    "spotId": "1751904860203",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-07T17:24:00.000Z",
+    "endTime": "2025-07-08T17:24:00.000Z",
+    "hours": 24,
+    "totalPrice": 240,
+    "createdAt": "2025-07-07T17:25:14.656Z",
+    "status": "paid",
+    "paymentId": "pi_3RiImmFfuH7KoJbs1ynTtrIa",
+    "sessionId": "cs_test_a1qYWMUdaAHe4TxoofAHq6zOZ7F6PZVqySvpD0r5T3PvYHjIvwSPorkiq0",
+    "paidAt": "2025-07-07T17:25:14.656Z",
+    "paymentAmount": 240,
+    "spotOwner": "user_john_123",
+    "spotOwnerName": "john_doe",
+    "location": "Test Location 1",
+    "spotDetails": {
+      "location": "Test Location 1",
+      "hourlyRate": "10"
+    }
+  },
+  {
+    "id": "booking_1751909016639",
+    "spotId": "spot_hospital_006",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-07T17:22:00.000Z",
+    "endTime": "2025-07-08T17:22:00.000Z",
+    "hours": 24,
+    "totalPrice": 288,
+    "createdAt": "2025-07-07T17:23:36.639Z",
+    "status": "paid",
+    "paymentId": "pi_3RiIlCFfuH7KoJbs0ryLorNR",
+    "sessionId": "cs_test_a13u2po7oxkCXprvSsLM5JoCKna0jDCA7efaK1tH6PjoFpxKhTrN3KgP3l",
+    "paidAt": "2025-07-07T17:23:36.639Z",
+    "paymentAmount": 288,
+    "spotOwner": "user_jane_456",
+    "spotOwnerName": "Jane Smith",
+    "location": "777 Medical Center Drive",
+    "spotDetails": {
+      "location": "777 Medical Center Drive",
+      "hourlyRate": "$12"
+    }
+  },
+  {
+    "id": "booking_1751887799475",
+    "spotId": "spot_stadium_007",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-07T11:29:00.000Z",
+    "endTime": "2025-07-08T11:29:00.000Z",
+    "hours": 24,
+    "totalPrice": 600,
+    "hourlyRate": "$25",
+    "status": "confirmed",
+    "createdAt": "2025-07-07T11:29:59.475Z",
+    "spotOwner": "user_mike_789",
+    "spotOwnerName": "Mike Wilson",
+    "location": "888 Sports Complex Road",
+    "spotDetails": {
+      "location": "888 Sports Complex Road",
+      "hourlyRate": "$25",
+      "coordinates": [
+        19.0698,
+        72.8845
+      ]
+    }
+  },
+  {
+    "id": "booking_1751887424512",
+    "spotId": "spot_residential_004",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-07T11:23:00.000Z",
+    "endTime": "2025-07-08T11:23:00.000Z",
+    "hours": 24,
+    "totalPrice": 192,
+    "hourlyRate": "$8",
+    "status": "confirmed",
+    "createdAt": "2025-07-07T11:23:44.512Z",
+    "spotOwner": "user_sarah_101",
+    "spotOwnerName": "Sarah Jones",
+    "location": "321 Oak Street, Residential Area",
+    "spotDetails": {
+      "location": "321 Oak Street, Residential Area",
+      "hourlyRate": "$8",
+      "coordinates": [
+        19.0736,
+        72.8816
+      ]
+    }
+  },
+  {
+    "id": "booking_1751887339501",
+    "spotId": "spot_airport_002",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-07T11:22:00.000Z",
+    "endTime": "2025-07-08T11:22:00.000Z",
+    "hours": 24,
+    "totalPrice": 480,
+    "hourlyRate": "$20",
+    "status": "confirmed",
+    "createdAt": "2025-07-07T11:22:19.501Z",
+    "spotOwner": "user_jane_456",
+    "spotOwnerName": "Jane Smith",
+    "location": "456 Airport Road, Near Terminal 1",
+    "spotDetails": {
+      "location": "456 Airport Road, Near Terminal 1",
+      "hourlyRate": "$20",
+      "coordinates": [
+        19.0896,
+        72.8656
+      ]
+    }
+  },
+  {
+    "id": "booking_1751887188550",
+    "spotId": "spot_downtown_001",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-07T11:19:00.000Z",
+    "endTime": "2025-07-08T11:19:00.000Z",
+    "hours": 24,
+    "totalPrice": 360,
+    "hourlyRate": "$15",
+    "status": "confirmed",
+    "createdAt": "2025-07-07T11:19:48.550Z",
+    "spotOwner": "user_john_123",
+    "spotOwnerName": "John Doe",
+    "location": "123 Main Street, Downtown",
+    "spotDetails": {
+      "location": "123 Main Street, Downtown",
+      "hourlyRate": "$15",
+      "coordinates": [
+        19.076,
+        72.8777
+      ]
+    }
+  },
+  {
     "id": "booking_1751835428301",
     "spotId": "spot_residential_004",
     "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
@@ -234,6 +406,24 @@
     }
   },
   {
+    "id": "booking_wadala_001",
+    "spotId": "spot_wadala_001",
+    "userId": "user_john_123",
+    "spotOwner": "user_aanchala_001",
+    "startTime": "2025-07-01T23:54:28.933Z",
+    "endTime": "2025-07-02T02:54:28.933Z",
+    "totalPrice": 36,
+    "amount": 36,
+    "status": "completed",
+    "createdAt": "2025-07-01T23:54:28.933Z",
+    "review": {
+      "rating": 5,
+      "comment": "Excellent parking spot in Wadala! Very convenient location and great security.",
+      "reviewer": "John Doe",
+      "date": "2025-07-02T23:54:28.933Z"
+    }
+  },
+  {
     "id": "booking_trusted_001",
     "spotId": "spot_trusted_001",
     "userId": "user_mike_789",
@@ -270,60 +460,6 @@
     }
   },
   {
-    "id": "booking_trusted_002",
-    "spotId": "spot_trusted_001",
-    "userId": "user_sarah_101",
-    "spotOwner": "user_trusted_002",
-    "startTime": "2025-06-26T23:24:21.614Z",
-    "endTime": "2025-06-27T00:24:21.614Z",
-    "totalPrice": 25,
-    "amount": 25,
-    "status": "completed",
-    "createdAt": "2025-06-26T23:24:21.614Z",
-    "review": {
-      "rating": 4,
-      "comment": "Good parking spot, well maintained.",
-      "reviewer": "Sarah Jones",
-      "date": "2025-06-27T23:24:21.614Z"
-    }
-  },
-  {
-    "id": "booking_premium_002",
-    "spotId": "spot_premium_001",
-    "userId": "user_jane_456",
-    "spotOwner": "user_premium_001",
-    "startTime": "2025-06-22T23:24:21.614Z",
-    "endTime": "2025-06-23T02:24:21.614Z",
-    "totalPrice": 150,
-    "amount": 150,
-    "status": "completed",
-    "createdAt": "2025-06-22T23:24:21.614Z",
-    "review": {
-      "rating": 5,
-      "comment": "Amazing luxury parking experience!",
-      "reviewer": "Jane Smith",
-      "date": "2025-06-23T23:24:21.614Z"
-    }
-  },
-  {
-    "id": "booking_wadala_001",
-    "spotId": "spot_wadala_001",
-    "userId": "user_john_123",
-    "spotOwner": "user_aanchala_001",
-    "startTime": "2025-07-01T23:54:28.933Z",
-    "endTime": "2025-07-02T02:54:28.933Z",
-    "totalPrice": 36,
-    "amount": 36,
-    "status": "completed",
-    "createdAt": "2025-07-01T23:54:28.933Z",
-    "review": {
-      "rating": 5,
-      "comment": "Excellent parking spot in Wadala! Very convenient location and great security.",
-      "reviewer": "John Doe",
-      "date": "2025-07-02T23:54:28.933Z"
-    }
-  },
-  {
     "id": "booking_wadala_002",
     "spotId": "spot_wadala_002",
     "userId": "user_jane_456",
@@ -339,6 +475,24 @@
       "comment": "Good parking near the station. Perfect for commuters.",
       "reviewer": "Jane Smith",
       "date": "2025-06-29T23:54:28.933Z"
+    }
+  },
+  {
+    "id": "booking_trusted_002",
+    "spotId": "spot_trusted_001",
+    "userId": "user_sarah_101",
+    "spotOwner": "user_trusted_002",
+    "startTime": "2025-06-26T23:24:21.614Z",
+    "endTime": "2025-06-27T00:24:21.614Z",
+    "totalPrice": 25,
+    "amount": 25,
+    "status": "completed",
+    "createdAt": "2025-06-26T23:24:21.614Z",
+    "review": {
+      "rating": 4,
+      "comment": "Good parking spot, well maintained.",
+      "reviewer": "Sarah Jones",
+      "date": "2025-06-27T23:24:21.614Z"
     }
   },
   {
@@ -360,175 +514,45 @@
     }
   },
   {
-    "id": "booking_1751887188550",
-    "spotId": "spot_downtown_001",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-07T11:19:00.000Z",
-    "endTime": "2025-07-08T11:19:00.000Z",
-    "hours": 24,
-    "totalPrice": 360,
-    "hourlyRate": "$15",
-    "status": "confirmed",
-    "createdAt": "2025-07-07T11:19:48.550Z",
-    "spotOwner": "user_john_123",
-    "spotOwnerName": "John Doe",
-    "location": "123 Main Street, Downtown",
-    "spotDetails": {
-      "location": "123 Main Street, Downtown",
-      "hourlyRate": "$15",
-      "coordinates": [
-        19.076,
-        72.8777
-      ]
+    "id": "booking_premium_002",
+    "spotId": "spot_premium_001",
+    "userId": "user_jane_456",
+    "spotOwner": "user_premium_001",
+    "startTime": "2025-06-22T23:24:21.614Z",
+    "endTime": "2025-06-23T02:24:21.614Z",
+    "totalPrice": 150,
+    "amount": 150,
+    "status": "completed",
+    "createdAt": "2025-06-22T23:24:21.614Z",
+    "review": {
+      "rating": 5,
+      "comment": "Amazing luxury parking experience!",
+      "reviewer": "Jane Smith",
+      "date": "2025-06-23T23:24:21.614Z"
     }
   },
   {
-    "id": "booking_1751887339501",
-    "spotId": "spot_airport_002",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "id": "booking_1751914672863",
+    "spotId": "1751904861838",
+    "userId": "Iy08DCkReuZJFI1zl5GlwQSrFVk1",
     "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-07T11:22:00.000Z",
-    "endTime": "2025-07-08T11:22:00.000Z",
-    "hours": 24,
-    "totalPrice": 480,
-    "hourlyRate": "$20",
-    "status": "confirmed",
-    "createdAt": "2025-07-07T11:22:19.501Z",
-    "spotOwner": "user_jane_456",
-    "spotOwnerName": "Jane Smith",
-    "location": "456 Airport Road, Near Terminal 1",
-    "spotDetails": {
-      "location": "456 Airport Road, Near Terminal 1",
-      "hourlyRate": "$20",
-      "coordinates": [
-        19.0896,
-        72.8656
-      ]
-    }
-  },
-  {
-    "id": "booking_1751887424512",
-    "spotId": "spot_residential_004",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-07T11:23:00.000Z",
-    "endTime": "2025-07-08T11:23:00.000Z",
-    "hours": 24,
-    "totalPrice": 192,
-    "hourlyRate": "$8",
-    "status": "confirmed",
-    "createdAt": "2025-07-07T11:23:44.512Z",
-    "spotOwner": "user_sarah_101",
-    "spotOwnerName": "Sarah Jones",
-    "location": "321 Oak Street, Residential Area",
-    "spotDetails": {
-      "location": "321 Oak Street, Residential Area",
-      "hourlyRate": "$8",
-      "coordinates": [
-        19.0736,
-        72.8816
-      ]
-    }
-  },
-  {
-    "id": "booking_1751887799475",
-    "spotId": "spot_stadium_007",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-07T11:29:00.000Z",
-    "endTime": "2025-07-08T11:29:00.000Z",
-    "hours": 24,
-    "totalPrice": 600,
-    "hourlyRate": "$25",
-    "status": "confirmed",
-    "createdAt": "2025-07-07T11:29:59.475Z",
-    "spotOwner": "user_mike_789",
-    "spotOwnerName": "Mike Wilson",
-    "location": "888 Sports Complex Road",
-    "spotDetails": {
-      "location": "888 Sports Complex Road",
-      "hourlyRate": "$25",
-      "coordinates": [
-        19.0698,
-        72.8845
-      ]
-    }
-  },
-  {
-    "id": "booking_1751909016639",
-    "spotId": "spot_hospital_006",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-07T17:22:00.000Z",
-    "endTime": "2025-07-08T17:22:00.000Z",
+    "userEmail": "yashrajp114t@gmail.com",
+    "startTime": "2025-07-06T18:56:00.000Z",
+    "endTime": "2025-07-07T18:56:00.000Z",
     "hours": 24,
     "totalPrice": 288,
-    "createdAt": "2025-07-07T17:23:36.639Z",
+    "createdAt": "2025-07-07T18:57:52.864Z",
     "status": "paid",
-    "paymentId": "pi_3RiIlCFfuH7KoJbs0ryLorNR",
-    "sessionId": "cs_test_a13u2po7oxkCXprvSsLM5JoCKna0jDCA7efaK1tH6PjoFpxKhTrN3KgP3l",
-    "paidAt": "2025-07-07T17:23:36.639Z",
+    "paymentId": "pi_3RiKELFfuH7KoJbs06LCPIjF",
+    "sessionId": "cs_test_a1ePb1xUXU1ownl22bz2ZePRBHUXZnveBXa70GFnC2prRDBU5QVrC9oPyV",
+    "paidAt": "2025-07-07T18:57:52.864Z",
     "paymentAmount": 288,
     "spotOwner": "user_jane_456",
-    "spotOwnerName": "Jane Smith",
-    "location": "777 Medical Center Drive",
+    "spotOwnerName": "jane_smith",
+    "location": "Test Location 2",
     "spotDetails": {
-      "location": "777 Medical Center Drive",
-      "hourlyRate": "$12"
-    }
-  },
-  {
-    "id": "booking_1751909114656",
-    "spotId": "1751904860203",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-07T17:24:00.000Z",
-    "endTime": "2025-07-08T17:24:00.000Z",
-    "hours": 24,
-    "totalPrice": 240,
-    "createdAt": "2025-07-07T17:25:14.656Z",
-    "status": "paid",
-    "paymentId": "pi_3RiImmFfuH7KoJbs1ynTtrIa",
-    "sessionId": "cs_test_a1qYWMUdaAHe4TxoofAHq6zOZ7F6PZVqySvpD0r5T3PvYHjIvwSPorkiq0",
-    "paidAt": "2025-07-07T17:25:14.656Z",
-    "paymentAmount": 240,
-    "spotOwner": "user_john_123",
-    "spotOwnerName": "john_doe",
-    "location": "Test Location 1",
-    "spotDetails": {
-      "location": "Test Location 1",
-      "hourlyRate": "10"
-    }
-  },
-  {
-    "id": "booking_1751910159528",
-    "spotId": "spot_university_008",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "incyashraj@gmail.com",
-    "startTime": "2025-07-07T17:41:00.000Z",
-    "endTime": "2025-07-08T17:41:00.000Z",
-    "hours": 24,
-    "totalPrice": 144,
-    "createdAt": "2025-07-07T17:42:39.529Z",
-    "status": "paid",
-    "paymentId": "pi_3RiJ3cFfuH7KoJbs0JXiaPYa",
-    "sessionId": "cs_test_a1awiafjZ4nOHYmPS1LGQO1ir9FQBjoi0CahJBSmPZqZqfouc0YaQcZ8V3",
-    "paidAt": "2025-07-07T17:42:39.529Z",
-    "paymentAmount": 144,
-    "spotOwner": "user_sarah_101",
-    "spotOwnerName": "Sarah Jones",
-    "location": "999 Education Boulevard",
-    "spotDetails": {
-      "location": "999 Education Boulevard",
-      "hourlyRate": "$6"
+      "location": "Test Location 2",
+      "hourlyRate": "12"
     }
   }
 ]

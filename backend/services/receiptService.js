@@ -373,6 +373,14 @@ function stripeWebhookHandler(req, res) {
         console.error('Spot or user not found for booking:', spotId, userId);
         return res.status(400).send('Spot or user not found');
       }
+      
+      // Check if booking already exists for this session to prevent duplicates
+      const existingBooking = bookings.find(b => b.sessionId === session.id || b.paymentId === session.payment_intent);
+      if (existingBooking) {
+        console.log(`Booking already exists for session ${session.id}, skipping duplicate creation`);
+        return res.json({ received: true, message: 'Booking already exists' });
+      }
+      
       // Create booking object
       const booking = {
         id: `booking_${Date.now()}`,

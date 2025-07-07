@@ -4,7 +4,6 @@ import {
   IconButton,
   Badge,
   Menu,
-  MenuItem,
   Typography,
   Box,
   Divider,
@@ -14,7 +13,6 @@ import {
   ListItemIcon,
   Chip,
   Button,
-  Avatar,
   Tooltip,
   Alert,
   Snackbar,
@@ -26,11 +24,9 @@ import {
   Security as SecurityIcon,
   Info as InfoIcon,
   CheckCircle as CheckCircleIcon,
-  Warning as WarningIcon,
   Error as ErrorIcon,
   Message as MessageIcon,
   Cancel as CancelIcon,
-  Star as StarIcon,
   AccessTime as TimeIcon,
   Support as SupportIcon,
 } from '@mui/icons-material';
@@ -132,62 +128,7 @@ const NotificationCenter = () => {
     });
   };
 
-  // Add test notifications for debugging
-  const addTestNotifications = () => {
-    const testNotifications = [
-      {
-        id: Date.now(),
-        type: 'booking',
-        title: 'New Booking Received',
-        message: 'You have a new booking for your parking spot in Bandra West. The booking is confirmed and payment has been processed successfully.',
-        data: { spotId: 'spot_mumbai_bandra_001', amount: 150 },
-        timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 minutes ago
-        read: false
-      },
-      {
-        id: Date.now() + 1,
-        type: 'message',
-        title: 'New Message from John',
-        message: 'Hi! I have a question about your parking spot availability. Can you please let me know if it\'s available for tomorrow?',
-        data: { senderId: 'user_john_123', conversationId: 'conv_123' },
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-        read: false
-      },
-      {
-        id: Date.now() + 2,
-        type: 'payment',
-        title: 'Payment Received',
-        message: 'Payment of ₹150 has been received for your parking spot. The transaction has been completed successfully.',
-        data: { amount: 150, spotId: 'spot_mumbai_bandra_001', transactionId: 'txn_123' },
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-        read: true
-      },
-      {
-        id: Date.now() + 3,
-        type: 'announcement',
-        title: 'System Maintenance',
-        message: 'Scheduled maintenance will occur tonight from 2-4 AM. During this time, some features may be temporarily unavailable.',
-        data: { maintenanceType: 'scheduled', duration: '2 hours' },
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2), // 2 days ago
-        read: true
-      }
-    ];
-    
-    // Add notifications to the context
-    testNotifications.forEach(notification => {
-      addNotification(notification);
-    });
-  };
-
-  // Add test notifications on component mount for debugging
-  useEffect(() => {
-    // Only add test notifications if there are no notifications
-    if (notifications.length === 0) {
-      setTimeout(() => {
-        addTestNotifications();
-      }, 2000);
-    }
-  }, [notifications.length, addNotification]);
+  // Test notifications removed - notifications now come from real-time events
 
   const getTimeAgo = (timestamp) => {
     const now = new Date();
@@ -263,27 +204,10 @@ const NotificationCenter = () => {
     }
   };
 
-  const getNotificationPriority = (notification) => {
-    switch (notification.type) {
-      case 'booking':
-      case 'message':
-      case 'support-ticket':
-        return 1;
-      case 'cancellation':
-      case 'security':
-        return 2;
-      case 'availability':
-      case 'payment':
-        return 3;
-      default:
-        return 4;
-    }
-  };
 
-  // Sort notifications by priority and timestamp
+
+  // Sort notifications by timestamp (most recent first)
   const sortedNotifications = [...notifications].sort((a, b) => {
-    const priorityDiff = getNotificationPriority(a) - getNotificationPriority(b);
-    if (priorityDiff !== 0) return priorityDiff;
     return new Date(b.timestamp) - new Date(a.timestamp);
   });
 

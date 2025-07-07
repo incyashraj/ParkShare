@@ -194,6 +194,53 @@ export const RealtimeProvider = ({ children }) => {
       console.log('Real-time search results:', data);
     });
 
+    // Payment notifications
+    newSocket.on('payment-received', (notification) => {
+      // Only add notification if user hasn't seen it before
+      const notificationId = notification.id || `payment_received_${Date.now()}`;
+      
+      setNotifications(prev => {
+        // Check if this notification already exists
+        const exists = prev.find(n => n.id === notificationId);
+        if (exists) {
+          return prev;
+        }
+        
+        return [{
+          id: notificationId,
+          type: 'payment',
+          title: notification.title,
+          message: notification.message,
+          data: notification,
+          timestamp: notification.timestamp,
+          read: false
+        }, ...prev];
+      });
+    });
+
+    newSocket.on('payment-success', (notification) => {
+      // Only add notification if user hasn't seen it before
+      const notificationId = notification.id || `payment_success_${Date.now()}`;
+      
+      setNotifications(prev => {
+        // Check if this notification already exists
+        const exists = prev.find(n => n.id === notificationId);
+        if (exists) {
+          return prev;
+        }
+        
+        return [{
+          id: notificationId,
+          type: 'payment',
+          title: notification.title,
+          message: notification.message,
+          data: notification,
+          timestamp: notification.timestamp,
+          read: false
+        }, ...prev];
+      });
+    });
+
     // General announcements
     newSocket.on('announcement', (announcement) => {
       setNotifications(prev => [{
@@ -360,7 +407,15 @@ export const RealtimeProvider = ({ children }) => {
     setNotifications(prev => 
       prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
     );
-  }, []);
+    
+    // Mark notification as seen on the backend
+    if (socket && currentUser?.uid) {
+      socket.emit('mark-notification-seen', {
+        userId: currentUser.uid,
+        notificationId: notificationId
+      });
+    }
+  }, [socket, currentUser]);
 
   const markAllNotificationsAsRead = useCallback(() => {
     setNotifications(prev => 

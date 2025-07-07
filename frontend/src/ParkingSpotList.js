@@ -84,6 +84,7 @@ import LoadingSpinner from './components/LoadingSpinner';
 import ParkingSpotCard from './components/ParkingSpotCard';
 import { useRealtime } from './contexts/RealtimeContext';
 import { API_BASE } from './apiConfig';
+import SimpleMapComponent from './components/SimpleMapComponent';
 
 const initialCenter = [19.0760, 72.8777]; // Mumbai coordinates
 
@@ -120,6 +121,9 @@ const ParkingSpotList = () => {
   const [parkingType, setParkingType] = useState('all');
   const [instantBooking, setInstantBooking] = useState(false);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showLocationError, setShowLocationError] = useState(false);
+  const [locationErrorMessage, setLocationErrorMessage] = useState('');
+  const [showManualLocation, setShowManualLocation] = useState(false);
 
   // Calculate distance between two coordinates using Haversine formula
   const calculateDistance = useCallback((lat1, lon1, lat2, lon2) => {
@@ -377,8 +381,55 @@ const ParkingSpotList = () => {
     return [...sortedAvailableSpots, ...sortedOccupiedSpots];
   }, [sortBy]);
 
-  const handleLocationClick = () => {
+  // Enhanced geolocation logic
+  const requestUserLocation = () => {
+    // Check if we've already tried to get location in this session
+    const locationErrorShown = sessionStorage.getItem('locationErrorShown');
+    
     if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setUserLocation([latitude, longitude]);
+          setShowLocationError(false);
+          setLocationErrorMessage('');
+          // Clear the error flag since we succeeded
+          sessionStorage.removeItem('locationErrorShown');
+        },
+        (error) => {
+          console.error('Error getting location:', error);
+          // Only show error if we haven't shown it before in this session
+          if (!locationErrorShown) {
+            setShowLocationError(true);
+            setLocationErrorMessage('Could not get your location. Using default location.');
+            sessionStorage.setItem('locationErrorShown', 'true');
+          }
+        }
+      );
+    } else {
+      // Only show error if we haven't shown it before in this session
+      if (!locationErrorShown) {
+        setShowLocationError(true);
+        setLocationErrorMessage('Geolocation is not supported by your browser.');
+        sessionStorage.setItem('locationErrorShown', 'true');
+      }
+    }
+  };
+
+  const handleLocationClick = () => {
+    // Check if we're already requesting location
+    const isRequestingLocation = sessionStorage.getItem('isRequestingLocation');
+    if (isRequestingLocation) {
+      setSnackbarMessage('Location request already in progress...');
+      setSnackbarSeverity('info');
+      setOpenSnackbar(true);
+      return;
+    }
+
+    if (navigator.geolocation) {
+      // Set flag to prevent duplicate requests
+      sessionStorage.setItem('isRequestingLocation', 'true');
+      
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const { latitude, longitude } = position.coords;
@@ -386,13 +437,21 @@ const ParkingSpotList = () => {
           setSnackbarMessage('Location updated successfully!');
           setSnackbarSeverity('success');
           setOpenSnackbar(true);
+          // Clear the flag
+          sessionStorage.removeItem('isRequestingLocation');
         },
         (error) => {
           setSnackbarMessage('Could not get your location');
           setSnackbarSeverity('error');
           setOpenSnackbar(true);
+          // Clear the flag
+          sessionStorage.removeItem('isRequestingLocation');
         }
       );
+    } else {
+      setSnackbarMessage('Geolocation is not supported by your browser');
+      setSnackbarSeverity('error');
+      setOpenSnackbar(true);
     }
   };
 
@@ -762,6 +821,17 @@ const ParkingSpotList = () => {
         spot.id === spotId ? { ...spot, available } : spot
       )
     );
+  };
+
+  // Manual location selection handler
+  const handleManualLocationSelect = ({ lat, lng }) => {
+    setUserLocation([lat, lng]);
+    setShowManualLocation(false);
+    setShowLocationError(false);
+    setLocationErrorMessage('');
+    setSnackbarMessage('Location set manually!');
+    setSnackbarSeverity('info');
+    setOpenSnackbar(true);
   };
 
   if (loading) {
@@ -1526,6 +1596,46 @@ const ParkingSpotList = () => {
       >
         <AddIcon />
       </Fab>
+
+      {/* Manual Location Modal */}
+      {showManualLocation && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', background: 'rgba(0,0,0,0.4)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ background: 'white', borderRadius: 8, padding: 24, minWidth: 350, maxWidth: 400 }}>
+            <Typography variant="h6" gutterBottom>Select Your Location</Typography>
+            <SimpleMapComponent
+              center={userLocation}
+              onLocationSelect={handleManualLocationSelect}
+              selectedPosition={userLocation}
+            />
+            <Button fullWidth variant="outlined" sx={{ mt: 2 }} onClick={() => setShowManualLocation(false)}>Cancel</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Location Error Snackbar */}
+      <Snackbar
+        open={showLocationError}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        onClose={() => setShowLocationError(false)}
+        autoHideDuration={null}
+      >
+        <Alert
+          severity="info"
+          sx={{ minWidth: 350, alignItems: 'center' }}
+          action={
+            <>
+              <Button color="primary" size="small" onClick={requestUserLocation}>
+                Retry
+              </Button>
+              <Button color="secondary" size="small" onClick={() => { setShowManualLocation(true); setShowLocationError(false); }}>
+                Set Manually
+              </Button>
+            </>
+          }
+        >
+          {locationErrorMessage || 'Could not get your location. Using default location.'}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };

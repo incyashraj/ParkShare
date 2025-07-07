@@ -148,5 +148,26 @@
     "spotId": "spot_premium_001",
     "createdAt": "2025-07-06T23:25:49.443Z",
     "lastActivity": "2025-07-07T01:04:53.587Z"
+  },
+  {
+    "id": "conv_1751915309041",
+    "participants": [
+      {
+        "id": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "uid": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "user_santacruz_host",
+        "uid": "user_santacruz_host",
+        "username": "lakshmi_devi",
+        "email": "lakshmi.devi@email.com"
+      }
+    ],
+    "subject": "Inquiry about Santacruz Station Parking",
+    "spotId": null,
+    "createdAt": "2025-07-07T19:08:29.041Z",
+    "lastActivity": "2025-07-07T19:09:49.243Z"
   }
 ]

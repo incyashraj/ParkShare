@@ -674,7 +674,7 @@
     "username": "Yashraj Pardeshi",
     "email": "incyashraj@gmail.com",
     "password": "",
-    "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "uid": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
     "isAdmin": true,
     "blockedUsers": [],
     "privacySettings": {
@@ -933,5 +933,11 @@
       "timezone": "Asia/Kolkata",
       "currency": "INR"
     }
+  },
+  {
+    "username": "Yashraj Pardeshi",
+    "email": "yashrajp114t@gmail.com",
+    "password": "",
+    "uid": "Iy08DCkReuZJFI1zl5GlwQSrFVk1"
   }
 ]
