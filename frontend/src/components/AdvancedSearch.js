@@ -3,6 +3,7 @@ import { Search as SearchIcon, FilterList as FilterIcon, Clear as ClearIcon, Exp
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ParkingSpotCard from './ParkingSpotCard';
+import { API_BASE } from '../apiConfig';
 
 const AdvancedSearch = () => {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ const AdvancedSearch = () => {
   useEffect(() => {
     const fetchMaxPrice = async () => {
       try {
-        const response = await fetch('http://localhost:3001/parking-spots');
+        const response = await fetch(`${API_BASE}/parking-spots`);
         const data = await response.json();
         
         if (Array.isArray(data)) {
@@ -122,7 +123,7 @@ const AdvancedSearch = () => {
         queryParams.append('maxDistance', searchParams.distance);
       }
 
-      const response = await fetch(`http://localhost:3001/parking-spots/search?${queryParams.toString()}`);
+      const response = await fetch(`${API_BASE}/parking-spots/search?${queryParams.toString()}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch search results');

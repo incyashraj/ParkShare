@@ -48,6 +48,7 @@ import {
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../contexts/RealtimeContext';
+import { API_BASE } from '../apiConfig';
 
 const HostVerification = () => {
   const { currentUser } = useAuth();
@@ -122,7 +123,7 @@ const HostVerification = () => {
   const loadVerificationStatus = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/host-verification/status/${currentUser.uid}`, {
+      const response = await fetch(`${API_BASE}/api/host-verification/status/${currentUser.uid}`, {
         headers: {
           Authorization: `Bearer ${currentUser.uid}`
         }
@@ -189,7 +190,7 @@ const HostVerification = () => {
   const handleSendEmailCode = async () => {
     try {
       setSendingEmailCode(true);
-      const response = await fetch('http://localhost:3001/api/auth/send-email-verification', {
+      const response = await fetch(`${API_BASE}/api/auth/send-email-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -226,7 +227,7 @@ const HostVerification = () => {
   const handleSendPhoneCode = async () => {
     try {
       setSendingPhoneCode(true);
-      const response = await fetch('http://localhost:3001/api/auth/send-mobile-verification', {
+      const response = await fetch(`${API_BASE}/api/auth/send-mobile-verification`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -263,7 +264,7 @@ const HostVerification = () => {
   const handleVerifyEmail = async () => {
     try {
       setVerifyingEmail(true);
-      const response = await fetch('http://localhost:3001/api/auth/verify-email', {
+      const response = await fetch(`${API_BASE}/api/auth/verify-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -302,7 +303,7 @@ const HostVerification = () => {
   const handleVerifyPhone = async () => {
     try {
       setVerifyingPhone(true);
-      const response = await fetch('http://localhost:3001/api/auth/verify-mobile', {
+      const response = await fetch(`${API_BASE}/api/auth/verify-mobile`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -374,7 +375,7 @@ const HostVerification = () => {
         });
       }
 
-      const response = await fetch('http://localhost:3001/api/host-verification/upload-documents', {
+      const response = await fetch(`${API_BASE}/api/host-verification/upload-documents`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${currentUser.uid}`

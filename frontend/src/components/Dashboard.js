@@ -3,6 +3,7 @@ import { LocalParking, AttachMoney, TrendingUp, Person } from '@mui/icons-materi
 import { useAuth } from '../contexts/AuthContext';
 import { useState, useEffect, useCallback } from 'react';
 import './Dashboard.css';
+import { API_BASE } from '../apiConfig';
 
 const Dashboard = () => {
   const { currentUser } = useAuth();
@@ -33,11 +34,11 @@ const Dashboard = () => {
   const fetchDashboardData = useCallback(async () => {
     try {
       // Fetch real statistics from backend
-      const statsResponse = await fetch('http://localhost:3001/stats');
+      const statsResponse = await fetch(`${API_BASE}/stats`);
       const stats = await statsResponse.json();
       
       // Fetch user's bookings
-      const bookingsResponse = await fetch(`http://localhost:3001/bookings?userId=${currentUser?.uid}`);
+      const bookingsResponse = await fetch(`${API_BASE}/bookings?userId=${currentUser?.uid}`);
       const userBookings = await bookingsResponse.json();
       
       // Calculate user-specific stats

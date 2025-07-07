@@ -10,6 +10,7 @@ import {
   CircularProgress
 } from '@mui/material';
 import { useAuth } from './contexts/AuthContext';
+import { API_BASE } from './apiConfig';
 
 const TestBooking = () => {
   const { currentUser } = useAuth();
@@ -46,7 +47,7 @@ const TestBooking = () => {
 
       console.log('Creating test booking with data:', bookingData);
 
-      const response = await fetch(`http://localhost:3001/parking-spots/${bookingData.spotId}/book`, {
+      const response = await fetch(`${API_BASE}/parking-spots/${bookingData.spotId}/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +83,7 @@ const TestBooking = () => {
     setResult(null);
 
     try {
-      const response = await fetch(`http://localhost:3001/users/${currentUser.uid}/bookings`);
+      const response = await fetch(`${API_BASE}/users/${currentUser.uid}/bookings`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch bookings');

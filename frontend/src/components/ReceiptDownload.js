@@ -1,6 +1,7 @@
 import { Button, Dialog, DialogTitle, DialogContent, DialogActions, Typography, Box, CircularProgress, Alert, IconButton, Tooltip } from '@mui/material';
 import { Download as DownloadIcon, Email as EmailIcon, Receipt as ReceiptIcon } from '@mui/icons-material';
 import { useState } from 'react';
+import { API_BASE } from '../apiConfig';
 
 const ReceiptDownload = ({ booking, spot, user }) => {
   const [loading, setLoading] = useState(false);
@@ -13,7 +14,7 @@ const ReceiptDownload = ({ booking, spot, user }) => {
     setSuccess(null);
 
     try {
-      const response = await fetch('http://localhost:3001/receipts/generate', {
+      const response = await fetch(`${API_BASE}/receipts/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -32,7 +33,7 @@ const ReceiptDownload = ({ booking, spot, user }) => {
       
       if (data.downloadUrl) {
         // Download the file
-        const downloadResponse = await fetch(`http://localhost:3001${data.downloadUrl}`);
+        const downloadResponse = await fetch(`${API_BASE}${data.downloadUrl}`);
         if (downloadResponse.ok) {
           const blob = await downloadResponse.blob();
           
@@ -66,7 +67,7 @@ const ReceiptDownload = ({ booking, spot, user }) => {
     setSuccess(null);
 
     try {
-      const response = await fetch('http://localhost:3001/receipts/send-email', {
+      const response = await fetch(`${API_BASE}/receipts/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

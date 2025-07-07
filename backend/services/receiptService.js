@@ -2,6 +2,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_...');
 
 class ReceiptService {
   constructor() {
@@ -328,4 +329,91 @@ class ReceiptService {
   }
 }
 
-module.exports = new ReceiptService(); 
+// Stripe webhook handler
+function stripeWebhookHandler(req, res) {
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET || 'whsec_...'; // Replace with your webhook secret
+  const sig = req.headers['stripe-signature'];
+  let event;
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+  } catch (err) {
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+  // Handle the event
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    const metadata = session.metadata || {};
+    try {
+      // Load data files
+      const fs = require('fs');
+      const path = require('path');
+      const BOOKINGS_FILE = path.join(__dirname, '../data/bookings.json');
+      const SPOTS_FILE = path.join(__dirname, '../data/spots.json');
+      const USERS_FILE = path.join(__dirname, '../data/users.json');
+      const bookings = JSON.parse(fs.readFileSync(BOOKINGS_FILE, 'utf8'));
+      const parkingSpots = JSON.parse(fs.readFileSync(SPOTS_FILE, 'utf8'));
+      const users = JSON.parse(fs.readFileSync(USERS_FILE, 'utf8'));
+      // Extract booking details from metadata
+      const spotId = metadata.spotId;
+      const userId = metadata.userId;
+      const price = Number(metadata.price);
+      const spotTitle = metadata.spotTitle || metadata.spotLocation;
+      const startTime = metadata.startTime;
+      const endTime = metadata.endTime;
+      const hours = Number(metadata.hours) || 1;
+      if (!spotId || !userId || !price || !spotTitle || !startTime || !endTime) {
+        console.error('Missing booking metadata in Stripe session:', metadata);
+        return res.status(400).send('Missing booking metadata');
+      }
+      // Find spot and user
+      const spot = parkingSpots.find(s => s.id === spotId);
+      const user = users.find(u => u.uid === userId || u.id === userId);
+      if (!spot || !user) {
+        console.error('Spot or user not found for booking:', spotId, userId);
+        return res.status(400).send('Spot or user not found');
+      }
+      // Create booking object
+      const booking = {
+        id: `booking_${Date.now()}`,
+        spotId,
+        userId,
+        userName: user.displayName || user.username || user.email || 'Unknown User',
+        userEmail: user.email,
+        startTime,
+        endTime,
+        hours,
+        totalPrice: price,
+        createdAt: new Date().toISOString(),
+        status: 'paid',
+        paymentId: session.payment_intent,
+        sessionId: session.id, // Store Stripe Checkout Session ID
+        paidAt: new Date().toISOString(),
+        paymentAmount: price,
+        spotOwner: spot.owner,
+        spotOwnerName: spot.ownerName,
+        location: spot.location,
+        spotDetails: {
+          location: spot.location,
+          hourlyRate: spot.hourlyRate
+        }
+      };
+      bookings.push(booking);
+      // Add booking to spot
+      if (!spot.bookings) spot.bookings = [];
+      spot.bookings.push(booking.id);
+      spot.available = false;
+      // Save data
+      fs.writeFileSync(BOOKINGS_FILE, JSON.stringify(bookings, null, 2));
+      fs.writeFileSync(SPOTS_FILE, JSON.stringify(parkingSpots, null, 2));
+      // Optionally, send confirmation email/notification here
+      console.log(`Booking created via Stripe webhook: ${booking.id} for spot ${spotId} by user ${userId}`);
+    } catch (err) {
+      console.error('Error creating booking from Stripe webhook:', err);
+      return res.status(500).send('Failed to create booking');
+    }
+  }
+  res.json({ received: true });
+}
+
+module.exports = Object.assign(new ReceiptService(), { stripeWebhookHandler }); 

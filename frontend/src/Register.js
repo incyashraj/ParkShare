@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import AppleIcon from '@mui/icons-material/Apple';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useState } from 'react';
+import { API_BASE } from './apiConfig';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   marginTop: theme.spacing(8),
@@ -40,7 +41,7 @@ function Register() {
         displayName: username
       });
       
-      const response = await fetch('http://localhost:3001/register', {
+      const response = await fetch(`${API_BASE}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -78,7 +79,7 @@ function Register() {
       const result = await signInWithPopup(auth, provider);
       console.log('Google sign in initiated:', result.user.uid);
       // Register Google user in our backend
-      const response = await fetch('http://localhost:3001/register', {
+      const response = await fetch(`${API_BASE}/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -213,7 +214,7 @@ function Register() {
               size="small"
               onClick={async () => {
                 try {
-                  const response = await fetch('http://localhost:3001/health');
+                  const response = await fetch(`${API_BASE}/health`);
                   const data = await response.json();
                   console.log('Backend health check:', data);
                   alert(`Backend Status: ${data.status}\nUsers: ${data.usersCount}`);
@@ -239,7 +240,7 @@ function Register() {
                   const userCredential = await createUserWithEmailAndPassword(auth, testEmail, testPassword);
                   await updateProfile(userCredential.user, { displayName: testUsername });
                   
-                  const response = await fetch('http://localhost:3001/register', {
+                  const response = await fetch(`${API_BASE}/register`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

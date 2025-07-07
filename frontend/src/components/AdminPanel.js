@@ -69,6 +69,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../contexts/RealtimeContext';
 import UserPresenceIndicator from './UserPresenceIndicator';
+import { API_BASE } from '../apiConfig';
 
 const AdminPanel = () => {
   const { currentUser } = useAuth();
@@ -128,7 +129,7 @@ const AdminPanel = () => {
       
       // Check if backend server is running with a simpler approach
       try {
-        const healthCheck = await fetch('http://localhost:3001/health', {
+        const healthCheck = await fetch(`${API_BASE}/health`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -142,7 +143,7 @@ const AdminPanel = () => {
         console.log('Backend server is running');
       } catch (healthError) {
         console.error('Backend server health check failed:', healthError);
-        setError('Cannot connect to backend server. Please ensure the server is running at http://localhost:3001');
+        setError('Cannot connect to backend server. Please ensure the server is running at ' + API_BASE);
         setLoading(false);
         return;
       }
@@ -154,13 +155,13 @@ const AdminPanel = () => {
       
       // Load all data in parallel with better error handling
       const promises = [
-        fetch('http://localhost:3001/api/admin/analytics', { headers }).catch(e => ({ ok: false, error: e })),
-        fetch('http://localhost:3001/api/support/tickets', { headers }).catch(e => ({ ok: false, error: e })),
-        fetch('http://localhost:3001/api/users', { headers }).catch(e => ({ ok: false, error: e })),
-        fetch('http://localhost:3001/api/admin/spots', { headers }).catch(e => ({ ok: false, error: e })),
-        fetch('http://localhost:3001/api/admin/bookings', { headers }).catch(e => ({ ok: false, error: e })),
-        fetch('http://localhost:3001/api/admin/online-users', { headers }).catch(e => ({ ok: false, error: e })),
-        fetch('http://localhost:3001/api/host-verification/pending', { headers }).catch(e => ({ ok: false, error: e }))
+        fetch(`${API_BASE}/api/admin/analytics`, { headers }).catch(e => ({ ok: false, error: e })),
+        fetch(`${API_BASE}/api/support/tickets`, { headers }).catch(e => ({ ok: false, error: e })),
+        fetch(`${API_BASE}/api/users`, { headers }).catch(e => ({ ok: false, error: e })),
+        fetch(`${API_BASE}/api/admin/spots`, { headers }).catch(e => ({ ok: false, error: e })),
+        fetch(`${API_BASE}/api/admin/bookings`, { headers }).catch(e => ({ ok: false, error: e })),
+        fetch(`${API_BASE}/api/admin/online-users`, { headers }).catch(e => ({ ok: false, error: e })),
+        fetch(`${API_BASE}/api/host-verification/pending`, { headers }).catch(e => ({ ok: false, error: e }))
       ];
 
       const [analyticsRes, ticketsRes, usersRes, spotsRes, bookingsRes, onlineUsersRes, verificationsRes] = await Promise.all(promises);
@@ -218,7 +219,7 @@ const AdminPanel = () => {
     } catch (error) {
       console.error('Error loading admin data:', error);
       if (error.message.includes('Failed to fetch')) {
-        setError('Cannot connect to backend server. Please ensure the server is running at http://localhost:3001');
+        setError('Cannot connect to backend server. Please ensure the server is running at ' + API_BASE);
       } else {
         setError(`Failed to load admin data: ${error.message}`);
       }
@@ -377,7 +378,7 @@ const AdminPanel = () => {
     if (!newMessage.trim() || !selectedTicket) return;
     setSendingMessage(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/support/tickets/${selectedTicket.id}/message`, {
+      const response = await fetch(`${API_BASE}/api/support/tickets/${selectedTicket.id}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -411,7 +412,7 @@ const AdminPanel = () => {
 
   const handleUpdateTicketStatus = async (ticketId, status) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/support/tickets/${ticketId}`, {
+      const response = await fetch(`${API_BASE}/api/support/tickets/${ticketId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -435,7 +436,7 @@ const AdminPanel = () => {
     if (!window.confirm('Are you sure you want to delete this ticket?')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/support/tickets/${ticketId}`, {
+      const response = await fetch(`${API_BASE}/api/support/tickets/${ticketId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${currentUser.uid}` }
       });
@@ -454,7 +455,7 @@ const AdminPanel = () => {
   // User management functions
   const handleUpdateUserRole = async (userId, isAdmin) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/role`, {
+      const response = await fetch(`${API_BASE}/api/users/${userId}/role`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -476,7 +477,7 @@ const AdminPanel = () => {
 
   const handleBanUser = async (userId, banned) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/ban`, {
+      const response = await fetch(`${API_BASE}/api/users/${userId}/ban`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -503,7 +504,7 @@ const AdminPanel = () => {
 
   const handleViewUserDetails = async (userId) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/details`, {
+      const response = await fetch(`${API_BASE}/api/users/${userId}/details`, {
         headers: { Authorization: `Bearer ${currentUser.uid}` }
       });
 
@@ -524,7 +525,7 @@ const AdminPanel = () => {
     if (!window.confirm('Are you sure you want to delete this spot? This will cancel all bookings.')) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/spots/${spotId}`, {
+      const response = await fetch(`${API_BASE}/api/admin/spots/${spotId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${currentUser.uid}` }
       });
@@ -544,7 +545,7 @@ const AdminPanel = () => {
   // Booking management functions
   const handleCancelBooking = async (bookingId, reason) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/admin/bookings/${bookingId}/cancel`, {
+      const response = await fetch(`${API_BASE}/api/admin/bookings/${bookingId}/cancel`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -682,7 +683,7 @@ const AdminPanel = () => {
     try {
       setReviewingVerification(true);
       
-      const response = await fetch(`http://localhost:3001/api/host-verification/review/${selectedVerification.uid}`, {
+      const response = await fetch(`${API_BASE}/api/host-verification/review/${selectedVerification.uid}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -721,7 +722,7 @@ const AdminPanel = () => {
 
   const handleDownloadDocument = async (filename) => {
     try {
-      const response = await fetch(`http://localhost:3001/api/host-verification/document/${filename}`, {
+      const response = await fetch(`${API_BASE}/api/host-verification/document/${filename}`, {
         headers: {
           Authorization: `Bearer ${currentUser.uid}`
         }

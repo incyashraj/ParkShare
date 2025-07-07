@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import MapWrapper from './components/MapWrapper';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
+import { API_BASE } from './apiConfig';
 
 import 'leaflet/dist/leaflet.css';
 
@@ -262,7 +263,7 @@ function ParkingSpotForm() {
       console.log('Form data:', formData);
       console.log('Submitting parking spot data:', spotData);
 
-      const response = await fetch('http://localhost:3001/parking-spots', {
+      const response = await fetch(`${API_BASE}/parking-spots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

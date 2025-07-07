@@ -7,6 +7,7 @@ import {
 } from '@mui/icons-material';
 import { useRealtime } from '../contexts/RealtimeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../apiConfig';
 
 const UserPresenceIndicator = ({ userId, username, showDetails = false, size = 'small', hideOwnStatus = false }) => {
   const [presence, setPresence] = useState({ status: 'offline', lastSeen: null, lastActivity: null });
@@ -22,7 +23,7 @@ const UserPresenceIndicator = ({ userId, username, showDetails = false, size = '
     const fetchPresence = async () => {
       try {
         const uid = currentUser?.uid || localStorage.getItem('userUid') || 'anonymous';
-        const response = await fetch(`http://192.168.1.7:3001/api/users/${userId}/presence`, {
+        const response = await fetch(`${API_BASE}/api/users/${userId}/presence`, {
           headers: {
             'Authorization': `Bearer ${uid}`
           }

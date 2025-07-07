@@ -65,16 +65,17 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../contexts/RealtimeContext';
 import BookingModal from './BookingModal';
+import PaymentModal from './PaymentModal';
 
 import ReviewsAndRatings from './ReviewsAndRatings';
 import MapComponent from './MapComponent';
-
+import { API_BASE } from '../apiConfig';
 
 const ParkingSpotDetail = () => {
   const { spotId } = useParams();
   const navigate = useNavigate();
   const { currentUser } = useAuth();
-  const { addNotification } = useRealtime() || {};
+  const { addNotification, socket } = useRealtime() || {};
   
   const [spot, setSpot] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -111,12 +112,33 @@ const ParkingSpotDetail = () => {
   const [contactSuccess, setContactSuccess] = useState(false);
   const [contactError, setContactError] = useState('');
 
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentBookingData, setPaymentBookingData] = useState(null);
+
   // Check if current user is the owner of this spot
   const isOwner = currentUser && spot && spot.owner === currentUser.uid;
 
   useEffect(() => {
     fetchSpotDetails();
   }, [spotId, currentUser?.uid]);
+
+  useEffect(() => {
+    if (!spot) return;
+    // Join spot room
+    socket?.emit('join-spot-room', spot.id);
+    // Listen for real-time updates
+    const handleAvailability = (data) => {
+      if (data.spotId === spot.id) {
+        setSpot(prev => ({ ...prev, available: data.available }));
+      }
+    };
+    socket?.on('spot-availability-updated', handleAvailability);
+    // Clean up
+    return () => {
+      socket?.emit('leave-spot-room', spot.id);
+      socket?.off('spot-availability-updated', handleAvailability);
+    };
+  }, [socket, spot?.id]);
 
   const fetchSpotDetails = async () => {
     try {
@@ -131,7 +153,7 @@ const ParkingSpotDetail = () => {
       }
       
       const userId = currentUser?.uid || 'none';
-      const url = `http://localhost:3001/parking-spots/${spotId}?userId=${userId}`;
+      const url = `${API_BASE}/parking-spots/${spotId}?userId=${userId}`;
       console.log('Fetching from URL:', url);
       
       const response = await fetch(url);
@@ -181,12 +203,24 @@ const ParkingSpotDetail = () => {
     }
   };
 
-  const handleBooking = () => {
+  const handleBooking = (bookingDetails) => {
     if (!currentUser) {
       navigate('/login');
       return;
     }
-    setShowBookingModal(true);
+    // bookingDetails: { startTime, endTime, hours, totalPrice }
+    setPaymentBookingData({
+      spotId: spot.id,
+      userId: currentUser.uid,
+      userName: currentUser.displayName || currentUser.email,
+      spotTitle: spot.title || spot.location,
+      startTime: bookingDetails.startTime,
+      endTime: bookingDetails.endTime,
+      totalPrice: bookingDetails.totalPrice,
+      duration: bookingDetails.hours,
+      status: 'pending_payment'
+    });
+    setShowPaymentModal(true);
   };
 
   const handleContactHost = () => {
@@ -206,7 +240,7 @@ const ParkingSpotDetail = () => {
     setContactError('');
     try {
       // First, create a conversation
-      const conversationResponse = await fetch('http://localhost:3001/api/conversations', {
+      const conversationResponse = await fetch(`${API_BASE}/api/conversations`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -279,7 +313,7 @@ const ParkingSpotDetail = () => {
     setEditError('');
     
     try {
-      const response = await fetch(`http://localhost:3001/parking-spots/${spot.id}`, {
+      const response = await fetch(`${API_BASE}/parking-spots/${spot.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -755,8 +789,7 @@ const ParkingSpotDetail = () => {
                     fullWidth
                     startIcon={<BookOnline />}
                     onClick={() => {
-                      console.log('Book Now button clicked!');
-                      handleBooking();
+                      setShowBookingModal(true);
                     }}
                     sx={{ mb: 2, py: 1.5, fontWeight: 'bold', fontSize: '1.1rem', letterSpacing: 0.5, borderRadius: 2 }}
                   >
@@ -945,13 +978,17 @@ const ParkingSpotDetail = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Booking Modal */}
-      {showBookingModal && (
-        <BookingModal
-          open={showBookingModal}
-          onClose={() => setShowBookingModal(false)}
-          spot={spot}
-          onBookingComplete={handleBookingComplete}
+      {/* Payment Modal */}
+      {showPaymentModal && paymentBookingData && (
+        <PaymentModal
+          open={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          bookingData={paymentBookingData}
+          onSuccess={() => {
+            setShowPaymentModal(false);
+            fetchSpotDetails();
+          }}
+          onError={() => setShowPaymentModal(false)}
         />
       )}
 
@@ -1192,6 +1229,19 @@ const ParkingSpotDetail = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Booking Modal */}
+      {showBookingModal && (
+        <BookingModal
+          open={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          spot={spot}
+          onBookingComplete={(bookingDetails) => {
+            setShowBookingModal(false);
+            if (bookingDetails) handleBooking(bookingDetails);
+          }}
+        />
+      )}
 
     </Container>
   );

@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
-const stripe = require('stripe')('sk_test_51RhGUIFfuH7KoJbsGqc8UHhP2LhkeF9Ysqp4dggt3tKOgcYXpyNDt5HdvHyZ5fq1CBdGIJxsh7QXD6jG8ftdpfcT00Ry6UIfqm');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
@@ -11,15 +10,26 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000",
-    methods: ["GET", "POST"]
+    origin: 'http://192.168.1.7:3000',
+    methods: ['GET', 'POST']
   }
 });
 const port = 3001;
 
+// Set the frontend base URL in one place for CORS and Stripe redirects
+const BASE_FRONTEND_URL = 'http://192.168.1.7:3000';
+
 // Middleware - MUST be at the top before routes
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
+app.use(cors({
+  origin: BASE_FRONTEND_URL,
+  credentials: true
+}));
+
+// Place this BEFORE express.json() and express.urlencoded()
+const stripeWebhookRaw = express.raw({ type: 'application/json' });
+
+// JSON body parsing middleware - MUST be after CORS but before routes
+app.use(express.json());
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // ===== TEST MODE CONFIGURATION =====
@@ -503,13 +513,6 @@ let verificationCodes = {}; // Store verification codes temporarily
 console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings, ${conversations.length} conversations, ${messages.length} messages, ${supportTickets.length} support tickets`);
 
 app.use('/uploads', express.static(UPLOADS_DIR));
-
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.setHeader('Content-Type', 'application/json');
-  next();
-});
 
 // Enhanced real-time data structures
 const connectedUsers = new Map(); // socketId -> userData
@@ -1134,15 +1137,16 @@ app.post('/parking-spots', async (req, res) => {
 app.get('/parking-spots', (req, res) => {
   const { search, minPrice, maxPrice, rating, lat, lng, radius, userId } = req.query;
 
+  const now = new Date();
   // First, return all spots with owner information
   let filteredSpots = parkingSpots.map(spot => {
-    // Check if spot has any active (non-cancelled) bookings
+    // Check if spot has any active (non-cancelled) bookings that overlap with now
     const activeBookings = bookings.filter(b => 
       b.spotId === spot.id && 
-      b.status !== 'cancelled'
+      b.status !== 'cancelled' &&
+      new Date(b.startTime) <= now && new Date(b.endTime) >= now
     );
-    
-    // Spot is available if it has no active bookings
+    // Spot is available if it has no active bookings for now
     const isActuallyAvailable = activeBookings.length === 0;
     
     // Get owner information and tier
@@ -1242,41 +1246,34 @@ app.get('/parking-spots/search', (req, res) => {
     maxDistance 
   } = req.query;
 
-  // First, return all spots with owner information
   let filteredSpots = parkingSpots.map(spot => {
-    // Check if spot has any active (non-cancelled) bookings
-    const activeBookings = bookings.filter(b => 
-      b.spotId === spot.id && 
-      b.status !== 'cancelled'
-    );
-    
-    // Spot is available if it has no active bookings
-    const isActuallyAvailable = activeBookings.length === 0;
-    
-    // Get owner information and tier
-    const owner = users.find(u => u.uid === spot.owner);
-    let ownerTier = null;
-    
-    if (owner) {
-      // Calculate owner's stats for tier
-      const ownerReviews = bookings
-        .filter(booking => booking.spotOwner === spot.owner && booking.review)
-        .map(booking => booking.review.rating);
-      
-      const ownerTotalBookings = bookings.filter(b => b.spotOwner === spot.owner).length;
-      const ownerTotalSpots = parkingSpots.filter(s => s.owner === spot.owner).length;
-      const ownerAverageRating = ownerReviews.length > 0 
-        ? ownerReviews.reduce((sum, rating) => sum + rating, 0) / ownerReviews.length 
-        : 0;
-      
-      ownerTier = calculateUserTier(ownerAverageRating, ownerTotalBookings, ownerTotalSpots);
+    // If date/time/duration is provided, check for overlap with requested window
+    if (date && time && duration) {
+      const searchDate = new Date(`${date}T${time}`);
+      const endTime = new Date(searchDate.getTime() + (parseInt(duration) * 60 * 60 * 1000));
+      const conflictingBookings = bookings.filter(b => 
+        b.spotId === spot.id && 
+        b.status !== 'cancelled' &&
+        new Date(b.startTime) < endTime &&
+        new Date(b.endTime) > searchDate
+      );
+      return {
+        ...spot,
+        available: conflictingBookings.length === 0
+      };
+    } else {
+      // Default: check for overlap with now
+      const now = new Date();
+      const activeBookings = bookings.filter(b => 
+        b.spotId === spot.id && 
+        b.status !== 'cancelled' &&
+        new Date(b.startTime) <= now && new Date(b.endTime) >= now
+      );
+      return {
+        ...spot,
+        available: activeBookings.length === 0
+      };
     }
-    
-    return {
-      ...spot,
-      available: isActuallyAvailable,
-      ownerTier
-    };
   });
 
   // Apply location filter
@@ -1327,24 +1324,6 @@ app.get('/parking-spots/search', (req, res) => {
           spotAmenity.toLowerCase().includes(amenity.toLowerCase())
         )
       );
-    });
-  }
-
-  // Apply date/time availability check (basic implementation)
-  if (date && time && duration) {
-    const searchDate = new Date(`${date}T${time}`);
-    const endTime = new Date(searchDate.getTime() + (parseInt(duration) * 60 * 60 * 1000));
-    
-    filteredSpots = filteredSpots.filter(spot => {
-      // Check if spot is available for the requested time period
-      const conflictingBookings = bookings.filter(b => 
-        b.spotId === spot.id && 
-        b.status !== 'cancelled' &&
-        new Date(b.startTime) < endTime &&
-        new Date(b.endTime) > searchDate
-      );
-      
-      return conflictingBookings.length === 0;
     });
   }
 
@@ -1564,123 +1543,11 @@ app.get('/realtime/spot-watchers/:spotId', (req, res) => {
 
 // Enhanced booking endpoint with real-time features
 app.post('/parking-spots/:spotId/book', (req, res) => {
-  const { spotId } = req.params;
-  const { startTime, endTime, userId, userName, userEmail, hours, totalPrice, hourlyRate } = req.body;
+  return res.status(400).json({ message: 'Direct booking is disabled. Please complete payment first.' });
+});
 
-  if (!startTime || !endTime || !userId) {
-    return res.status(400).send({ message: 'Start time, end time, and user ID are required' });
-  }
-
-  const spot = parkingSpots.find(s => s.id === spotId);
-  
-  if (!spot) {
-    return res.status(404).send({ message: 'Parking spot not found' });
-  }
-
-  // Check if user is trying to book their own spot
-  if (spot.owner === userId) {
-    return res.status(400).send({ message: 'Cannot book your own parking spot' });
-  }
-
-  // Check if spot is available for booking
-  if (!spot.available) {
-    return res.status(400).send({ message: 'This spot is not available for booking' });
-  }
-
-  // Check if the spot is available for the requested time
-  const isAvailable = isSpotAvailable(spotId, startTime, endTime);
-
-  if (!isAvailable) {
-    return res.status(400).send({ message: 'Spot is not available for the requested time' });
-  }
-
-  const user = users.find(u => u.uid === userId);
-  const booking = {
-    id: `booking_${Date.now()}`,
-    spotId,
-    userId,
-    userName: userName || user?.username || 'Unknown User',
-    userEmail: userEmail || user?.email,
-    startTime,
-    endTime,
-    hours: hours || 1,
-    totalPrice: totalPrice || 0,
-    hourlyRate: hourlyRate || spot.hourlyRate,
-    status: 'confirmed',
-    createdAt: new Date().toISOString(),
-    spotOwner: spot.owner,
-    spotOwnerName: spot.ownerName,
-    location: spot.location,
-    spotDetails: {
-      location: spot.location,
-      hourlyRate: spot.hourlyRate,
-      coordinates: spot.coordinates
-    }
-  };
-
-  bookings.push(booking);
-  
-  // Add booking to spot's bookings array
-  if (!spot.bookings) {
-    spot.bookings = [];
-  }
-  spot.bookings.push(booking.id);
-
-  // Add the booking information to the spot's history
-  if (!spot.bookingHistory) {
-    spot.bookingHistory = [];
-  }
-  spot.bookingHistory.push({
-    bookingId: booking.id,
-    startTime,
-    endTime,
-    userId
-  });
-
-  // Save data to files
-  saveData(SPOTS_FILE, parkingSpots);
-  saveData(BOOKINGS_FILE, bookings);
-
-  // Enhanced real-time notifications
-  const bookingNotification = {
-    type: 'booking',
-    title: 'New Booking Received',
-    message: `${booking.userName} booked your spot at ${spot.location}`,
-    booking,
-    timestamp: new Date()
-  };
-
-  // Emit to spot owner
-  io.to(`user-${spot.owner}`).emit('booking-received', bookingNotification);
-  
-  // Emit to all users watching this spot
-  io.to(`spot-${spotId}`).emit('spot-booked', {
-    spotId,
-    booking,
-    timestamp: new Date()
-  });
-
-  // Emit spot availability update
-  const stillAvailable = isSpotAvailable(spotId, startTime, endTime);
-  io.to(`spot-${spotId}`).emit('spot-availability-updated', {
-    spotId,
-    available: stillAvailable,
-    reason: 'New booking',
-    lastUpdated: new Date()
-  });
-
-  // Send push notification to spot owner if they're not online
-  if (!userSessions.has(spot.owner)) {
-    // Store notification for when user comes online
-    if (!spot.pendingNotifications) {
-      spot.pendingNotifications = [];
-    }
-    spot.pendingNotifications.push(bookingNotification);
-  }
-
-  console.log(`Booking created: ${booking.id} for spot ${spotId} by user ${userId}`);
-
-  res.status(201).send({ message: 'Booking confirmed', booking });
+app.post('/bookings', (req, res) => {
+  return res.status(400).json({ message: 'Direct booking is disabled. Please complete payment first.' });
 });
 
 // Get user's listings
@@ -5341,6 +5208,141 @@ app.get('/api/users/:userId/publicKey', (req, res) => {
   const user = users.find(u => u.uid === userId);
   if (!user || !user.publicKey) return res.status(404).json({ message: 'Public key not found' });
   res.json({ publicKey: user.publicKey });
+});
+
+// Stripe integration
+const stripe = require('stripe')('sk_test_51RhGUIFfuH7KoJbsGqc8UHhP2LhkeF9Ysqp4dggt3tKOgcYXpyNDt5HdvHyZ5fq1CBdGIJxsh7QXD6jG8ftdpfcT00Ry6UIfqm'); // Hardcoded for local testing
+
+// Create Stripe Checkout session for booking
+app.post('/api/payments/create-session', async (req, res) => {
+  console.log('Received payment session request:', req.body); // DEBUG LOG
+  try {
+    const { spotId, userId, price, spotTitle, startTime, endTime, hours } = req.body;
+    if (!spotId || !userId || !price || !spotTitle || !startTime || !endTime || !hours) {
+      return res.status(400).json({ message: 'Missing required fields' });
+    }
+    // Create a Stripe Checkout session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'payment',
+      line_items: [
+        {
+          price_data: {
+            currency: 'inr',
+            product_data: {
+              name: `Parking Spot: ${spotTitle}`,
+            },
+            unit_amount: Math.round(price * 100), // Stripe expects amount in paise
+          },
+          quantity: 1,
+        },
+      ],
+      metadata: {
+        spotId,
+        userId,
+        price,
+        spotTitle,
+        startTime,
+        endTime,
+        hours
+      },
+      success_url: `${BASE_FRONTEND_URL}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${BASE_FRONTEND_URL}/payment-cancel`,
+    });
+    res.json({ sessionUrl: session.url });
+  } catch (error) {
+    console.error('Stripe session error:', error);
+    res.status(500).json({ message: 'Failed to create payment session' });
+  }
+});
+
+// Stripe webhook endpoint (must be before express.json)
+app.post('/api/payments/webhook', stripeWebhookRaw, require('./services/receiptService').stripeWebhookHandler);
+
+// Endpoint to get booking by Stripe session/payment intent ID
+app.get('/bookings/by-session/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+  // Try to find booking by paymentId, paymentIntentId, or sessionId
+  const booking = bookings.find(b => b.paymentId === sessionId || b.paymentIntentId === sessionId || b.sessionId === sessionId);
+  if (!booking) {
+    return res.status(404).json({ message: 'Booking not found' });
+  }
+  res.json({ booking });
+});
+
+// Stripe polling solution for booking confirmation
+app.post('/api/payments/confirm-session', async (req, res) => {
+  const { sessionId } = req.body;
+  if (!sessionId) {
+    return res.status(400).json({ message: 'Missing sessionId' });
+  }
+  try {
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    if (!session || session.payment_status !== 'paid') {
+      return res.status(400).json({ message: 'Payment not completed' });
+    }
+    // Extract booking details from session.metadata
+    const metadata = session.metadata || {};
+    const spotId = metadata.spotId;
+    const userId = metadata.userId;
+    const price = Number(metadata.price);
+    const spotTitle = metadata.spotTitle || metadata.spotLocation;
+    const startTime = metadata.startTime;
+    const endTime = metadata.endTime;
+    const hours = Number(metadata.hours) || 1;
+    if (!spotId || !userId || !price || !spotTitle || !startTime || !endTime) {
+      return res.status(400).json({ message: 'Missing booking metadata' });
+    }
+    // Find spot and user
+    const spot = parkingSpots.find(s => s.id === spotId);
+    const user = users.find(u => u.uid === userId || u.id === userId);
+    if (!spot || !user) {
+      return res.status(400).json({ message: 'Spot or user not found' });
+    }
+    // Check if booking already exists for this session
+    let booking = bookings.find(b => b.sessionId === sessionId);
+    if (!booking) {
+      // Create booking object
+      booking = {
+        id: `booking_${Date.now()}`,
+        spotId,
+        userId,
+        userName: user.displayName || user.username || user.email || 'Unknown User',
+        userEmail: user.email,
+        startTime,
+        endTime,
+        hours,
+        totalPrice: price,
+        createdAt: new Date().toISOString(),
+        status: 'paid',
+        paymentId: session.payment_intent,
+        sessionId: session.id, // Store Stripe Checkout Session ID
+        paidAt: new Date().toISOString(),
+        paymentAmount: price,
+        spotOwner: spot.owner,
+        spotOwnerName: spot.ownerName,
+        location: spot.location,
+        spotDetails: {
+          location: spot.location,
+          hourlyRate: spot.hourlyRate
+        }
+      };
+      bookings.push(booking);
+      // Add booking to spot
+      if (!spot.bookings) spot.bookings = [];
+      spot.bookings.push(booking.id);
+      spot.available = false;
+      // Save data
+      saveData(BOOKINGS_FILE, bookings);
+      saveData(SPOTS_FILE, parkingSpots);
+      // Optionally, send confirmation email/notification here
+      console.log(`Booking created via Stripe polling: ${booking.id} for spot ${spotId} by user ${userId}`);
+    }
+    res.json({ booking });
+  } catch (err) {
+    console.error('Error confirming Stripe session:', err);
+    res.status(500).json({ message: 'Failed to confirm payment session' });
+  }
 });
 
 server.listen(port, '0.0.0.0', () => {

@@ -27,6 +27,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
+import { API_BASE } from '../apiConfig';
 
 function Settings() {
   // User state
@@ -121,7 +122,7 @@ function Settings() {
   // Fetch backend profile info
   const fetchProfile = async (uid) => {
     try {
-      const res = await axios.get(`http://192.168.1.7:3001/api/users/${uid}/profile`, {
+      const res = await axios.get(`${API_BASE}/users/${uid}/profile`, {
         headers: { Authorization: `Bearer ${uid}` }
       });
       setProfile(res.data.profile);
@@ -135,7 +136,7 @@ function Settings() {
   const fetchSettings = async (uid) => {
     setSettingsLoading(true);
     try {
-      const res = await axios.get(`http://192.168.1.7:3001/users/${uid}/settings`);
+      const res = await axios.get(`${API_BASE}/users/${uid}/settings`);
       setSettings(res.data);
     } catch (e) {
       setSettings(null);
@@ -191,7 +192,7 @@ function Settings() {
       default: return;
     }
     try {
-      await axios.put(`http://192.168.1.7:3001${url}`, data);
+      await axios.put(`${API_BASE}${url}`, data);
       setSuccess('Settings updated successfully');
       await fetchSettings(user.uid);
       await fetchProfile(user.uid);
@@ -208,15 +209,15 @@ function Settings() {
     try {
       if (dialogType === 'email') {
         if (!emailInput || !emailInput.includes('@')) throw new Error('Enter a valid email');
-        await axios.put(`http://192.168.1.7:3001/api/users/${user.uid}/profile`, { email: emailInput });
+        await axios.put(`${API_BASE}/api/users/${user.uid}/profile`, { email: emailInput });
         setProfileSuccess('Email updated successfully');
       } else if (dialogType === 'phone') {
         if (!phoneInput) throw new Error('Enter a valid phone number');
-        await axios.put(`http://192.168.1.7:3001/api/users/${user.uid}/profile`, { phone: phoneInput });
+        await axios.put(`${API_BASE}/api/users/${user.uid}/profile`, { phone: phoneInput });
         setProfileSuccess('Phone number updated successfully');
       } else if (dialogType === 'displayName') {
         if (!displayNameInput) throw new Error('Enter a valid name');
-        await axios.put(`http://192.168.1.7:3001/api/users/${user.uid}/profile`, { displayName: displayNameInput });
+        await axios.put(`${API_BASE}/api/users/${user.uid}/profile`, { displayName: displayNameInput });
         setProfileSuccess('Display name updated successfully');
       } else if (dialogType === 'password') {
         if (!currentPassword) throw new Error('Current password is required');

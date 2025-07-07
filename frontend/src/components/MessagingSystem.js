@@ -62,8 +62,8 @@ import UserPresenceIndicator from './UserPresenceIndicator';
 import UserStatusIndicator from './UserStatusIndicator';
 import FileUpload from './FileUpload';
 import MessageAttachment from './MessageAttachment';
-import * as openpgp from 'openpgp';
 import UserActivityTracker from './UserActivityTracker';
+import { API_BASE } from '../apiConfig';
 
 const MessagingSystem = () => {
   const navigate = useNavigate();
@@ -160,7 +160,7 @@ const MessagingSystem = () => {
     if (!currentUser?.uid) return;
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.1.7:3001/api/conversations', {
+      const response = await fetch(`${API_BASE}/conversations`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -182,7 +182,7 @@ const MessagingSystem = () => {
   const loadAvailableUsers = useCallback(async () => {
     if (!currentUser?.uid) return;
     try {
-      const response = await fetch('http://192.168.1.7:3001/api/users/messaging', {
+      const response = await fetch(`${API_BASE}/users/messaging`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -195,7 +195,7 @@ const MessagingSystem = () => {
         const filtered = [];
         for (const user of data.users || []) {
           try {
-            const pkRes = await fetch(`http://192.168.1.7:3001/api/users/${user.uid}/publicKey`);
+            const pkRes = await fetch(`${API_BASE}/users/${user.uid}/publicKey`);
             if (pkRes.ok) filtered.push(user);
           } catch {}
         }
@@ -210,7 +210,7 @@ const MessagingSystem = () => {
     if (!currentUser?.uid || !convId) return;
     setLoading(true);
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${convId}/messages`, {
+      const response = await fetch(`${API_BASE}/conversations/${convId}/messages`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -287,7 +287,7 @@ const MessagingSystem = () => {
             if (prev.some(msg => msg.id === newMsg.id)) return prev;
             return [...prev, newMsg].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
           });
-          // Emit delivered status
+          // Emit delivered status with messageId
           if (socket) {
             socket.emit('message-status', {
               conversationId: data.conversationId,
@@ -430,7 +430,7 @@ const MessagingSystem = () => {
       }
       // Encrypt message
       const encryptedContent = await encryptMessage(messageContent, recipientPublicKey);
-      const response = await fetch('http://192.168.1.7:3001/api/messages', {
+      const response = await fetch(`${API_BASE}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -498,7 +498,7 @@ const MessagingSystem = () => {
     setSendingMessage(true);
     
     try {
-      const response = await fetch('http://192.168.1.7:3001/api/messages', {
+      const response = await fetch(`${API_BASE}/messages`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -557,7 +557,7 @@ const MessagingSystem = () => {
     if (!newMessageRecipient || !newMessageSubject || !newMessageContent) return;
     
     try {
-      const response = await fetch('http://192.168.1.7:3001/api/conversations', {
+      const response = await fetch(`${API_BASE}/conversations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -732,7 +732,7 @@ const MessagingSystem = () => {
     if (!messageActions.message) return;
     
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/messages/${messageActions.message.id}`, {
+      const response = await fetch(`${API_BASE}/messages/${messageActions.message.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -762,7 +762,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/mute`, {
+      const response = await fetch(`${API_BASE}/conversations/${selectedConversation.id}/mute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -799,7 +799,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/star`, {
+      const response = await fetch(`${API_BASE}/conversations/${selectedConversation.id}/star`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -836,7 +836,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/archive`, {
+      const response = await fetch(`${API_BASE}/conversations/${selectedConversation.id}/archive`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -882,7 +882,7 @@ const MessagingSystem = () => {
     if (!otherUser) return;
     
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/users/${otherUser.uid}/block`, {
+      const response = await fetch(`${API_BASE}/users/${otherUser.uid}/block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -929,7 +929,7 @@ const MessagingSystem = () => {
     if (!reportDialog.userId || !reportDialog.reason) return;
     
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/users/${reportDialog.userId}/report`, {
+      const response = await fetch(`${API_BASE}/users/${reportDialog.userId}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -958,7 +958,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}`, {
+      const response = await fetch(`${API_BASE}/conversations/${selectedConversation.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -1075,6 +1075,10 @@ const MessagingSystem = () => {
   };
 
   const generatePGPKeys = async (userId, email) => {
+    if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
+      throw new Error('Secure messaging is not supported in this environment.');
+    }
+    const openpgp = await import('openpgp');
     const { privateKey, publicKey } = await openpgp.generateKey({
       type: 'rsa',
       rsaBits: 2048,
@@ -1086,6 +1090,10 @@ const MessagingSystem = () => {
   };
 
   const encryptMessage = async (plaintext, recipientPublicKeyArmored) => {
+    if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
+      throw new Error('Secure messaging is not supported in this environment.');
+    }
+    const openpgp = await import('openpgp');
     const publicKey = await openpgp.readKey({ armoredKey: recipientPublicKeyArmored });
     const encrypted = await openpgp.encrypt({
       message: await openpgp.createMessage({ text: plaintext }),
@@ -1095,6 +1103,10 @@ const MessagingSystem = () => {
   };
 
   const decryptMessage = async (ciphertext, privateKeyArmored) => {
+    if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
+      throw new Error('Secure messaging is not supported in this environment.');
+    }
+    const openpgp = await import('openpgp');
     const privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored });
     const message = await openpgp.readMessage({ armoredMessage: ciphertext });
     const { data: decrypted } = await openpgp.decrypt({
@@ -1118,7 +1130,7 @@ const MessagingSystem = () => {
         needsUpload = true;
       }
       // Always upload public key to backend on login to ensure it's present
-      await fetch(`http://192.168.1.7:3001/api/users/${currentUser.uid}/publicKey`, {
+      await fetch(`${API_BASE}/users/${currentUser.uid}/publicKey`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ publicKey })
@@ -1129,7 +1141,7 @@ const MessagingSystem = () => {
 
   // Helper to fetch a user's public key
   const fetchUserPublicKey = async (userId) => {
-    const res = await fetch(`http://192.168.1.7:3001/api/users/${userId}/publicKey`);
+    const res = await fetch(`${API_BASE}/users/${userId}/publicKey`);
     if (!res.ok) throw new Error('Could not fetch public key');
     const data = await res.json();
     return data.publicKey;
@@ -1166,7 +1178,7 @@ const MessagingSystem = () => {
     // Mark all messages as read in this conversation
     const markAsRead = async () => {
       try {
-        await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/read`, {
+        await fetch(`${API_BASE}/conversations/${selectedConversation.id}/read`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

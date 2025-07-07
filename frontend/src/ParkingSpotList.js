@@ -83,6 +83,7 @@ import MapComponent from './components/MapComponent';
 import LoadingSpinner from './components/LoadingSpinner';
 import ParkingSpotCard from './components/ParkingSpotCard';
 import { useRealtime } from './contexts/RealtimeContext';
+import { API_BASE } from './apiConfig';
 
 const initialCenter = [19.0760, 72.8777]; // Mumbai coordinates
 
@@ -212,7 +213,7 @@ const ParkingSpotList = () => {
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/parking-spots/search?${queryParams.toString()}`);
+      const response = await fetch(`${API_BASE}/parking-spots/search?${queryParams.toString()}`);
       const data = await response.json();
       console.log('Fetched parking spots:', data.length);
 
@@ -754,6 +755,14 @@ const ParkingSpotList = () => {
       }
     }
   }, []);
+
+  const handleSpotAvailabilityChange = (spotId, available) => {
+    setSpots(prevSpots =>
+      prevSpots.map(spot =>
+        spot.id === spotId ? { ...spot, available } : spot
+      )
+    );
+  };
 
   if (loading) {
     return (
@@ -1306,6 +1315,7 @@ const ParkingSpotList = () => {
                         setSnackbarSeverity('success');
                         setOpenSnackbar(true);
                       }}
+                      onAvailabilityChange={(available) => handleSpotAvailabilityChange(spot.id, available)}
                     />
                   </Grid>
                 ))

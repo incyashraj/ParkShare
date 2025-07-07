@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button, Box, Typography, Alert } from '@mui/material';
 import { useRealtime } from './contexts/RealtimeContext';
+import { API_BASE } from './apiConfig';
 
 const TestComponent = () => {
   const { addNotification } = useRealtime();
@@ -46,7 +47,7 @@ const TestComponent = () => {
   const testBookingFlow = async () => {
     try {
       // Test the booking endpoint directly
-      const response = await fetch('http://localhost:3001/bookings', {
+      const response = await fetch(`${API_BASE}/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

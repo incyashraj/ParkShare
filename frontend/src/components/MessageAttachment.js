@@ -23,6 +23,7 @@ import {
   GetApp
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../apiConfig';
 
 const MessageAttachment = ({ attachment, onDelete, canDelete = false }) => {
   const { currentUser } = useAuth();
@@ -57,7 +58,7 @@ const MessageAttachment = ({ attachment, onDelete, canDelete = false }) => {
 
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = `http://localhost:3001${attachment.url}`;
+    link.href = `${API_BASE}${attachment.url}`;
     link.download = attachment.originalName;
     document.body.appendChild(link);
     link.click();
@@ -69,7 +70,7 @@ const MessageAttachment = ({ attachment, onDelete, canDelete = false }) => {
     
     setDeleting(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/messages/attachment/${attachment.filename}`, {
+      const response = await fetch(`${API_BASE}/api/messages/attachment/${attachment.filename}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${currentUser.uid}`
@@ -175,7 +176,7 @@ const MessageAttachment = ({ attachment, onDelete, canDelete = false }) => {
               
               {isImage ? (
                 <img
-                  src={`http://localhost:3001${previewDialog.attachment.url}`}
+                  src={`${API_BASE}${previewDialog.attachment.url}`}
                   alt={previewDialog.attachment.originalName}
                   style={{ 
                     maxWidth: '100%', 

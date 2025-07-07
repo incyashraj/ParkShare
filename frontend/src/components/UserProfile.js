@@ -57,6 +57,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useTranslation } from 'react-i18next';
+import { API_BASE } from '../apiConfig';
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -87,7 +88,7 @@ const UserProfile = () => {
 
   const loadUserProfile = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/profile`, {
+      const response = await fetch(`${API_BASE}/api/users/${userId}/profile`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -130,7 +131,7 @@ const UserProfile = () => {
   const handleBlockUser = async () => {
     try {
       const isCurrentlyBlocked = userProfile.blocked;
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/block`, {
+      const response = await fetch(`${API_BASE}/api/users/${userId}/block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -161,7 +162,7 @@ const UserProfile = () => {
     
     setSubmitting(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${userId}/report`, {
+      const response = await fetch(`${API_BASE}/api/users/${userId}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import AppleIcon from '@mui/icons-material/Apple';
 import GoogleIcon from '@mui/icons-material/Google';
 import { useState } from 'react';
+import { API_BASE } from './apiConfig';
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
   marginTop: theme.spacing(8),
@@ -37,7 +38,7 @@ function Login() {
 
   const loginToBackend = async (uid) => {
     try {
-      const response = await fetch('http://localhost:3001/login', {
+      const response = await fetch(`${API_BASE}/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -81,7 +82,7 @@ function Login() {
         // If backend login fails, try to register the user first
         try {
           console.log('Attempting to register user in backend...');
-          const registerResponse = await fetch('http://localhost:3001/register', {
+          const registerResponse = await fetch(`${API_BASE}/register`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ function Login() {
         await loginToBackend(result.user.uid);
       } catch (loginError) {
         // If login fails, try to register
-        const response = await fetch('http://localhost:3001/register', {
+        const response = await fetch(`${API_BASE}/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -269,7 +270,7 @@ function Login() {
               size="small"
               onClick={async () => {
                 try {
-                  const response = await fetch('http://localhost:3001/health');
+                  const response = await fetch(`${API_BASE}/health`);
                   const data = await response.json();
                   console.log('Backend health check:', data);
                   alert(`Backend Status: ${data.status}\nUsers: ${data.usersCount}`);

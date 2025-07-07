@@ -33,6 +33,7 @@ import {
   Schedule as ScheduleIcon,
   NewReleases as NewUpdateIcon
 } from '@mui/icons-material';
+import { API_BASE } from '../apiConfig';
 
 const SupportPanel = () => {
   const { currentUser } = useAuth();
@@ -191,7 +192,7 @@ const SupportPanel = () => {
   const loadTickets = async () => {
     try {
       setLoading(true);
-      const response = await fetch('http://localhost:3001/api/support/tickets', {
+      const response = await fetch(`${API_BASE}/api/support/tickets`, {
         headers: {
           Authorization: `Bearer ${currentUser.uid}`
         }
@@ -213,7 +214,7 @@ const SupportPanel = () => {
 
   const handleCreateTicket = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/support/tickets', {
+      const response = await fetch(`${API_BASE}/api/support/tickets`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -248,7 +249,7 @@ const SupportPanel = () => {
     // Mark ticket as read if it has new updates
     if (ticket.hasNewUpdate) {
       try {
-        await fetch(`http://localhost:3001/api/support/tickets/${ticket.id}/read`, {
+        await fetch(`${API_BASE}/api/support/tickets/${ticket.id}/read`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
@@ -272,7 +273,7 @@ const SupportPanel = () => {
     if (!newMessage.trim() || !selectedTicket) return;
     setSendingMessage(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/support/tickets/${selectedTicket.id}/message`, {
+      const response = await fetch(`${API_BASE}/api/support/tickets/${selectedTicket.id}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

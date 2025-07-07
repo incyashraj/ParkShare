@@ -64,6 +64,9 @@ import './App.css';
 import './styles/global.css';
 import './i18n';
 import { useTranslation } from 'react-i18next';
+import { PaymentSuccess, PaymentCancel } from './components/PaymentModal';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 
 const theme = createTheme({
   palette: {
@@ -781,6 +784,10 @@ function AppContent() {
                       <DesignSystemDemo />
                     </ProtectedRoute>
                   } />
+                  
+                  {/* Payment Routes */}
+                  <Route path="/payment-success" element={<PaymentSuccess />} />
+                  <Route path="/payment-cancel" element={<PaymentCancel />} />
                   
                   {/* 404 Route - Must be last */}
                   <Route path="*" element={<NotFound />} />

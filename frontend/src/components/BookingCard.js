@@ -19,6 +19,7 @@ import {
   Cancel as CancelIcon
 } from '@mui/icons-material';
 import { format } from 'date-fns';
+import { API_BASE } from '../apiConfig';
 
 const BookingCard = ({ booking, onCancel, isCancelling = false }) => {
   const [downloading, setDownloading] = useState(false);
@@ -87,7 +88,7 @@ const BookingCard = ({ booking, onCancel, isCancelling = false }) => {
     setDownloadError(null);
     
     try {
-      const response = await fetch('http://localhost:3001/receipts/generate', {
+      const response = await fetch(`${API_BASE}/receipts/generate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -107,7 +108,7 @@ const BookingCard = ({ booking, onCancel, isCancelling = false }) => {
       
       if (data.downloadUrl) {
         // Download the file
-        const downloadResponse = await fetch(`http://localhost:3001${data.downloadUrl}`);
+        const downloadResponse = await fetch(`${API_BASE}${data.downloadUrl}`);
         if (downloadResponse.ok) {
           const blob = await downloadResponse.blob();
           

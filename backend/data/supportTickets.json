@@ -9,7 +9,7 @@
     "priority": "high",
     "category": "payment",
     "createdAt": "2024-01-15T10:30:00Z",
-    "updatedAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2025-07-07T12:32:13.417Z",
     "messages": [
       {
         "senderId": "user_john_123",
@@ -17,8 +17,16 @@
         "senderRole": "user",
         "message": "I'm having trouble with the payment system. It keeps showing an error when I try to book a spot.",
         "timestamp": "2024-01-15T10:30:00Z"
+      },
+      {
+        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "senderName": "Yashraj Pardeshi",
+        "senderRole": "admin",
+        "message": "payments issue was created",
+        "timestamp": "2025-07-07T12:32:13.417Z"
       }
-    ]
+    ],
+    "hasNewUpdate": true
   },
   {
     "id": "ticket_002",
@@ -76,4 +84,4 @@
       }
     ]
   }
-] 
+]

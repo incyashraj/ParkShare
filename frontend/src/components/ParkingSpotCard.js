@@ -67,8 +67,9 @@ import { useRealtime } from '../contexts/RealtimeContext';
 import PaymentModal from './PaymentModal';
 import './ParkingSpotCard.css';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../apiConfig';
 
-const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, isFavorite, onToggleFavorite }) => {
+const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, isFavorite, onToggleFavorite, ...props }) => {
   const navigate = useNavigate();
   const { currentUser } = useAuth();
   
@@ -96,13 +97,22 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
 
   // Join/leave spot room for real-time updates
   useEffect(() => {
-    if (spot.id && isConnected && socket) {
-      socket.emit('join-spot-room', spot.id);
-      return () => {
-        socket.emit('leave-spot-room', spot.id);
-      };
-    }
-  }, [spot.id, isConnected, socket]);
+    if (!spot?.id) return;
+    socket?.emit('join-spot-room', spot.id);
+    const handleAvailability = (data) => {
+      if (data.spotId === spot.id) {
+        // Update spot availability in parent or local state
+        if (props.onAvailabilityChange) {
+          props.onAvailabilityChange(data.available);
+        }
+      }
+    };
+    socket?.on('spot-availability-updated', handleAvailability);
+    return () => {
+      socket?.emit('leave-spot-room', spot.id);
+      socket?.off('spot-availability-updated', handleAvailability);
+    };
+  }, [socket, spot?.id]);
 
   // Use real-time status if available, otherwise fall back to spot data
   const isAvailable = spotStatus?.available !== undefined ? spotStatus.available : spot.available;
@@ -202,7 +212,7 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
       console.log('Payment successful:', paymentResult);
       
       // Create booking with payment confirmation
-      const bookingResponse = await fetch('http://localhost:3001/api/bookings', {
+      const bookingResponse = await fetch(`${API_BASE}/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -788,20 +798,28 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
       <PaymentModal
         open={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        booking={{
-          id: paymentIntent?.bookingId || `temp_${Date.now()}`,
+        bookingData={{
           spotId: spot.id,
           userId: currentUser?.uid,
           userName: currentUser?.displayName || currentUser?.email,
-          spotLocation: spot.title || spot.location,
+          spotTitle: spot.title || spot.location,
           startTime: bookingData.startTime,
           endTime: bookingData.endTime,
           totalPrice: paymentAmount,
-          duration: `${bookingData.hours} hour${bookingData.hours > 1 ? 's' : ''}`,
+          duration: bookingData.hours,
           status: 'pending_payment'
         }}
-        onPaymentSuccess={handlePaymentSuccess}
-        onPaymentError={handlePaymentError}
+        onSuccess={() => {
+          setSnackbarMessage('Payment successful! Booking will be confirmed after payment is processed.');
+          setSnackbarSeverity('success');
+          setOpenSnackbar(true);
+          setShowPaymentModal(false);
+        }}
+        onError={(err) => {
+          setSnackbarMessage('Payment failed. Please try again.');
+          setSnackbarSeverity('error');
+          setOpenSnackbar(true);
+        }}
       />
     </>
   );

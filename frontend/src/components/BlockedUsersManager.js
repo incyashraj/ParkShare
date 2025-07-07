@@ -31,6 +31,7 @@ import {
   Warning as WarningIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../apiConfig';
 
 const BlockedUsersManager = () => {
   const { currentUser } = useAuth();
@@ -51,7 +52,7 @@ const BlockedUsersManager = () => {
   const loadBlockedUsers = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/users/${currentUser.uid}/blocked`, {
+      const response = await fetch(`${API_BASE}/api/users/${currentUser.uid}/blocked`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -83,7 +84,7 @@ const BlockedUsersManager = () => {
 
     try {
       setUnblockingUser(userToUnblock.uid);
-      const response = await fetch(`http://localhost:3001/api/users/${userToUnblock.uid}/block`, {
+      const response = await fetch(`${API_BASE}/api/users/${userToUnblock.uid}/block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,6 +1,7 @@
 const axios = require('axios');
 
-const BASE_URL = 'http://localhost:3001';
+// Use the same backend base URL as the frontend
+const BASE_URL = 'http://192.168.1.7:3001';
 
 // Test data
 const testUser = {
@@ -203,7 +204,7 @@ async function runTests() {
   try {
     console.log('\n9. Testing WebSocket Connection...');
     const io = require('socket.io-client');
-    const socket = io('http://localhost:3001');
+    const socket = io(BASE_URL);
     
     const wsTest = new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {

@@ -23,6 +23,7 @@ import {
   FileCopy
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../apiConfig';
 
 const FileUpload = ({ onFilesSelected, maxFiles = 5, maxSize = 10 }) => {
   const { currentUser } = useAuth();
@@ -130,7 +131,7 @@ const FileUpload = ({ onFilesSelected, maxFiles = 5, maxSize = 10 }) => {
     formData.append('attachment', file);
 
     try {
-      const response = await fetch('http://localhost:3001/api/messages/upload-attachment', {
+      const response = await fetch(`${API_BASE}/messages/upload-attachment`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${currentUser.uid}`

@@ -18,8 +18,10 @@ import {
   Snackbar,
 } from '@mui/material';
 import ReceiptDownload from './ReceiptDownload';
+import PaymentModal from './PaymentModal';
+import { parse, isValid } from 'date-fns';
 
-function BookingModal({ open, onClose, spot }) {
+function BookingModal({ open, onClose, spot, onBookingComplete }) {
   const navigate = useNavigate();
   const { addNotification } = useRealtime();
   const [startDate, setStartDate] = useState('');
@@ -32,6 +34,15 @@ function BookingModal({ open, onClose, spot }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookingData, setBookingData] = useState(null);
   const [showSuccessSnackbar, setShowSuccessSnackbar] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [pendingBookingDetails, setPendingBookingDetails] = useState(null);
+
+  // Inline error state for each field
+  const [fieldErrors, setFieldErrors] = useState({});
+  const startDateRef = React.useRef();
+  const startTimeRef = React.useRef();
+  const endDateRef = React.useRef();
+  const endTimeRef = React.useRef();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
@@ -46,137 +57,116 @@ function BookingModal({ open, onClose, spot }) {
       const now = new Date();
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      
       setStartDate(now.toISOString().split('T')[0]);
       setStartTime(now.toTimeString().slice(0, 5));
       setEndDate(tomorrow.toISOString().split('T')[0]);
       setEndTime(now.toTimeString().slice(0, 5));
+      setError('');
+      setSuccess(false);
+      setBookingData(null);
+      setShowSuccessSnackbar(false);
+      setShowPaymentModal(false);
+      setPendingBookingDetails(null);
     }
   }, [open]);
 
   const calculateTotalPrice = () => {
     if (!startDate || !startTime || !endDate || !endTime) return 0;
     
-    const startDateTime = new Date(`${startDate}T${startTime}`);
-    const endDateTime = new Date(`${endDate}T${endTime}`);
+    const startDateTime = parse(`${startDate} ${startTime}`, 'yyyy-MM-dd HH:mm', new Date());
+    const endDateTime = parse(`${endDate} ${endTime}`, 'yyyy-MM-dd HH:mm', new Date());
     
-    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) return 0;
+    if (!isValid(startDateTime) || !isValid(endDateTime)) return 0;
     
     const hours = Math.ceil((endDateTime - startDateTime) / (1000 * 60 * 60));
     const rate = parseFloat(spot.hourlyRate.replace(/[^0-9.]/g, ''));
     return Math.max(0, hours * rate);
   };
 
-  const handleBooking = async () => {
-    console.log('handleBooking called');
-    console.log('currentUser:', currentUser);
-    console.log('startDate:', startDate, 'startTime:', startTime);
-    console.log('endDate:', endDate, 'endTime:', endTime);
-    console.log('spot:', spot);
+  const validateFields = () => {
+    const errors = {};
+    if (!startDate) errors.startDate = 'Start date is required';
+    if (!startTime) errors.startTime = 'Start time is required';
+    if (!endDate) errors.endDate = 'End date is required';
+    if (!endTime) errors.endTime = 'End time is required';
+    let startDateTime, endDateTime;
+    if (startDate && startTime) {
+      startDateTime = parse(`${startDate} ${startTime}`, 'yyyy-MM-dd HH:mm', new Date());
+      if (!isValid(startDateTime)) {
+        errors.startTime = 'Invalid start date/time';
+        console.log('Invalid start:', startDate, startTime, startDateTime);
+      }
+    }
+    if (endDate && endTime) {
+      endDateTime = parse(`${endDate} ${endTime}`, 'yyyy-MM-dd HH:mm', new Date());
+      if (!isValid(endDateTime)) {
+        errors.endTime = 'Invalid end date/time';
+        console.log('Invalid end:', endDate, endTime, endDateTime);
+      }
+    }
+    if (
+      startDate && startTime && endDate && endTime &&
+      isValid(startDateTime) && isValid(endDateTime) &&
+      endDateTime <= startDateTime
+    ) {
+      errors.endTime = 'End time must be after start time';
+    }
+    return errors;
+  };
 
+  const allFieldsValid = () => {
+    const errors = validateFields();
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleBooking = () => {
     if (!currentUser) {
       setError('Please log in to book a parking spot');
       return;
     }
-
-    if (!startDate || !startTime || !endDate || !endTime) {
-      setError('Please select both start and end dates/times');
+    const errors = validateFields();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length > 0) {
+      // Focus the first invalid field
+      if (errors.startDate && startDateRef.current) startDateRef.current.focus();
+      else if (errors.startTime && startTimeRef.current) startTimeRef.current.focus();
+      else if (errors.endDate && endDateRef.current) endDateRef.current.focus();
+      else if (errors.endTime && endTimeRef.current) endTimeRef.current.focus();
+      setError('Please fill all required fields correctly');
       return;
     }
-
-    const startDateTime = new Date(`${startDate}T${startTime}`);
-    const endDateTime = new Date(`${endDate}T${endTime}`);
-    
-    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+    const startDateTime = parse(`${startDate} ${startTime}`, 'yyyy-MM-dd HH:mm', new Date());
+    const endDateTime = parse(`${endDate} ${endTime}`, 'yyyy-MM-dd HH:mm', new Date());
+    if (!isValid(startDateTime) || !isValid(endDateTime)) {
       setError('Please enter valid dates and times');
       return;
     }
-
     if (endDateTime <= startDateTime) {
       setError('End time must be after start time');
       return;
     }
-
     const hours = Math.ceil((endDateTime - startDateTime) / (1000 * 60 * 60));
     if (spot.maxDuration && hours > spot.maxDuration) {
       setError(`Maximum parking duration is ${spot.maxDuration} hours`);
       return;
     }
-
-    setIsProcessing(true);
-    setError('');
-    setSuccess(false);
-
-    try {
-      // Create booking data
-      const bookingData = {
-        spotId: spot.id,
-        userId: currentUser?.uid,
-        userName: currentUser?.displayName || currentUser?.email,
-        userEmail: currentUser?.email,
-        spotTitle: spot.title || spot.location,
-        spotLocation: spot.location,
-        startTime: startDateTime.toISOString(),
-        endTime: endDateTime.toISOString(),
-        hours: hours,
-        totalPrice: calculateTotalPrice(),
-        hourlyRate: spot.hourlyRate
-      };
-      
-      console.log('Creating booking with data:', bookingData);
-
-      // Call the backend to create the booking
-      const response = await fetch(`http://localhost:3001/parking-spots/${spot.id}/book`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(bookingData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create booking');
-      }
-
-      const result = await response.json();
-      console.log('Booking created successfully:', result);
-      
-      setSuccess(true);
-      setBookingData(result.booking);
-      
-      // Show success notification
-      setShowSuccessSnackbar(true);
-      
-      // Add notification to the notification center
-      const notification = {
-        id: Date.now(),
-        type: 'booking',
-        title: 'Booking Confirmed! 🎉',
-        message: `Your booking for ${result.booking.spotTitle || result.booking.spotLocation} has been confirmed.`,
-        data: {
-          bookingId: result.booking.id,
-          spotId: result.booking.spotId,
-          type: 'booking-confirmation'
-        },
-        timestamp: new Date(),
-        read: false
-      };
-      
-      // Add to notifications context
-      addNotification(notification);
-      
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      setError(error.message || 'Failed to create booking. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
+    const bookingDetails = {
+      spotId: spot.id,
+      userId: currentUser?.uid,
+      userName: currentUser?.displayName || currentUser?.email,
+      userEmail: currentUser?.email,
+      spotTitle: spot.title || spot.location,
+      spotLocation: spot.location,
+      startTime: startDateTime.toISOString(),
+      endTime: endDateTime.toISOString(),
+      hours: hours,
+      totalPrice: calculateTotalPrice(),
+      hourlyRate: spot.hourlyRate
+    };
+    setPendingBookingDetails(bookingDetails);
+    setShowPaymentModal(true);
+    // Do not call onBookingComplete or close the modal yet
   };
-
-
-
-
 
   const handleClose = () => {
     onClose(true);
@@ -191,10 +181,10 @@ function BookingModal({ open, onClose, spot }) {
   const getDurationText = () => {
     if (!startDate || !startTime || !endDate || !endTime) return '-';
     
-    const startDateTime = new Date(`${startDate}T${startTime}`);
-    const endDateTime = new Date(`${endDate}T${endTime}`);
+    const startDateTime = parse(`${startDate} ${startTime}`, 'yyyy-MM-dd HH:mm', new Date());
+    const endDateTime = parse(`${endDate} ${endTime}`, 'yyyy-MM-dd HH:mm', new Date());
     
-    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) return '-';
+    if (!isValid(startDateTime) || !isValid(endDateTime)) return '-';
     
     const hours = Math.ceil((endDateTime - startDateTime) / (1000 * 60 * 60));
     return `${hours} hours`;
@@ -230,42 +220,54 @@ function BookingModal({ open, onClose, spot }) {
           <Grid container spacing={3}>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Start Date"
+                label={<><span style={{color:'red'}}>*</span> Start Date</>}
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                onChange={(e) => { setStartDate(e.target.value); setFieldErrors(f => ({...f, startDate: undefined})); }}
                 fullWidth
                 InputLabelProps={{ shrink: true }}
+                inputRef={startDateRef}
+                error={!!fieldErrors.startDate}
+                helperText={fieldErrors.startDate}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="Start Time"
+                label={<><span style={{color:'red'}}>*</span> Start Time</>}
                 type="time"
                 value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
+                onChange={(e) => { setStartTime(e.target.value); setFieldErrors(f => ({...f, startTime: undefined})); }}
                 fullWidth
                 InputLabelProps={{ shrink: true }}
+                inputRef={startTimeRef}
+                error={!!fieldErrors.startTime}
+                helperText={fieldErrors.startTime}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="End Date"
+                label={<><span style={{color:'red'}}>*</span> End Date</>}
                 type="date"
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
+                onChange={(e) => { setEndDate(e.target.value); setFieldErrors(f => ({...f, endDate: undefined})); }}
                 fullWidth
                 InputLabelProps={{ shrink: true }}
+                inputRef={endDateRef}
+                error={!!fieldErrors.endDate}
+                helperText={fieldErrors.endDate}
               />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
-                label="End Time"
+                label={<><span style={{color:'red'}}>*</span> End Time</>}
                 type="time"
                 value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
+                onChange={(e) => { setEndTime(e.target.value); setFieldErrors(f => ({...f, endTime: undefined})); }}
                 fullWidth
                 InputLabelProps={{ shrink: true }}
+                inputRef={endTimeRef}
+                error={!!fieldErrors.endTime}
+                helperText={fieldErrors.endTime}
               />
             </Grid>
           </Grid>
@@ -329,7 +331,7 @@ function BookingModal({ open, onClose, spot }) {
             <Button
               variant="contained"
               onClick={handleBooking}
-              disabled={isProcessing}
+              disabled={isProcessing || !allFieldsValid()}
               sx={{
                 bgcolor: '#1E3A8A',
                 '&:hover': {
@@ -350,13 +352,11 @@ function BookingModal({ open, onClose, spot }) {
                 },
               }}
             >
-              View My Bookings
+              Close
             </Button>
           )}
         </DialogActions>
       </Dialog>
-
-
 
       {/* Success Snackbar */}
       <Snackbar
@@ -382,6 +382,21 @@ function BookingModal({ open, onClose, spot }) {
           Booking confirmed successfully! Check your notifications for details.
         </Alert>
       </Snackbar>
+
+      {/* Payment Modal Integration */}
+      <PaymentModal
+        open={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        bookingData={pendingBookingDetails}
+        onSuccess={() => {
+          setShowPaymentModal(false);
+          setSuccess(true);
+          setShowSuccessSnackbar(true);
+          if (typeof onBookingComplete === 'function') {
+            onBookingComplete(pendingBookingDetails);
+          }
+        }}
+      />
     </>
   );
 }

@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { io } from 'socket.io-client';
 import { auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
+import { API_BASE } from '../apiConfig';
 
 const RealtimeContext = createContext();
 
@@ -30,7 +31,7 @@ export const RealtimeProvider = ({ children }) => {
   useEffect(() => {
     let newSocket;
     try {
-      newSocket = io('http://localhost:3001', {
+      newSocket = io(API_BASE, {
         transports: ['websocket', 'polling'],
         autoConnect: true,
         reconnection: true,

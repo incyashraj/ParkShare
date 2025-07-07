@@ -68,6 +68,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import BookingCard from './BookingCard';
 import BlockedUsersManager from './BlockedUsersManager';
+import { API_BASE } from '../apiConfig';
 
 function TabPanel({ children, value, index }) {
   return (
@@ -243,7 +244,7 @@ function Profile() {
     setShowCancelConfirm(false);
     
     try {
-      const response = await fetch(`http://localhost:3001/bookings/${bookingToCancel.id}/cancel`, {
+      const response = await fetch(`${API_BASE}/bookings/${bookingToCancel.id}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -308,7 +309,7 @@ function Profile() {
         return;
       }
 
-      const response = await fetch(`http://localhost:3001/bookings/${selectedBookingForEdit.id}/modify`, {
+      const response = await fetch(`${API_BASE}/bookings/${selectedBookingForEdit.id}/modify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -378,7 +379,7 @@ function Profile() {
 
     setEditListingLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/parking-spots/${selectedListingForEdit.id}`, {
+      const response = await fetch(`${API_BASE}/parking-spots/${selectedListingForEdit.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -434,9 +435,9 @@ function Profile() {
       setNetworkError(null);
 
       const [bookingsResponse, listingsResponse, verificationResponse] = await Promise.allSettled([
-        fetch(`http://localhost:3001/users/${userId}/bookings`),
-        fetch(`http://localhost:3001/spots/user/${userId}`),
-        fetch(`http://localhost:3001/users/${userId}/verification`)
+        fetch(`${API_BASE}/users/${userId}/bookings`),
+        fetch(`${API_BASE}/spots/user/${userId}`),
+        fetch(`${API_BASE}/users/${userId}/verification`)
       ]);
 
       // Handle bookings

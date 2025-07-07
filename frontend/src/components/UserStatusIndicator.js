@@ -3,6 +3,7 @@ import { Box, Tooltip, Typography } from '@mui/material';
 import { FiberManualRecord } from '@mui/icons-material';
 import { useRealtime } from '../contexts/RealtimeContext';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../apiConfig';
 
 const UserStatusIndicator = ({ userId, username, size = 'small', showTooltip = true }) => {
   const [presence, setPresence] = useState({ status: 'offline', lastSeen: null, lastActivity: null });
@@ -18,7 +19,7 @@ const UserStatusIndicator = ({ userId, username, size = 'small', showTooltip = t
     const fetchPresence = async () => {
       try {
         const uid = currentUser?.uid || localStorage.getItem('userUid') || 'anonymous';
-        const response = await fetch(`http://192.168.1.7:3001/api/users/${userId}/presence`, {
+        const response = await fetch(`${API_BASE}/api/users/${userId}/presence`, {
           headers: {
             'Authorization': `Bearer ${uid}`
           }
