@@ -62,6 +62,8 @@ import { RealtimeProvider } from './contexts/RealtimeContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import './App.css';
 import './styles/global.css';
+import './i18n';
+import { useTranslation } from 'react-i18next';
 
 const theme = createTheme({
   palette: {
@@ -355,6 +357,7 @@ function ScrollToTop() {
 function AppContent() {
   const { currentUser, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
+  const { t } = useTranslation();
 
   console.log('AppContent rendered, currentUser:', currentUser);
 

@@ -56,6 +56,7 @@ import {
 } from '@mui/icons-material';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useTranslation } from 'react-i18next';
 
 const UserProfile = () => {
   const navigate = useNavigate();
@@ -64,6 +65,7 @@ const UserProfile = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   
   const { currentUser } = useAuth();
+  const { t } = useTranslation();
   
   const [userProfile, setUserProfile] = useState(null);
   const [userSpots, setUserSpots] = useState([]);
@@ -201,13 +203,14 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
-          <CircularProgress />
-        </Box>
-      </Container>
+      <Box display="flex" justifyContent="center" alignItems="center" minHeight="60vh">
+        <CircularProgress />
+      </Box>
     );
   }
+
+  // Add this debug log before rendering profile info
+  console.log('UserProfile:', userProfile);
 
   if (error || !userProfile) {
     return (
@@ -308,7 +311,7 @@ const UserProfile = () => {
               <Box sx={{ mb: 2 }}>
                 <Chip
                   icon={<span style={{ fontSize: '1.2rem' }}>{userProfile.userTier.badge}</span>}
-                  label={userProfile.userTier.name}
+                  label={t(userProfile.userTier.name) || userProfile.userTier.name}
                   sx={{ 
                     backgroundColor: userProfile.userTier.color,
                     color: 'white',
@@ -324,7 +327,7 @@ const UserProfile = () => {
             {userProfile.verified && (
               <Chip
                 icon={<VerifiedIcon />}
-                label="Verified Host"
+                label={t('Verified Host')}
                 color="primary"
                 sx={{ mb: 2 }}
               />
@@ -378,7 +381,7 @@ const UserProfile = () => {
         <Grid item xs={12} md={8}>
           <Paper sx={{ p: 3, borderRadius: 3, mb: 3 }}>
             <Typography variant="h6" fontWeight="bold" gutterBottom>
-              About {userProfile.username}
+              {t('About')} {userProfile.username}
             </Typography>
             
             <Grid container spacing={2}>
@@ -386,7 +389,7 @@ const UserProfile = () => {
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                   <EmailIcon sx={{ mr: 1, color: 'text.secondary' }} />
                   <Typography variant="body2">
-                    {userProfile.email}
+                    {t('Email')}: {userProfile.email}
                   </Typography>
                 </Box>
               </Grid>
@@ -396,7 +399,7 @@ const UserProfile = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <PhoneIcon sx={{ mr: 1, color: 'text.secondary' }} />
                     <Typography variant="body2">
-                      {userProfile.phone}
+                      {t('Phone')}: {userProfile.phone}
                     </Typography>
                   </Box>
                 </Grid>
@@ -407,7 +410,7 @@ const UserProfile = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <LocationIcon sx={{ mr: 1, color: 'text.secondary' }} />
                     <Typography variant="body2">
-                      {userProfile.location}
+                      {t('Location')}: {userProfile.location}
                     </Typography>
                   </Box>
                 </Grid>
@@ -418,7 +421,7 @@ const UserProfile = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <LanguageIcon sx={{ mr: 1, color: 'text.secondary' }} />
                     <Typography variant="body2">
-                      {userProfile.languages.join(', ')}
+                      {t('Languages')}: {userProfile.languages.join(', ')}
                     </Typography>
                   </Box>
                 </Grid>

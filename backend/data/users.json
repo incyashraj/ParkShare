@@ -10,7 +10,44 @@
     "verified": true,
     "hostSince": "2023-01-15",
     "totalSpots": 1,
-    "rating": 4.7
+    "rating": 4.7,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "priya_patel",
@@ -23,7 +60,44 @@
     "verified": true,
     "hostSince": "2023-03-20",
     "totalSpots": 1,
-    "rating": 4.2
+    "rating": 4.2,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "arun_mehta",
@@ -36,7 +110,44 @@
     "verified": true,
     "hostSince": "2022-11-10",
     "totalSpots": 1,
-    "rating": 4.9
+    "rating": 4.9,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "sunita_desai",
@@ -49,7 +160,44 @@
     "verified": true,
     "hostSince": "2023-06-05",
     "totalSpots": 1,
-    "rating": 4.4
+    "rating": 4.4,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "rajesh_kumar",
@@ -63,7 +211,44 @@
     "hostSince": "2023-02-18",
     "totalSpots": 1,
     "rating": 4.6,
-    "blockedAt": {}
+    "blockedAt": {},
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "meera_iyer",
@@ -76,7 +261,44 @@
     "verified": true,
     "hostSince": "2023-04-12",
     "totalSpots": 1,
-    "rating": 4.8
+    "rating": 4.8,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "vikram_singh",
@@ -89,7 +311,44 @@
     "verified": true,
     "hostSince": "2022-08-30",
     "totalSpots": 1,
-    "rating": 4.5
+    "rating": 4.5,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "lakshmi_devi",
@@ -102,7 +361,44 @@
     "verified": true,
     "hostSince": "2023-05-22",
     "totalSpots": 1,
-    "rating": 4.1
+    "rating": 4.1,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "testuser",
@@ -115,28 +411,213 @@
     "verified": false,
     "hostSince": "2024-01-01",
     "totalSpots": 0,
-    "rating": 0
+    "rating": 0,
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "john_doe",
     "email": "john@example.com",
     "uid": "user_john_123",
-    "blockedAt": {}
+    "blockedAt": {},
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "jane_smith",
     "email": "jane@example.com",
-    "uid": "user_jane_456"
+    "uid": "user_jane_456",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "mike_wilson",
     "email": "mike@example.com",
-    "uid": "user_mike_789"
+    "uid": "user_mike_789",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "sarah_jones",
     "email": "sarah@example.com",
-    "uid": "user_sarah_101"
+    "uid": "user_sarah_101",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "Mblue",
@@ -149,7 +630,44 @@
     "hostSince": "2024-01-01",
     "totalSpots": 0,
     "rating": 0,
-    "blockedUsers": []
+    "blockedUsers": [],
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "Yashraj Pardeshi",
@@ -157,31 +675,217 @@
     "password": "",
     "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
     "isAdmin": true,
-    "blockedUsers": []
+    "blockedUsers": [],
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    },
+    "phone": "+919970666606"
   },
   {
     "username": "premium_host",
     "email": "premium@example.com",
     "uid": "user_premium_001",
-    "fullName": "Premium Host"
+    "fullName": "Premium Host",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "trusted_host",
     "email": "trusted@example.com",
     "uid": "user_trusted_002",
-    "fullName": "Trusted Host"
+    "fullName": "Trusted Host",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "regular_host",
     "email": "regular@example.com",
     "uid": "user_regular_003",
-    "fullName": "Regular Host"
+    "fullName": "Regular Host",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "new_host",
     "email": "new@example.com",
     "uid": "user_new_004",
-    "fullName": "New Host"
+    "fullName": "New Host",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   },
   {
     "username": "Aanchala",
@@ -189,6 +893,43 @@
     "uid": "user_aanchala_001",
     "fullName": "Aanchala Bhongade",
     "phone": "+917276228504",
-    "password": "Admin"
+    "password": "Admin",
+    "privacySettings": {
+      "profileVisibility": "public",
+      "locationSharing": true,
+      "activityStatus": true,
+      "dataAnalytics": true,
+      "thirdPartySharing": false
+    },
+    "securitySettings": {
+      "twoFAEnabled": false,
+      "biometricAuth": false,
+      "sessionTimeout": 30,
+      "loginNotifications": true,
+      "suspiciousActivityAlerts": true
+    },
+    "parkingPreferences": {
+      "defaultRadius": 5,
+      "preferredTypes": [
+        "street",
+        "garage"
+      ],
+      "maxPrice": 50,
+      "electricCharging": false,
+      "disabledAccess": false,
+      "autoBook": false
+    },
+    "accessibilitySettings": {
+      "theme": "light",
+      "fontSize": "medium",
+      "highContrast": false,
+      "reduceMotion": false,
+      "screenReader": false
+    },
+    "regionalSettings": {
+      "language": "en",
+      "timezone": "Asia/Kolkata",
+      "currency": "INR"
+    }
   }
 ]

@@ -5185,6 +5185,145 @@ app.patch('/api/admin/bookings/:bookingId/cancel', (req, res) => {
   }
 });
 
+// ===== USER SETTINGS ENDPOINTS (NEW) =====
+
+// Helper: Default settings
+function getDefaultUserSettings() {
+  return {
+    privacySettings: {
+      profileVisibility: 'public',
+      locationSharing: true,
+      activityStatus: true,
+      dataAnalytics: true,
+      thirdPartySharing: false
+    },
+    securitySettings: {
+      twoFAEnabled: false,
+      biometricAuth: false,
+      sessionTimeout: 30,
+      loginNotifications: true,
+      suspiciousActivityAlerts: true
+    },
+    parkingPreferences: {
+      defaultRadius: 5,
+      preferredTypes: ['street', 'garage'],
+      maxPrice: 50,
+      electricCharging: false,
+      disabledAccess: false,
+      autoBook: false
+    },
+    accessibilitySettings: {
+      theme: 'light',
+      fontSize: 'medium',
+      highContrast: false,
+      reduceMotion: false,
+      screenReader: false
+    },
+    regionalSettings: {
+      language: 'en',
+      timezone: 'Asia/Kolkata',
+      currency: 'INR'
+    }
+  };
+}
+
+// Ensure all users have the new settings fields
+users.forEach(user => {
+  const defaults = getDefaultUserSettings();
+  Object.keys(defaults).forEach(key => {
+    if (!user[key]) user[key] = defaults[key];
+  });
+});
+
+// GET all user settings
+app.get('/users/:userId/settings', (req, res) => {
+  const { userId } = req.params;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  res.json({
+    privacySettings: user.privacySettings,
+    securitySettings: user.securitySettings,
+    parkingPreferences: user.parkingPreferences,
+    accessibilitySettings: user.accessibilitySettings,
+    regionalSettings: user.regionalSettings
+  });
+});
+
+// PUT privacy settings
+app.put('/users/:userId/settings/privacy', (req, res) => {
+  const { userId } = req.params;
+  const settings = req.body;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  user.privacySettings = { ...user.privacySettings, ...settings };
+  res.json({ message: 'Privacy settings updated', privacySettings: user.privacySettings });
+});
+
+// PUT security settings
+app.put('/users/:userId/settings/security', (req, res) => {
+  const { userId } = req.params;
+  const settings = req.body;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  user.securitySettings = { ...user.securitySettings, ...settings };
+  res.json({ message: 'Security settings updated', securitySettings: user.securitySettings });
+});
+
+// PUT parking preferences
+app.put('/users/:userId/settings/parking-preferences', (req, res) => {
+  const { userId } = req.params;
+  const settings = req.body;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  user.parkingPreferences = { ...user.parkingPreferences, ...settings };
+  res.json({ message: 'Parking preferences updated', parkingPreferences: user.parkingPreferences });
+});
+
+// PUT accessibility settings
+app.put('/users/:userId/settings/accessibility', (req, res) => {
+  const { userId } = req.params;
+  const settings = req.body;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  user.accessibilitySettings = { ...user.accessibilitySettings, ...settings };
+  res.json({ message: 'Accessibility settings updated', accessibilitySettings: user.accessibilitySettings });
+});
+
+// PUT regional settings
+app.put('/users/:userId/settings/regional', (req, res) => {
+  const { userId } = req.params;
+  const settings = req.body;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  user.regionalSettings = { ...user.regionalSettings, ...settings };
+  res.json({ message: 'Regional settings updated', regionalSettings: user.regionalSettings });
+});
+
+// Update user profile info (displayName, phone, email)
+app.put('/api/users/:userId/profile', (req, res) => {
+  const { userId } = req.params;
+  const { displayName, phone, email } = req.body;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  if (displayName !== undefined) {
+    user.fullName = displayName;
+    user.username = displayName; // Also update username for consistency
+  }
+  if (phone !== undefined) user.phone = phone;
+  if (email !== undefined) user.email = email;
+  saveData(USERS_FILE, users);
+  console.log(`Profile updated and saved for user ${userId}:`, { displayName, phone, email });
+  res.json({
+    message: 'Profile updated',
+    user: {
+      uid: user.uid,
+      displayName: user.fullName,
+      phone: user.phone,
+      email: user.email
+    }
+  });
+});
+
 server.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
 });

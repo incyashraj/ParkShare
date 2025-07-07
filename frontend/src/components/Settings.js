@@ -24,6 +24,9 @@ import {
 } from '@mui/icons-material';
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
+import axios from 'axios';
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 function Settings() {
   // User state
@@ -47,6 +50,7 @@ function Settings() {
   const [confirmPasswordInput, setConfirmPasswordInput] = useState('');
   const [newPaymentInput, setNewPaymentInput] = useState('');
   const [currentPassword, setCurrentPassword] = useState('');
+  const [displayNameInput, setDisplayNameInput] = useState('');
 
   // Settings states
   const [notifications, setNotifications] = useState({
@@ -102,18 +106,60 @@ function Settings() {
   const [timezone, setTimezone] = useState('Asia/Kolkata');
   const [currency, setCurrency] = useState('INR');
 
+  // Add a loading state for settings fetch
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  const [profile, setProfile] = useState(null);
+  const [settings, setSettings] = useState(null);
+
+  // Add error/success state for profile updates
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+
+  const { t } = useTranslation();
+
+  // Fetch backend profile info
+  const fetchProfile = async (uid) => {
+    try {
+      const res = await axios.get(`http://localhost:3001/api/users/${uid}/profile`, {
+        headers: { Authorization: `Bearer ${uid}` }
+      });
+      setProfile(res.data.profile);
+    } catch (e) {
+      console.error('Failed to fetch profile:', e);
+      setProfile(null);
+    }
+  };
+
+  // Fetch all settings from backend
+  const fetchSettings = async (uid) => {
+    setSettingsLoading(true);
+    try {
+      const res = await axios.get(`http://localhost:3001/users/${uid}/settings`);
+      setSettings(res.data);
+    } catch (e) {
+      setSettings(null);
+    }
+    setSettingsLoading(false);
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, user => {
       setUser(user);
       setLoading(false);
+      if (user) {
+        fetchProfile(user.uid);
+        fetchSettings(user.uid);
+      }
     });
     return () => unsubscribe();
   }, []);
 
   useEffect(() => {
     if (openDialog) {
-      if (dialogType === 'email') setEmailInput(user?.email || '');
-      if (dialogType === 'phone') setPhoneInput(user?.phoneNumber || '');
+      if (dialogType === 'email') setEmailInput(profile?.email || '');
+      if (dialogType === 'phone') setPhoneInput(profile?.phone || '');
+      if (dialogType === 'displayName') setDisplayNameInput(profile?.fullName || '');
       if (dialogType === 'password') {
         setPasswordInput('');
         setConfirmPasswordInput('');
@@ -121,51 +167,105 @@ function Settings() {
       }
       if (dialogType === 'payment') setNewPaymentInput('');
     }
-  }, [openDialog, dialogType, user]);
+  }, [openDialog, dialogType, profile]);
 
+  // Re-fetch profile/settings after dialog closes (after update)
+  useEffect(() => {
+    if (!openDialog && user) {
+      fetchProfile(user.uid);
+      fetchSettings(user.uid);
+    }
+  }, [openDialog, user]);
+
+  // Save handlers for each settings group
+  const saveSettings = async (group, data) => {
+    if (!user) return;
+    let url = '';
+    switch (group) {
+      case 'privacy': url = `/users/${user.uid}/settings/privacy`; break;
+      case 'security': url = `/users/${user.uid}/settings/security`; break;
+      case 'parking': url = `/users/${user.uid}/settings/parking-preferences`; break;
+      case 'accessibility': url = `/users/${user.uid}/settings/accessibility`; break;
+      case 'regional': url = `/users/${user.uid}/settings/regional`; break;
+      case 'notifications': url = `/users/${user.uid}/settings/notifications`; break;
+      default: return;
+    }
+    try {
+      await axios.put(`http://localhost:3001${url}`, data);
+      setSuccess('Settings updated successfully');
+      await fetchSettings(user.uid);
+      await fetchProfile(user.uid);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update settings');
+    }
+    setOpenSnackbar(true);
+  };
+
+  // Account info update handler
+  const handleSaveChanges = async () => {
+    setProfileError('');
+    setProfileSuccess('');
+    try {
+      if (dialogType === 'email') {
+        if (!emailInput || !emailInput.includes('@')) throw new Error('Enter a valid email');
+        await axios.put(`http://localhost:3001/api/users/${user.uid}/profile`, { email: emailInput });
+        setProfileSuccess('Email updated successfully');
+      } else if (dialogType === 'phone') {
+        if (!phoneInput) throw new Error('Enter a valid phone number');
+        await axios.put(`http://localhost:3001/api/users/${user.uid}/profile`, { phone: phoneInput });
+        setProfileSuccess('Phone number updated successfully');
+      } else if (dialogType === 'displayName') {
+        if (!displayNameInput) throw new Error('Enter a valid name');
+        await axios.put(`http://localhost:3001/api/users/${user.uid}/profile`, { displayName: displayNameInput });
+        setProfileSuccess('Display name updated successfully');
+      } else if (dialogType === 'password') {
+        if (!currentPassword) throw new Error('Current password is required');
+        if (!passwordInput || passwordInput.length < 6) throw new Error('Password must be at least 6 characters');
+        if (passwordInput !== confirmPasswordInput) throw new Error('Passwords do not match');
+        await user.updatePassword(passwordInput);
+      } else if (dialogType === 'payment') {
+        if (!newPaymentInput || newPaymentInput.length < 4) throw new Error('Enter last 4 digits of card');
+        // Payment method logic here (implement backend sync if needed)
+      }
+      // Always re-fetch profile after update
+      await fetchProfile(user.uid);
+      setOpenDialog(false);
+    } catch (e) {
+      setProfileError(e.response?.data?.message || e.message || 'Failed to update profile');
+    }
+    setOpenSnackbar(true);
+  };
+
+  // All handleXChange functions now update backend and re-fetch settings
   const handleNotificationChange = (type) => {
-    setNotifications(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-    setSuccess(`${type.charAt(0).toUpperCase() + type.slice(1)} notifications ${!notifications[type] ? 'enabled' : 'disabled'}`);
-    setOpenSnackbar(true);
+    const updated = { ...settings?.notifications, [type]: !settings?.notifications?.[type] };
+    saveSettings('notifications', updated);
   };
-
   const handlePrivacyChange = (type) => {
-    setPrivacy(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-    setSuccess(`Privacy setting updated`);
-    setOpenSnackbar(true);
+    const updated = { ...settings?.privacySettings, [type]: !settings?.privacySettings?.[type] };
+    saveSettings('privacy', updated);
   };
-
   const handleAccessibilityChange = (type, value) => {
-    setAccessibility(prev => ({
-      ...prev,
-      [type]: value
-    }));
-    setSuccess(`Accessibility setting updated`);
-    setOpenSnackbar(true);
+    const updated = { ...settings?.accessibilitySettings, [type]: value };
+    saveSettings('accessibility', updated);
   };
-
   const handleParkingPreferenceChange = (type, value) => {
-    setParkingPreferences(prev => ({
-      ...prev,
-      [type]: value
-    }));
-    setSuccess(`Parking preference updated`);
-    setOpenSnackbar(true);
+    const updated = { ...settings?.parkingPreferences, [type]: value };
+    saveSettings('parking', updated);
   };
-
   const handleSecurityChange = (type) => {
-    setSecurity(prev => ({
-      ...prev,
-      [type]: !prev[type]
-    }));
-    setSuccess(`Security setting updated`);
-    setOpenSnackbar(true);
+    const updated = { ...settings?.securitySettings, [type]: !settings?.securitySettings?.[type] };
+    saveSettings('security', updated);
+  };
+  const handleLanguageChange = (newLanguage) => {
+    i18n.changeLanguage(newLanguage);
+    saveSettings('regional', { ...settings?.regionalSettings, language: newLanguage });
+  };
+  const handleCurrencyChange = (newCurrency) => {
+    saveSettings('regional', { ...settings?.regionalSettings, currency: newCurrency });
+  };
+  const handleTimezoneChange = (newTimezone) => {
+    saveSettings('regional', { ...settings?.regionalSettings, timezone: newTimezone });
   };
 
   const handleDeletePaymentMethod = (id) => {
@@ -193,40 +293,6 @@ function Settings() {
     setConfirmDialog(true);
   };
 
-  const handleSaveChanges = async () => {
-    setError(null);
-    setSuccess('');
-    try {
-      if (dialogType === 'email') {
-        if (!emailInput || !emailInput.includes('@')) throw new Error('Enter a valid email');
-        await user.updateEmail(emailInput);
-        setSuccess('Email updated successfully');
-      } else if (dialogType === 'phone') {
-        if (!phoneInput) throw new Error('Enter a valid phone number');
-        setUser(prev => ({ ...prev, phoneNumber: phoneInput }));
-        setSuccess('Phone number updated successfully');
-      } else if (dialogType === 'password') {
-        if (!currentPassword) throw new Error('Current password is required');
-        if (!passwordInput || passwordInput.length < 6) throw new Error('Password must be at least 6 characters');
-        if (passwordInput !== confirmPasswordInput) throw new Error('Passwords do not match');
-        await user.updatePassword(passwordInput);
-        setSuccess('Password updated successfully');
-      } else if (dialogType === 'payment') {
-        if (!newPaymentInput || newPaymentInput.length < 4) throw new Error('Enter last 4 digits of card');
-        setPaymentMethods(prev => [
-          ...prev,
-          { id: Date.now(), type: 'card', last4: newPaymentInput, default: false, brand: 'Card' }
-        ]);
-        setSuccess('Payment method added');
-      }
-      setOpenDialog(false);
-      setOpenSnackbar(true);
-    } catch (err) {
-      setError(err.message);
-      setOpenSnackbar(true);
-    }
-  };
-
   const handleDataExport = () => {
     // Simulate data export
     setSuccess('Data export started. You will receive an email when ready.');
@@ -239,25 +305,7 @@ function Settings() {
     setOpenSnackbar(true);
   };
 
-  const handleLanguageChange = (newLanguage) => {
-    setLanguage(newLanguage);
-    setSuccess('Language updated successfully');
-    setOpenSnackbar(true);
-  };
-
-  const handleCurrencyChange = (newCurrency) => {
-    setCurrency(newCurrency);
-    setSuccess('Currency updated successfully');
-    setOpenSnackbar(true);
-  };
-
-  const handleTimezoneChange = (newTimezone) => {
-    setTimezone(newTimezone);
-    setSuccess('Timezone updated successfully');
-    setOpenSnackbar(true);
-  };
-
-  if (loading) {
+  if (loading || settingsLoading) {
     return (
       <Container maxWidth="md">
         <Box py={4}>
@@ -268,24 +316,26 @@ function Settings() {
     );
   }
 
+  console.log('Profile object:', profile);
+
   return (
     <Container maxWidth="lg">
       <Box py={4}>
         <Box display="flex" alignItems="center" mb={3}>
           <SettingsIcon sx={{ mr: 2, fontSize: 32 }} color="primary" />
           <Typography variant="h4" color="primary">
-            Settings
+            {t('Settings')}
           </Typography>
         </Box>
 
         <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3 }}>
-          <Tab label="Account" />
-          <Tab label="Notifications" />
-          <Tab label="Privacy & Security" />
-          <Tab label="Parking Preferences" />
-          <Tab label="Payment" />
-          <Tab label="Accessibility" />
-          <Tab label="Data & Storage" />
+          <Tab label={t('Account')} />
+          <Tab label={t('Notifications')} />
+          <Tab label={t('Privacy & Security')} />
+          <Tab label={t('Parking Preferences')} />
+          <Tab label={t('Payment')} />
+          <Tab label={t('Accessibility')} />
+          <Tab label={t('Data & Storage')} />
         </Tabs>
 
         {/* Account Settings */}
@@ -294,7 +344,7 @@ function Settings() {
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Profile Information
+                  {t('Profile Information')}
                 </Typography>
                 <List>
                   <ListItem>
@@ -302,11 +352,11 @@ function Settings() {
                       <PersonIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Display Name"
-                      secondary={user?.displayName || 'Not set'}
+                      primary={t('Display Name')}
+                      secondary={profile?.fullName || t('Not set')}
                     />
                     <ListItemSecondaryAction>
-                      <IconButton onClick={() => handleOpenDialog('name')}>
+                      <IconButton onClick={() => handleOpenDialog('displayName')}>
                         <EditIcon />
                       </IconButton>
                     </ListItemSecondaryAction>
@@ -316,8 +366,8 @@ function Settings() {
                       <EmailIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Email"
-                      secondary={user?.email || 'Not set'}
+                      primary={t('Email')}
+                      secondary={profile?.email || t('Not set')}
                     />
                     <ListItemSecondaryAction>
                       <IconButton onClick={() => handleOpenDialog('email')}>
@@ -330,8 +380,8 @@ function Settings() {
                       <PhoneIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Phone Number"
-                      secondary={user?.phoneNumber || 'Not set'}
+                      primary={t('Phone Number')}
+                      secondary={profile?.phone || t('Not set')}
                     />
                     <ListItemSecondaryAction>
                       <IconButton onClick={() => handleOpenDialog('phone')}>
@@ -340,13 +390,16 @@ function Settings() {
                     </ListItemSecondaryAction>
                   </ListItem>
                 </List>
+                {/* Display error/success messages for profile updates */}
+                {profileError && <Alert severity="error">{profileError}</Alert>}
+                {profileSuccess && <Alert severity="success">{profileSuccess}</Alert>}
               </Paper>
             </Grid>
 
             <Grid item xs={12} md={6}>
               <Paper sx={{ p: 3 }}>
                 <Typography variant="h6" gutterBottom>
-                  Regional Settings
+                  {t('Regional Settings')}
                 </Typography>
                 <List>
                   <ListItem>
@@ -354,20 +407,23 @@ function Settings() {
                       <LanguageIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Language"
-                      secondary="English"
+                      primary={t('Language')}
+                      secondary={settings?.regionalSettings?.language ? t(settings.regionalSettings.language === 'en' ? 'English' : settings.regionalSettings.language === 'hi' ? 'Hindi' : settings.regionalSettings.language === 'mr' ? 'Marathi' : settings.regionalSettings.language === 'gu' ? 'Gujarati' : settings.regionalSettings.language) : t('Not set')}
                     />
                     <ListItemSecondaryAction>
                       <FormControl size="small">
                         <Select
-                          value={language}
+                          value={settings?.regionalSettings?.language || ''}
                           onChange={(e) => handleLanguageChange(e.target.value)}
                           sx={{ minWidth: 120 }}
                         >
-                          <MenuItem value="en">English</MenuItem>
-                          <MenuItem value="hi">Hindi</MenuItem>
-                          <MenuItem value="mr">Marathi</MenuItem>
-                          <MenuItem value="gu">Gujarati</MenuItem>
+                          <MenuItem value="en">{t('English')}</MenuItem>
+                          <MenuItem value="hi">{t('Hindi')}</MenuItem>
+                          <MenuItem value="mr">{t('Marathi')}</MenuItem>
+                          <MenuItem value="gu">{t('Gujarati')}</MenuItem>
+                          <MenuItem value="es">{t('Spanish')}</MenuItem>
+                          <MenuItem value="fr">{t('French')}</MenuItem>
+                          <MenuItem value="zh">{t('Chinese')}</MenuItem>
                         </Select>
                       </FormControl>
                     </ListItemSecondaryAction>
@@ -378,12 +434,12 @@ function Settings() {
                     </ListItemIcon>
                     <ListItemText
                       primary="Currency"
-                      secondary="Indian Rupee"
+                      secondary={settings?.regionalSettings?.currency === 'INR' ? 'Indian Rupee' : settings?.regionalSettings?.currency === 'USD' ? 'US Dollar' : settings?.regionalSettings?.currency === 'EUR' ? 'Euro' : settings?.regionalSettings?.currency || 'Not set'}
                     />
                     <ListItemSecondaryAction>
                       <FormControl size="small">
                         <Select
-                          value={currency}
+                          value={settings?.regionalSettings?.currency || ''}
                           onChange={(e) => handleCurrencyChange(e.target.value)}
                           sx={{ minWidth: 120 }}
                         >
@@ -400,12 +456,12 @@ function Settings() {
                     </ListItemIcon>
                     <ListItemText
                       primary="Timezone"
-                      secondary="Asia/Kolkata"
+                      secondary={settings?.regionalSettings?.timezone || 'Not set'}
                     />
                     <ListItemSecondaryAction>
                       <FormControl size="small">
                         <Select
-                          value={timezone}
+                          value={settings?.regionalSettings?.timezone || ''}
                           onChange={(e) => handleTimezoneChange(e.target.value)}
                           sx={{ minWidth: 120 }}
                         >
@@ -436,8 +492,8 @@ function Settings() {
                       <NotificationsActiveIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Email Notifications"
-                      secondary="Receive booking updates via email"
+                      primary={t('Email Notifications')}
+                      secondary={t('Receive booking updates via email')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -451,8 +507,8 @@ function Settings() {
                       <NotificationsIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Push Notifications"
-                      secondary="Receive updates on your device"
+                      primary={t('Push Notifications')}
+                      secondary={t('Receive updates on your device')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -466,8 +522,8 @@ function Settings() {
                       <CarIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Booking Updates"
-                      secondary="Get notified about booking status changes"
+                      primary={t('Booking Updates')}
+                      secondary={t('Get notified about booking status changes')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -481,8 +537,8 @@ function Settings() {
                       <NotificationsIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Reminders"
-                      secondary="Get parking reminders and alerts"
+                      primary={t('Reminders')}
+                      secondary={t('Get parking reminders and alerts')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -500,8 +556,8 @@ function Settings() {
                       <SecurityIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Security Alerts"
-                      secondary="Get notified about account security"
+                      primary={t('Security Alerts')}
+                      secondary={t('Get notified about account security')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -515,8 +571,8 @@ function Settings() {
                       <NotificationsIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Support Updates"
-                      secondary="Receive updates on support tickets"
+                      primary={t('Support Updates')}
+                      secondary={t('Receive updates on support tickets')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -530,8 +586,8 @@ function Settings() {
                       <NotificationsIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Marketing Communications"
-                      secondary="Receive offers and promotions"
+                      primary={t('Marketing Communications')}
+                      secondary={t('Receive offers and promotions')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -545,8 +601,8 @@ function Settings() {
                       <NotificationsIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Promotional Offers"
-                      secondary="Get notified about special deals"
+                      primary={t('Promotional Offers')}
+                      secondary={t('Get notified about special deals')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -575,8 +631,8 @@ function Settings() {
                       <VisibilityIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Profile Visibility"
-                      secondary="Control who can see your profile"
+                      primary={t('Profile Visibility')}
+                      secondary={t('Control who can see your profile')}
                     />
                     <ListItemSecondaryAction>
                       <FormControl size="small">
@@ -597,8 +653,8 @@ function Settings() {
                       <LocationIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Location Sharing"
-                      secondary="Share your location for better parking suggestions"
+                      primary={t('Location Sharing')}
+                      secondary={t('Share your location for better parking suggestions')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -612,8 +668,8 @@ function Settings() {
                       <PersonIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Activity Status"
-                      secondary="Show when you're online"
+                      primary={t('Activity Status')}
+                      secondary={t('Show when you\'re online')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -627,8 +683,8 @@ function Settings() {
                       <StorageIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Data Analytics"
-                      secondary="Help improve our service with usage data"
+                      primary={t('Data Analytics')}
+                      secondary={t('Help improve our service with usage data')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -652,8 +708,8 @@ function Settings() {
                       <LockIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Change Password"
-                      secondary="Update your password regularly"
+                      primary={t('Change Password')}
+                      secondary={t('Update your password regularly')}
                     />
                     <ListItemSecondaryAction>
                       <Button
@@ -670,8 +726,8 @@ function Settings() {
                       <SecurityIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Two-Factor Authentication"
-                      secondary="Add an extra layer of security"
+                      primary={t('Two-Factor Authentication')}
+                      secondary={t('Add an extra layer of security')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -685,8 +741,8 @@ function Settings() {
                       <VerifiedUserIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Biometric Authentication"
-                      secondary="Use fingerprint or face ID"
+                      primary={t('Biometric Authentication')}
+                      secondary={t('Use fingerprint or face ID')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -700,8 +756,8 @@ function Settings() {
                       <NotificationsIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Login Notifications"
-                      secondary="Get notified of new login attempts"
+                      primary={t('Login Notifications')}
+                      secondary={t('Get notified of new login attempts')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -764,8 +820,8 @@ function Settings() {
                       <ParkingIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Auto-Book Available Spots"
-                      secondary="Automatically book spots when available"
+                      primary={t('Auto-Book Available Spots')}
+                      secondary={t('Automatically book spots when available')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -779,8 +835,8 @@ function Settings() {
                       <CarIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Electric Vehicle Charging"
-                      secondary="Prefer spots with EV charging"
+                      primary={t('Electric Vehicle Charging')}
+                      secondary={t('Prefer spots with EV charging')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -794,8 +850,8 @@ function Settings() {
                       <AccessibilityIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Disabled Access"
-                      secondary="Prefer accessible parking spots"
+                      primary={t('Disabled Access')}
+                      secondary={t('Prefer accessible parking spots')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -833,7 +889,7 @@ function Settings() {
                   </ListItemIcon>
                   <ListItemText
                     primary={`${method.brand} **** **** **** ${method.last4}`}
-                    secondary={method.default ? 'Default' : ''}
+                    secondary={method.default ? t('Default') : ''}
                   />
                   <ListItemSecondaryAction>
                     {!method.default && (
@@ -872,8 +928,8 @@ function Settings() {
                       {accessibility.theme === 'dark' ? <DarkModeIcon /> : <LightModeIcon />}
                     </ListItemIcon>
                     <ListItemText
-                      primary="Theme"
-                      secondary="Choose your preferred theme"
+                      primary={t('Theme')}
+                      secondary={t('Choose your preferred theme')}
                     />
                     <ListItemSecondaryAction>
                       <FormControl size="small">
@@ -894,8 +950,8 @@ function Settings() {
                       <TextFieldsIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Font Size"
-                      secondary="Adjust text size for better readability"
+                      primary={t('Font Size')}
+                      secondary={t('Adjust text size for better readability')}
                     />
                     <ListItemSecondaryAction>
                       <FormControl size="small">
@@ -917,8 +973,8 @@ function Settings() {
                       <AccessibilityIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="High Contrast"
-                      secondary="Increase contrast for better visibility"
+                      primary={t('High Contrast')}
+                      secondary={t('Increase contrast for better visibility')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -936,8 +992,8 @@ function Settings() {
                       <SpeedIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Reduce Motion"
-                      secondary="Minimize animations and transitions"
+                      primary={t('Reduce Motion')}
+                      secondary={t('Minimize animations and transitions')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -951,8 +1007,8 @@ function Settings() {
                       <VolumeIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Screen Reader Support"
-                      secondary="Enable screen reader compatibility"
+                      primary={t('Screen Reader Support')}
+                      secondary={t('Enable screen reader compatibility')}
                     />
                     <ListItemSecondaryAction>
                       <Switch
@@ -981,8 +1037,8 @@ function Settings() {
                       <DownloadIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Export My Data"
-                      secondary="Download a copy of your data"
+                      primary={t('Export My Data')}
+                      secondary={t('Download a copy of your data')}
                     />
                     <ListItemSecondaryAction>
                       <Button
@@ -999,8 +1055,8 @@ function Settings() {
                       <HistoryIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Clear Search History"
-                      secondary="Remove all saved searches"
+                      primary={t('Clear Search History')}
+                      secondary={t('Remove all saved searches')}
                     />
                     <ListItemSecondaryAction>
                       <Button
@@ -1018,8 +1074,8 @@ function Settings() {
                       <StorageIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Clear Cache"
-                      secondary="Free up storage space"
+                      primary={t('Clear Cache')}
+                      secondary={t('Free up storage space')}
                     />
                     <ListItemSecondaryAction>
                       <Button
@@ -1047,8 +1103,8 @@ function Settings() {
                       <BlockIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Deactivate Account"
-                      secondary="Temporarily disable your account"
+                      primary={t('Deactivate Account')}
+                      secondary={t('Temporarily disable your account')}
                     />
                     <ListItemSecondaryAction>
                       <Button
@@ -1066,8 +1122,8 @@ function Settings() {
                       <DeleteForeverIcon />
                     </ListItemIcon>
                     <ListItemText
-                      primary="Delete Account"
-                      secondary="Permanently delete your account and data"
+                      primary={t('Delete Account')}
+                      secondary={t('Permanently delete your account and data')}
                     />
                     <ListItemSecondaryAction>
                       <Button
@@ -1089,10 +1145,10 @@ function Settings() {
         {/* Dialogs */}
         <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
           <DialogTitle>
-            {dialogType === 'email' && 'Update Email'}
-            {dialogType === 'phone' && 'Update Phone Number'}
-            {dialogType === 'password' && 'Change Password'}
-            {dialogType === 'payment' && 'Add Payment Method'}
+            {dialogType === 'email' && t('Update Email')}
+            {dialogType === 'phone' && t('Update Phone Number')}
+            {dialogType === 'password' && t('Change Password')}
+            {dialogType === 'payment' && t('Add Payment Method')}
           </DialogTitle>
           <DialogContent>
             {dialogType === 'email' && (
@@ -1155,7 +1211,7 @@ function Settings() {
                 fullWidth
                 value={newPaymentInput}
                 onChange={e => setNewPaymentInput(e.target.value.replace(/\D/g, '').slice(0,4))}
-                helperText="For demo only. Enter last 4 digits."
+                helperText={t('For demo only. Enter last 4 digits.')}
               />
             )}
           </DialogContent>
@@ -1169,13 +1225,13 @@ function Settings() {
 
         {/* Confirmation Dialog */}
         <Dialog open={confirmDialog} onClose={() => setConfirmDialog(false)}>
-          <DialogTitle>Confirm Action</DialogTitle>
+          <DialogTitle>{t('Confirm Action')}</DialogTitle>
           <DialogContent>
             <Typography>
-              {confirmAction === 'clearHistory' && 'Are you sure you want to clear your search history? This action cannot be undone.'}
-              {confirmAction === 'clearCache' && 'Are you sure you want to clear the app cache? This will free up storage space.'}
-              {confirmAction === 'deactivate' && 'Are you sure you want to deactivate your account? You can reactivate it later by logging in.'}
-              {confirmAction === 'delete' && 'Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.'}
+              {confirmAction === 'clearHistory' && t('Are you sure you want to clear your search history? This action cannot be undone.')}
+              {confirmAction === 'clearCache' && t('Are you sure you want to clear the app cache? This will free up storage space.')}
+              {confirmAction === 'deactivate' && t('Are you sure you want to deactivate your account? You can reactivate it later by logging in.')}
+              {confirmAction === 'delete' && t('Are you sure you want to permanently delete your account? This action cannot be undone and all your data will be lost.')}
             </Typography>
           </DialogContent>
           <DialogActions>
@@ -1185,7 +1241,7 @@ function Settings() {
                 if (confirmAction === 'delete') {
                   handleAccountDeletion();
                 } else {
-                  setSuccess('Action completed successfully');
+                  setSuccess(t('Action completed successfully'));
                   setOpenSnackbar(true);
                   setConfirmDialog(false);
                 }
