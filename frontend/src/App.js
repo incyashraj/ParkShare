@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import Footer from './components/Footer';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -341,6 +341,17 @@ const theme = createTheme({
   },
 });
 
+// ScrollToTop component to handle scroll restoration
+function ScrollToTop() {
+  const { pathname } = useLocation();
+
+  React.useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+}
+
 function AppContent() {
   const { currentUser, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -374,6 +385,7 @@ function AppContent() {
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <CssBaseline />
           <Router>
+            <ScrollToTop />
             {/* User Activity Tracker - tracks activity for presence system */}
             {currentUser && <UserActivityTracker userId={currentUser.uid} />}
             <Box sx={{ flexGrow: 1 }} className="airbnb-app-container">

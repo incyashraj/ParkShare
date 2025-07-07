@@ -194,13 +194,25 @@ const ParkingSpotList = () => {
     // Add filter parameters
     queryParams.append('minPrice', priceRange[0]);
     queryParams.append('maxPrice', priceRange[1]);
-    queryParams.append('rating', ratingFilter);
+    queryParams.append('minRating', ratingFilter);
+    
+    // Add availability filter
+    if (availabilityFilter === 'available') {
+      queryParams.append('availability', 'available');
+    }
+    
+    // Add search term
     if (searchTerm) {
-      queryParams.append('search', searchTerm);
+      queryParams.append('location', searchTerm);
+    }
+
+    // Add amenities filter
+    if (selectedAmenities.length > 0) {
+      queryParams.append('amenities', selectedAmenities.join(','));
     }
 
     try {
-      const response = await fetch(`http://localhost:3001/parking-spots?${queryParams.toString()}`);
+      const response = await fetch(`http://localhost:3001/parking-spots/search?${queryParams.toString()}`);
       const data = await response.json();
       console.log('Fetched parking spots:', data.length);
 
@@ -274,7 +286,7 @@ const ParkingSpotList = () => {
     } finally {
       setLoading(false);
     }
-  }, [priceRange, ratingFilter, searchTerm, calculateDistances]);
+  }, [priceRange, ratingFilter, searchTerm, availabilityFilter, selectedAmenities, calculateDistances]);
 
   useEffect(() => {
     fetchParkingSpots();
@@ -317,47 +329,52 @@ const ParkingSpotList = () => {
     };
   }, [spots, joinSpotRoom, leaveSpotRoom]);
 
-  // Apply sorting (without availability sorting since that's handled separately)
+  // Apply sorting with availability priority
   const sortSpots = useCallback((spotsToSort) => {
     console.log('Sorting spots by:', sortBy, 'Total spots:', spotsToSort.length);
     
-    // Apply the selected sort criteria
-    switch (sortBy) {
-      case 'price':
-        return [...spotsToSort].sort((a, b) => {
-          const priceA = parseFloat(a.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
-          const priceB = parseFloat(b.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
-          return priceA - priceB;
-        });
-      case 'rating':
-        return [...spotsToSort].sort((a, b) => (b.rating || 0) - (a.rating || 0));
-      case 'availability':
-        // Sort by availability (available first, then occupied)
-        return [...spotsToSort].sort((a, b) => {
-          const aAvailable = Boolean(a.available) || 
-                            Boolean(a.available24h) || 
-                            a.status === 'available' ||
-                            a.status === 'Available' ||
-                            (a.available !== false && a.available24h !== false);
-          const bAvailable = Boolean(b.available) || 
-                            Boolean(b.available24h) || 
-                            b.status === 'available' ||
-                            b.status === 'Available' ||
-                            (b.available !== false && b.available24h !== false);
-          
-          if (!aAvailable && bAvailable) return 1;  // a goes to bottom
-          if (aAvailable && !bAvailable) return -1; // a goes to top
-          return 0; // same availability, maintain order
-        });
-      case 'popularity':
-        return [...spotsToSort].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
-      case 'distance':
-      default:
-        return [...spotsToSort].sort((a, b) => (a.distance || 0) - (b.distance || 0));
-    }
+    // Helper function to check if a spot is available
+    const isSpotAvailable = (spot) => {
+      return Boolean(spot.available) || 
+             Boolean(spot.available24h) || 
+             spot.status === 'available' ||
+             spot.status === 'Available' ||
+             (spot.available !== false && spot.available24h !== false);
+    };
+    
+    // First, separate available and occupied spots
+    const availableSpots = spotsToSort.filter(spot => isSpotAvailable(spot));
+    const occupiedSpots = spotsToSort.filter(spot => !isSpotAvailable(spot));
+    
+    // Sort each group according to the selected criteria
+    const sortByCriteria = (spots) => {
+      switch (sortBy) {
+        case 'price':
+          return [...spots].sort((a, b) => {
+            const priceA = parseFloat(a.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
+            const priceB = parseFloat(b.hourlyRate?.replace(/[^0-9.]/g, '') || '0');
+            return priceA - priceB;
+          });
+        case 'rating':
+          return [...spots].sort((a, b) => (b.rating || 0) - (a.rating || 0));
+        case 'availability':
+          // For availability sorting, we already have them separated, so just return as is
+          return [...spots];
+        case 'popularity':
+          return [...spots].sort((a, b) => (b.reviewCount || 0) - (a.reviewCount || 0));
+        case 'distance':
+        default:
+          return [...spots].sort((a, b) => (a.distance || 0) - (b.distance || 0));
+      }
+    };
+    
+    // Sort available and occupied spots separately
+    const sortedAvailableSpots = sortByCriteria(availableSpots);
+    const sortedOccupiedSpots = sortByCriteria(occupiedSpots);
+    
+    // Always return available spots first, then occupied spots
+    return [...sortedAvailableSpots, ...sortedOccupiedSpots];
   }, [sortBy]);
-
-
 
   const handleLocationClick = () => {
     if (navigator.geolocation) {
@@ -439,9 +456,9 @@ const ParkingSpotList = () => {
       return sortedAvailableSpots.slice(startIndex, endIndex);
     }
     
-    // Otherwise, show all spots with available ones first
+    // Otherwise, show all spots with available ones first (already handled by sortSpots)
     const allSpots = [...availableSpots, ...occupiedSpots];
-    // Sort all spots according to the selected sort criteria
+    // Sort all spots according to the selected sort criteria (available first)
     const sortedAllSpots = sortSpots(allSpots);
     const startIndex = (currentPage - 1) * spotsPerPage;
     const endIndex = startIndex + spotsPerPage;
