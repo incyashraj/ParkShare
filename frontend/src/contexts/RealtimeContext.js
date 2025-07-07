@@ -151,11 +151,19 @@ export const RealtimeProvider = ({ children }) => {
       });
 
       // Add message notification
+      let preview = '';
+      if (typeof messageData.message === 'string') {
+        preview = messageData.message.substring(0, 50) + (messageData.message.length > 50 ? '...' : '');
+      } else if (messageData.message && typeof messageData.message === 'object') {
+        preview = '[Encrypted message]';
+      } else {
+        preview = '[No message content]';
+      }
       setNotifications(prev => [{
         id: Date.now(),
         type: 'message',
         title: `New Message from ${messageData.senderName}`,
-        message: messageData.message.substring(0, 50) + (messageData.message.length > 50 ? '...' : ''),
+        message: preview,
         data: messageData,
         timestamp: messageData.timestamp,
         read: false

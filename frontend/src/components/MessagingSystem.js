@@ -62,6 +62,7 @@ import UserPresenceIndicator from './UserPresenceIndicator';
 import UserStatusIndicator from './UserStatusIndicator';
 import FileUpload from './FileUpload';
 import MessageAttachment from './MessageAttachment';
+import * as openpgp from 'openpgp';
 
 const MessagingSystem = () => {
   const navigate = useNavigate();
@@ -102,6 +103,7 @@ const MessagingSystem = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [showE2EEWarning, setShowE2EEWarning] = useState(false);
 
   const messagesEndRef = useRef(null);
 
@@ -146,7 +148,7 @@ const MessagingSystem = () => {
     if (!currentUser?.uid) return;
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3001/api/conversations', {
+      const response = await fetch('http://192.168.1.7:3001/api/conversations', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -168,17 +170,24 @@ const MessagingSystem = () => {
   const loadAvailableUsers = useCallback(async () => {
     if (!currentUser?.uid) return;
     try {
-      const response = await fetch('http://localhost:3001/api/users', {
+      const response = await fetch('http://192.168.1.7:3001/api/users/messaging', {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser?.uid}`
         }
       });
-      
       if (response.ok) {
         const data = await response.json();
-        setAvailableUsers(data.users || []);
+        // Only show users with public keys
+        const filtered = [];
+        for (const user of data.users || []) {
+          try {
+            const pkRes = await fetch(`http://192.168.1.7:3001/api/users/${user.uid}/publicKey`);
+            if (pkRes.ok) filtered.push(user);
+          } catch {}
+        }
+        setAvailableUsers(filtered);
       }
     } catch (error) {
       console.error('Error loading users:', error);
@@ -189,20 +198,20 @@ const MessagingSystem = () => {
     if (!currentUser?.uid || !convId) return;
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/conversations/${convId}/messages`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${convId}/messages`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${currentUser?.uid}`
         }
       });
-      
       if (response.ok) {
         const data = await response.json();
-        setMessages(data.messages || []);
-        setPreviousMessageCount(0); // Reset when loading new conversation
-        
-        // Scroll to bottom after loading messages
+        let decrypted = await decryptMessages(data.messages || []);
+        // Sort messages by timestamp ascending (oldest first)
+        decrypted = decrypted.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        setMessages(decrypted);
+        setPreviousMessageCount(0);
         setTimeout(() => scrollToBottom(), 100);
       }
     } catch (error) {
@@ -229,28 +238,30 @@ const MessagingSystem = () => {
     
     // Set up real-time listeners
     if (isConnected && socket) {
-      const handleNewMessage = (data) => {
-        console.log('New message received:', data);
-        
-        // If this message is for the currently selected conversation, add it to messages
+      const handleNewMessage = async (data) => {
+        let newMsg = data.message;
+        if (newMsg.content && isPGPMessage(newMsg.content)) {
+          try {
+            const privateKey = getStoredPrivateKey();
+            if (privateKey) {
+              newMsg = { ...newMsg, content: await decryptMessage(newMsg.content, privateKey) };
+            }
+          } catch {
+            newMsg = { ...newMsg, content: '[Unable to decrypt]' };
+          }
+        }
+        // Add to UI and sort
         if (selectedConversation && data.conversationId === selectedConversation.id) {
           setMessages(prev => {
-            // Check if message already exists to avoid duplicates
-            const messageExists = prev.some(msg => msg.id === data.message.id);
-            if (messageExists) return prev;
-            return [...prev, data.message];
+            // Avoid duplicates
+            const exists = prev.some(msg => msg.id === newMsg.id);
+            const updated = exists ? prev : [...prev, newMsg];
+            return updated.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
           });
         }
-        
-        // Update conversation list to show latest message
-        setConversations(prev => prev.map(conv => 
-          conv.id === data.conversationId 
-            ? { 
-                ...conv, 
-                lastMessage: data.message, 
-                lastActivity: data.message.timestamp,
-                unreadCount: (conv.unreadCount || 0) + 1
-              }
+        setConversations(prev => prev.map(conv =>
+          conv.id === data.conversationId
+            ? { ...conv, lastMessage: newMsg, lastActivity: newMsg.timestamp, unreadCount: (conv.unreadCount || 0) + 1 }
             : conv
         ));
       };
@@ -344,7 +355,6 @@ const MessagingSystem = () => {
 
   const handleSendMessage = async () => {
     if ((!messageInput.trim() && selectedFiles.length === 0) || !selectedConversation || sendingMessage) return;
-    
     setSendingMessage(true);
     const tempMessageId = `temp_${Date.now()}`;
     const newMsg = {
@@ -355,20 +365,34 @@ const MessagingSystem = () => {
       timestamp: new Date().toISOString(),
       status: 'sending'
     };
-    
-    // Optimistically add message to UI
-    setMessages(prev => [...prev, newMsg]);
+    // Optimistically add only the user's own message
+    setMessages(prev => [
+      ...prev.filter(msg => msg.id !== tempMessageId),
+      newMsg
+    ]);
     const messageContent = messageInput;
     const messageAttachments = selectedFiles;
     setMessageInput('');
     setSelectedFiles([]);
     setShowFileUpload(false);
-    
-    // Scroll to bottom immediately after adding message
     setTimeout(() => scrollToBottom(), 50);
-    
     try {
-      const response = await fetch('http://localhost:3001/api/messages', {
+      // Fetch recipient public key
+      const otherUser = selectedConversation.participants.find(p => p.uid !== currentUser.uid);
+      let recipientPublicKey;
+      try {
+        recipientPublicKey = await fetchUserPublicKey(otherUser.uid);
+      } catch (e) {
+        setMessages(prev => prev.map(msg =>
+          msg.id === tempMessageId ? { ...msg, status: 'failed' } : msg
+        ));
+        setError('Recipient has not set up secure messaging yet. They need to log in once before you can message them.');
+        setSendingMessage(false);
+        return;
+      }
+      // Encrypt message
+      const encryptedContent = await encryptMessage(messageContent, recipientPublicKey);
+      const response = await fetch('http://192.168.1.7:3001/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -376,55 +400,52 @@ const MessagingSystem = () => {
         },
         body: JSON.stringify({
           conversationId: selectedConversation.id,
-          content: messageContent,
+          content: encryptedContent,
           senderId: currentUser.uid,
           attachments: messageAttachments
         })
       });
-      
       if (response.ok) {
         const data = await response.json();
-        // Replace temp message with real message from server
-        setMessages(prev => prev.map(msg => 
-          msg.id === tempMessageId ? { ...data.message, status: 'sent' } : msg
+        // Decrypt the message content before updating the UI
+        let decryptedMessage = data.message;
+        try {
+          if (decryptedMessage.content) {
+            const privateKey = getStoredPrivateKey();
+            if (privateKey) {
+              decryptedMessage = {
+                ...decryptedMessage,
+                content: await decryptMessage(decryptedMessage.content, privateKey)
+              };
+            }
+          }
+        } catch (e) {
+          decryptedMessage = {
+            ...decryptedMessage,
+            content: '[Unable to decrypt]'
+          };
+        }
+        setMessages(prev => prev.map(msg =>
+          msg.id === tempMessageId ? { ...decryptedMessage, status: 'sent' } : msg
         ));
-        
-        // Update conversation list to show latest message
-        setConversations(prev => prev.map(conv => 
-          conv.id === selectedConversation.id 
-            ? { ...conv, lastMessage: data.message, lastActivity: data.message.timestamp }
+        setConversations(prev => prev.map(conv =>
+          conv.id === selectedConversation.id
+            ? { ...conv, lastMessage: decryptedMessage, lastActivity: decryptedMessage.timestamp }
             : conv
         ));
-        
-        // Show success notification
         setSuccessMessage('Message sent successfully');
         setTimeout(() => setSuccessMessage(null), 2000);
-        
-        // Ensure scroll to bottom after successful send
         setTimeout(() => scrollToBottom(), 100);
       } else {
         const errorData = await response.json();
-        // If failed, mark message as failed
-        setMessages(prev => prev.map(msg => 
+        setMessages(prev => prev.map(msg =>
           msg.id === tempMessageId ? { ...msg, status: 'failed' } : msg
         ));
-        
-        if (response.status === 403) {
-          if (errorData.message.includes('blocked users')) {
-            setError(`Cannot send message - ${errorData.blockedUsers?.join(', ')} are blocked. Unblock them in your profile to send messages.`);
-          } else if (errorData.message.includes('been blocked')) {
-            setError('Cannot send message - you have been blocked by one or more participants.');
-          } else {
-            setError(errorData.message || 'Cannot send message to this conversation.');
-          }
-        } else {
-          setError(errorData.message || 'Failed to send message');
-        }
+        setError(errorData.message || 'Failed to send message');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Mark message as failed
-      setMessages(prev => prev.map(msg => 
+      setMessages(prev => prev.map(msg =>
         msg.id === tempMessageId ? { ...msg, status: 'failed' } : msg
       ));
       setError('Failed to send message');
@@ -439,7 +460,7 @@ const MessagingSystem = () => {
     setSendingMessage(true);
     
     try {
-      const response = await fetch('http://localhost:3001/api/messages', {
+      const response = await fetch('http://192.168.1.7:3001/api/messages', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -498,7 +519,7 @@ const MessagingSystem = () => {
     if (!newMessageRecipient || !newMessageSubject || !newMessageContent) return;
     
     try {
-      const response = await fetch('http://localhost:3001/api/conversations', {
+      const response = await fetch('http://192.168.1.7:3001/api/conversations', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -673,7 +694,7 @@ const MessagingSystem = () => {
     if (!messageActions.message) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/messages/${messageActions.message.id}`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/messages/${messageActions.message.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -703,7 +724,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/conversations/${selectedConversation.id}/mute`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/mute`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -740,7 +761,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/conversations/${selectedConversation.id}/star`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/star`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -777,7 +798,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/conversations/${selectedConversation.id}/archive`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/archive`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -823,7 +844,7 @@ const MessagingSystem = () => {
     if (!otherUser) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${otherUser.uid}/block`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/users/${otherUser.uid}/block`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -870,7 +891,7 @@ const MessagingSystem = () => {
     if (!reportDialog.userId || !reportDialog.reason) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/users/${reportDialog.userId}/report`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/users/${reportDialog.userId}/report`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -899,7 +920,7 @@ const MessagingSystem = () => {
     if (!selectedConversation) return;
     
     try {
-      const response = await fetch(`http://localhost:3001/api/conversations/${selectedConversation.id}`, {
+      const response = await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -1003,8 +1024,108 @@ const MessagingSystem = () => {
     setShowFileUpload(!showFileUpload);
   };
 
+  // Key management utilities
+  const getStoredPrivateKey = () => localStorage.getItem('pgp_privateKey');
+  const getStoredPublicKey = () => localStorage.getItem('pgp_publicKey');
+  const storeKeys = (privateKey, publicKey) => {
+    localStorage.setItem('pgp_privateKey', privateKey);
+    localStorage.setItem('pgp_publicKey', publicKey);
+  };
+
+  const generatePGPKeys = async (userId, email) => {
+    const { privateKey, publicKey } = await openpgp.generateKey({
+      type: 'rsa',
+      rsaBits: 2048,
+      userIDs: [{ name: userId, email }],
+      passphrase: '' // No passphrase for demo; use a real one in production
+    });
+    storeKeys(privateKey, publicKey);
+    return { privateKey, publicKey };
+  };
+
+  const encryptMessage = async (plaintext, recipientPublicKeyArmored) => {
+    const publicKey = await openpgp.readKey({ armoredKey: recipientPublicKeyArmored });
+    const encrypted = await openpgp.encrypt({
+      message: await openpgp.createMessage({ text: plaintext }),
+      encryptionKeys: publicKey
+    });
+    return encrypted;
+  };
+
+  const decryptMessage = async (ciphertext, privateKeyArmored) => {
+    const privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored });
+    const message = await openpgp.readMessage({ armoredMessage: ciphertext });
+    const { data: decrypted } = await openpgp.decrypt({
+      message,
+      decryptionKeys: privateKey
+    });
+    return decrypted;
+  };
+
+  // On first login, generate and upload keys if not present
+  useEffect(() => {
+    if (!currentUser) return;
+    const setupKeys = async () => {
+      let privateKey = getStoredPrivateKey();
+      let publicKey = getStoredPublicKey();
+      let needsUpload = false;
+      if (!privateKey || !publicKey) {
+        const keys = await generatePGPKeys(currentUser.uid, currentUser.email);
+        privateKey = keys.privateKey;
+        publicKey = keys.publicKey;
+        needsUpload = true;
+      }
+      // Always upload public key to backend on login to ensure it's present
+      await fetch(`http://192.168.1.7:3001/api/users/${currentUser.uid}/publicKey`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ publicKey })
+      });
+    };
+    setupKeys();
+  }, [currentUser]);
+
+  // Helper to fetch a user's public key
+  const fetchUserPublicKey = async (userId) => {
+    const res = await fetch(`http://192.168.1.7:3001/api/users/${userId}/publicKey`);
+    if (!res.ok) throw new Error('Could not fetch public key');
+    const data = await res.json();
+    return data.publicKey;
+  };
+
+  // Helper to detect PGP message
+  const isPGPMessage = (content) => typeof content === 'string' && content.startsWith('-----BEGIN PGP MESSAGE-----');
+
+  // Decrypt messages after loading
+  const decryptMessages = async (msgs) => {
+    const privateKey = getStoredPrivateKey();
+    if (!privateKey) return msgs;
+    let unableToDecrypt = false;
+    const decryptedMsgs = await Promise.all(msgs.map(async (msg) => {
+      try {
+        if (msg.content && isPGPMessage(msg.content)) {
+          const decrypted = await decryptMessage(msg.content, privateKey);
+          return { ...msg, content: decrypted };
+        }
+        return msg; // Plaintext, no decryption needed
+      } catch {
+        unableToDecrypt = true;
+        return { ...msg, content: '[Unable to decrypt]' };
+      }
+    }));
+    setShowE2EEWarning(unableToDecrypt);
+    // Always sort by timestamp ascending (oldest first)
+    return decryptedMsgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 4, height: 'calc(100vh - 200px)' }}>
+      {showE2EEWarning && (
+        <div className="e2ee-warning" style={{ background: '#fffbe6', color: '#ad8b00', padding: '10px', borderRadius: '6px', marginBottom: '10px', border: '1px solid #ffe58f' }}>
+          <strong>Some messages could not be decrypted.</strong><br />
+          End-to-end encryption is only available for messages sent after your encryption keys were created. Older messages or messages sent before this may not be readable.
+        </div>
+      )}
       {/* Success and Error Messages */}
       {successMessage && (
         <Alert 

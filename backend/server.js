@@ -5324,6 +5324,25 @@ app.put('/api/users/:userId/profile', (req, res) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+// Upload user public key for E2EE messaging
+app.post('/api/users/:userId/publicKey', (req, res) => {
+  const { userId } = req.params;
+  const { publicKey } = req.body;
+  const user = users.find(u => u.uid === userId);
+  if (!user) return res.status(404).json({ message: 'User not found' });
+  user.publicKey = publicKey;
+  saveData(USERS_FILE, users);
+  res.json({ message: 'Public key saved' });
+});
+
+// Fetch user public key for E2EE messaging
+app.get('/api/users/:userId/publicKey', (req, res) => {
+  const { userId } = req.params;
+  const user = users.find(u => u.uid === userId);
+  if (!user || !user.publicKey) return res.status(404).json({ message: 'Public key not found' });
+  res.json({ publicKey: user.publicKey });
+});
+
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Server listening at http://0.0.0.0:${port}`);
 });
