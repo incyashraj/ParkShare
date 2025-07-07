@@ -198,6 +198,19 @@ export const RealtimeProvider = ({ children }) => {
       }, ...prev]);
     });
 
+    // Support ticket notifications
+    newSocket.on('support-ticket-notification', (notification) => {
+      setNotifications(prev => [{
+        id: Date.now(),
+        type: 'support-ticket',
+        title: notification.title,
+        message: notification.message,
+        data: notification.data,
+        timestamp: new Date(notification.timestamp),
+        read: false
+      }, ...prev]);
+    });
+
     setSocket(newSocket);
 
     return () => {

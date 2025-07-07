@@ -32,6 +32,7 @@ import {
   Cancel as CancelIcon,
   Star as StarIcon,
   AccessTime as TimeIcon,
+  Support as SupportIcon,
 } from '@mui/icons-material';
 import { useRealtime } from '../contexts/RealtimeContext';
 import NotificationPopup from './NotificationPopup';
@@ -110,6 +111,11 @@ const NotificationCenter = () => {
         // Navigate to payment/receipt page
         console.log('Navigate to payment:', notification.data);
         navigate('/bookings');
+        break;
+      case 'support-ticket':
+        // Navigate to support panel
+        console.log('Navigate to support ticket:', notification.data);
+        navigate('/support');
         break;
       default:
         console.log('Handle notification:', notification);
@@ -225,6 +231,8 @@ const NotificationCenter = () => {
         return <ParkingIcon {...iconProps} sx={{ ...iconProps.sx, color: 'primary.main' }} />;
       case 'announcement':
         return <InfoIcon {...iconProps} sx={{ ...iconProps.sx, color: 'info.main' }} />;
+      case 'support-ticket':
+        return <SupportIcon {...iconProps} sx={{ ...iconProps.sx, color: 'warning.main' }} />;
       default:
         return <InfoIcon {...iconProps} sx={{ ...iconProps.sx, color: 'text.secondary' }} />;
     }
@@ -248,6 +256,8 @@ const NotificationCenter = () => {
         return 'primary';
       case 'announcement':
         return 'info';
+      case 'support-ticket':
+        return 'warning';
       default:
         return 'default';
     }
@@ -257,6 +267,7 @@ const NotificationCenter = () => {
     switch (notification.type) {
       case 'booking':
       case 'message':
+      case 'support-ticket':
         return 1;
       case 'cancellation':
       case 'security':

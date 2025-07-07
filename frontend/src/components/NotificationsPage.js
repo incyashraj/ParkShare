@@ -67,6 +67,7 @@ import {
   Settings as SettingsIcon,
   Close as CloseIcon,
   Visibility as VisibilityIcon,
+  Support as SupportIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import { useRealtime } from '../contexts/RealtimeContext';
@@ -233,6 +234,8 @@ const NotificationsPage = () => {
         return <ParkingIcon {...iconProps} sx={{ ...iconProps.sx, color: '#FF385C' }} />;
       case 'announcement':
         return <InfoIcon {...iconProps} sx={{ ...iconProps.sx, color: '#007A87' }} />;
+      case 'support-ticket':
+        return <SupportIcon {...iconProps} sx={{ ...iconProps.sx, color: '#FFB400' }} />;
       default:
         return <InfoIcon {...iconProps} />;
     }
@@ -248,6 +251,7 @@ const NotificationsPage = () => {
       case 'security': return '#007A87';
       case 'spot-booked': return '#FF385C';
       case 'announcement': return '#007A87';
+      case 'support-ticket': return '#FFB400';
       default: return '#717171';
     }
   };
@@ -256,6 +260,7 @@ const NotificationsPage = () => {
     switch (notification.type) {
       case 'booking':
       case 'message':
+      case 'support-ticket':
         return 1;
       case 'cancellation':
       case 'security':

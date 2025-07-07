@@ -33,6 +33,7 @@ import {
   LocationOn as LocationIcon,
   Person as PersonIcon,
   AttachMoney as MoneyIcon,
+  Support as SupportIcon,
 } from '@mui/icons-material';
 
 const NotificationPopup = ({ notification, open, onClose, onAction }) => {
@@ -62,6 +63,8 @@ const NotificationPopup = ({ notification, open, onClose, onAction }) => {
         return <ParkingIcon {...iconProps} sx={{ ...iconProps.sx, color: 'primary.main' }} />;
       case 'announcement':
         return <InfoIcon {...iconProps} sx={{ ...iconProps.sx, color: 'info.main' }} />;
+      case 'support-ticket':
+        return <SupportIcon {...iconProps} sx={{ ...iconProps.sx, color: 'warning.main' }} />;
       default:
         return <InfoIcon {...iconProps} sx={{ ...iconProps.sx, color: 'text.secondary' }} />;
     }
@@ -85,6 +88,8 @@ const NotificationPopup = ({ notification, open, onClose, onAction }) => {
         return 'primary';
       case 'announcement':
         return 'info';
+      case 'support-ticket':
+        return 'warning';
       default:
         return 'default';
     }

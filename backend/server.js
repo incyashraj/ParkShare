@@ -127,17 +127,60 @@ app.post('/api/support/tickets', (req, res) => {
       username: user.username,
       email: user.email,
       subject,
-      message,
       category: category || 'general',
       priority: priority || 'medium',
       status: 'open',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       assignedTo: null,
-      responses: []
+      messages: [
+        {
+          senderId: userId,
+          senderName: user.username || user.email,
+          senderRole: 'user',
+          message,
+          timestamp: new Date().toISOString()
+        }
+      ]
     };
     supportTickets.push(ticket);
     saveSupportTickets();
+    
+    // Emit real-time notification for new support ticket
+    const notification = {
+      type: 'new_support_ticket',
+      ticketId: ticket.id,
+      ticketSubject: ticket.subject,
+      ticket: ticket,
+      sender: {
+        id: userId,
+        name: user.username || user.email,
+        role: 'user'
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    // Notify all admin users about new ticket
+    const adminUsers = users.filter(u => isAdmin(u.uid));
+    adminUsers.forEach(admin => {
+      io.to(`user-${admin.uid}`).emit('new-support-ticket', notification);
+      
+      // Send notification to admin
+      io.to(`user-${admin.uid}`).emit('support-ticket-notification', {
+        type: 'new_ticket',
+        title: 'New Support Ticket Received',
+        message: `A new support ticket "${ticket.subject}" has been submitted`,
+        data: {
+          ticketId: ticket.id,
+          ticketSubject: ticket.subject,
+          ticketCategory: ticket.category,
+          ticketPriority: ticket.priority,
+          senderName: user.username || user.email
+        },
+        timestamp: new Date().toISOString()
+      });
+    });
+    
     res.status(201).json({ message: 'Ticket submitted', ticket });
   } catch (error) {
     console.error('Error creating ticket:', error);
@@ -203,29 +246,84 @@ app.get('/api/support/tickets/:id', (req, res) => {
 });
 
 // Respond to a ticket (admin or user)
-app.post('/api/support/tickets/:id/respond', (req, res) => {
+app.post('/api/support/tickets/:id/message', (req, res) => {
   try {
     const userId = req.headers.authorization?.replace('Bearer ', '');
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     const ticket = supportTickets.find(t => t.id === req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    if (ticket.status === 'closed' || ticket.status === 'resolved') return res.status(403).json({ message: `Ticket is ${ticket.status}` });
     if (!isAdmin(userId) && ticket.userId !== userId) return res.status(403).json({ message: 'Forbidden' });
     const user = users.find(u => u.uid === userId);
     const { message } = req.body;
     if (!message) return res.status(400).json({ message: 'Message required' });
-    const response = {
-      id: `resp_${Date.now()}`,
-      userId,
-      user: { uid: user.uid, username: user.username, email: user.email },
+    const senderRole = isAdmin(userId) ? 'admin' : 'user';
+    const msg = {
+      senderId: userId,
+      senderName: user.username || user.email,
+      senderRole,
       message,
-      createdAt: new Date().toISOString()
+      timestamp: new Date().toISOString()
     };
-    ticket.responses.push(response);
+    if (!ticket.messages) ticket.messages = [];
+    ticket.messages.push(msg);
     ticket.updatedAt = new Date().toISOString();
     saveSupportTickets();
-    res.json({ message: 'Response added', response });
+    
+    // Emit real-time notification for new support ticket message
+    const notification = {
+      type: 'support_ticket_message',
+      ticketId: ticket.id,
+      ticketSubject: ticket.subject,
+      message: msg,
+      sender: {
+        id: userId,
+        name: user.username || user.email,
+        role: senderRole
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    // Notify the ticket owner (if message is from admin)
+    if (senderRole === 'admin') {
+      io.to(`user-${ticket.userId}`).emit('support-ticket-updated', notification);
+      
+      // Send notification to ticket owner
+      io.to(`user-${ticket.userId}`).emit('support-ticket-notification', {
+        type: 'ticket_message',
+        title: 'New Response to Your Support Ticket',
+        message: `You have received a new response to your ticket "${ticket.subject}"`,
+        data: {
+          ticketId: ticket.id,
+          ticketSubject: ticket.subject,
+          senderName: user.username || user.email,
+          senderRole: senderRole,
+          message: msg.message
+        },
+        timestamp: new Date().toISOString()
+      });
+    }
+    
+    // Notify all admins (if message is from user)
+    if (senderRole === 'user') {
+      // Get all admin users
+      const adminUsers = users.filter(u => isAdmin(u.uid));
+      adminUsers.forEach(admin => {
+        io.to(`user-${admin.uid}`).emit('support-ticket-updated', notification);
+      });
+    }
+    
+    // Emit to specific ticket room for real-time updates
+    io.to(`ticket-${ticket.id}`).emit('ticket-message-added', {
+      ticketId: ticket.id,
+      message: msg,
+      ticket: ticket
+    });
+    
+    res.json({ message: 'Message added', msg });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to add response' });
+    console.error('Error adding message to ticket:', error);
+    res.status(500).json({ message: 'Failed to add message' });
   }
 });
 
@@ -242,6 +340,50 @@ app.patch('/api/support/tickets/:id', (req, res) => {
     if (assignedTo) ticket.assignedTo = assignedTo;
     ticket.updatedAt = new Date().toISOString();
     saveSupportTickets();
+    
+    // Emit real-time notification for ticket status update
+    const notification = {
+      type: 'ticket_status_updated',
+      ticketId: ticket.id,
+      ticketSubject: ticket.subject,
+      oldStatus: ticket.status,
+      newStatus: status,
+      assignedTo: assignedTo,
+      ticket: ticket,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Notify ticket owner about status change
+    io.to(`user-${ticket.userId}`).emit('ticket-status-updated', notification);
+    
+    // Send notification to ticket owner
+    io.to(`user-${ticket.userId}`).emit('support-ticket-notification', {
+      type: 'ticket_status_update',
+      title: 'Support Ticket Status Updated',
+      message: `Your ticket "${ticket.subject}" status has been changed to ${status}`,
+      data: {
+        ticketId: ticket.id,
+        ticketSubject: ticket.subject,
+        oldStatus: ticket.status,
+        newStatus: status,
+        assignedTo: assignedTo
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+    // Notify all admins about status change
+    const adminUsers = users.filter(u => isAdmin(u.uid));
+    adminUsers.forEach(admin => {
+      io.to(`user-${admin.uid}`).emit('ticket-status-updated', notification);
+    });
+    
+    // Emit to ticket room
+    io.to(`ticket-${ticket.id}`).emit('ticket-updated', {
+      ticketId: ticket.id,
+      ticket: ticket,
+      changes: { status, assignedTo }
+    });
+    
     res.json({ message: 'Ticket updated', ticket });
   } catch (error) {
     res.status(500).json({ message: 'Failed to update ticket' });
@@ -542,6 +684,37 @@ io.on('connection', (socket) => {
       // Emit presence update if status changed
       emitUserPresenceUpdate(uid, 'online', activity);
     }
+  });
+
+  // Join support ticket room for real-time updates
+  socket.on('join-ticket-room', (ticketId) => {
+    socket.join(`ticket-${ticketId}`);
+    console.log(`User joined ticket room: ${ticketId}`);
+  });
+
+  // Leave support ticket room
+  socket.on('leave-ticket-room', (ticketId) => {
+    socket.leave(`ticket-${ticketId}`);
+    console.log(`User left ticket room: ${ticketId}`);
+  });
+
+  // Handle support ticket typing indicators
+  socket.on('ticket-typing-start', (data) => {
+    const { ticketId, senderId } = data;
+    socket.to(`ticket-${ticketId}`).emit('ticket-user-typing', { 
+      ticketId, 
+      senderId, 
+      typing: true 
+    });
+  });
+
+  socket.on('ticket-typing-stop', (data) => {
+    const { ticketId, senderId } = data;
+    socket.to(`ticket-${ticketId}`).emit('ticket-user-typing', { 
+      ticketId, 
+      senderId, 
+      typing: false 
+    });
   });
 
   // Handle disconnect

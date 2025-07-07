@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Container,
@@ -35,7 +35,8 @@ import {
   ListItemText,
   ListItemSecondaryAction,
   Tooltip,
-  LinearProgress
+  LinearProgress,
+  Badge
 } from '@mui/material';
 import {
   AdminPanelSettings,
@@ -55,17 +56,23 @@ import {
   CheckCircleOutline,
   WarningAmber,
   ErrorOutline,
-  InfoOutlined
+  InfoOutlined,
+  Notifications
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
+import { useRealtime } from '../contexts/RealtimeContext';
 import UserPresenceIndicator from './UserPresenceIndicator';
 
 const AdminPanel = () => {
   const { currentUser } = useAuth();
+  const { socket } = useRealtime();
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [newTicketNotifications, setNewTicketNotifications] = useState(0);
+  const [typingUsers, setTypingUsers] = useState(new Set());
+  const typingTimeoutRef = useRef(null);
 
   // Dashboard data
   const [analytics, setAnalytics] = useState(null);
@@ -77,7 +84,8 @@ const AdminPanel = () => {
   const [ticketSearch, setTicketSearch] = useState('');
   const [selectedTicket, setSelectedTicket] = useState(null);
   const [replyDialog, setReplyDialog] = useState(false);
-  const [replyMessage, setReplyMessage] = useState('');
+  const [newMessage, setNewMessage] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
   
   // Users data
   const [users, setUsers] = useState([]);
@@ -218,8 +226,119 @@ const AdminPanel = () => {
     loadAdminData();
   }, [currentUser, loadAdminData]);
 
+  // Real-time WebSocket event listeners for support tickets
+  useEffect(() => {
+    if (!socket) return;
+
+    // Listen for new support tickets
+    socket.on('new-support-ticket', (notification) => {
+      console.log('New support ticket received:', notification);
+      setNewTicketNotifications(prev => prev + 1);
+      showSnackbar(`New support ticket: ${notification.ticketSubject}`, 'info');
+      loadAdminData(); // Refresh tickets
+    });
+
+    // Listen for support ticket updates
+    socket.on('support-ticket-updated', (notification) => {
+      console.log('Support ticket updated:', notification);
+      showSnackbar(`New message in ticket: ${notification.ticketSubject}`, 'info');
+      loadAdminData(); // Refresh tickets
+    });
+
+    // Listen for ticket status updates
+    socket.on('ticket-status-updated', (notification) => {
+      console.log('Ticket status updated:', notification);
+      showSnackbar(`Ticket "${notification.ticketSubject}" status changed to ${notification.newStatus}`, 'info');
+      loadAdminData(); // Refresh tickets
+    });
+
+    // Listen for new messages in specific ticket room
+    socket.on('ticket-message-added', (data) => {
+      console.log('New message in ticket room:', data);
+      if (selectedTicket && data.ticketId === selectedTicket.id) {
+        // Update the selected ticket with new message
+        setSelectedTicket(data.ticket);
+      }
+      loadAdminData(); // Refresh tickets
+    });
+
+    // Listen for typing indicators
+    socket.on('ticket-user-typing', (data) => {
+      if (selectedTicket && data.ticketId === selectedTicket.id) {
+        if (data.typing) {
+          setTypingUsers(prev => new Set(prev).add(data.senderId));
+        } else {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(data.senderId);
+            return newSet;
+          });
+        }
+      }
+    });
+
+    // Listen for ticket updates
+    socket.on('ticket-updated', (data) => {
+      console.log('Ticket updated:', data);
+      if (selectedTicket && data.ticketId === selectedTicket.id) {
+        setSelectedTicket(data.ticket);
+      }
+      loadAdminData(); // Refresh tickets
+    });
+
+    return () => {
+      socket.off('new-support-ticket');
+      socket.off('support-ticket-updated');
+      socket.off('ticket-status-updated');
+      socket.off('ticket-message-added');
+      socket.off('ticket-user-typing');
+      socket.off('ticket-updated');
+    };
+  }, [socket, selectedTicket, loadAdminData]);
+
+  // Join ticket room when viewing a ticket
+  useEffect(() => {
+    if (socket && selectedTicket) {
+      socket.emit('join-ticket-room', selectedTicket.id);
+      
+      return () => {
+        socket.emit('leave-ticket-room', selectedTicket.id);
+      };
+    }
+  }, [socket, selectedTicket]);
+
+  // Handle typing indicators for admin messages
+  const handleMessageChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    if (socket && selectedTicket) {
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+      
+      // Emit typing start
+      socket.emit('ticket-typing-start', {
+        ticketId: selectedTicket.id,
+        senderId: currentUser.uid
+      });
+      
+      // Set timeout to stop typing indicator
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit('ticket-typing-stop', {
+          ticketId: selectedTicket.id,
+          senderId: currentUser.uid
+        });
+      }, 2000);
+    }
+  };
+
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
+    // Clear notification badge when support tickets tab is clicked
+    if (newValue === 1) { // Support tickets tab index
+      setNewTicketNotifications(0);
+    }
   };
 
   const showSnackbar = (message, severity = 'success') => {
@@ -231,27 +350,39 @@ const AdminPanel = () => {
   };
 
   // Support ticket functions
-  const handleReplyToTicket = async () => {
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedTicket) return;
+    setSendingMessage(true);
     try {
-      const response = await fetch(`http://localhost:3001/api/support/tickets/${selectedTicket.id}/respond`, {
+      const response = await fetch(`http://localhost:3001/api/support/tickets/${selectedTicket.id}/message`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${currentUser.uid}`
         },
-        body: JSON.stringify({ message: replyMessage })
+        body: JSON.stringify({ message: newMessage })
       });
-
       if (response.ok) {
-        showSnackbar('Response sent successfully');
-        setReplyDialog(false);
-        setReplyMessage('');
-        loadAdminData(); // Refresh data
+        setNewMessage('');
+        // Clear typing indicator
+        if (socket) {
+          socket.emit('ticket-typing-stop', {
+            ticketId: selectedTicket.id,
+            senderId: currentUser.uid
+          });
+        }
+        // Clear typing timeout
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        loadAdminData();
       } else {
-        showSnackbar('Failed to send response', 'error');
+        showSnackbar('Failed to send message', 'error');
       }
     } catch (error) {
-      showSnackbar('Error sending response', 'error');
+      showSnackbar('Error sending message', 'error');
+    } finally {
+      setSendingMessage(false);
     }
   };
 
@@ -508,6 +639,19 @@ const AdminPanel = () => {
     return new Date(dateString).toLocaleDateString() + ' ' + new Date(dateString).toLocaleTimeString();
   };
 
+  const getPriorityColor = (priority) => {
+    switch (priority?.toLowerCase()) {
+      case 'high':
+        return 'error';
+      case 'medium':
+        return 'warning';
+      case 'low':
+        return 'success';
+      default:
+        return 'default';
+    }
+  };
+
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -540,7 +684,14 @@ const AdminPanel = () => {
       <Paper sx={{ width: '100%' }}>
         <Tabs value={activeTab} onChange={handleTabChange} variant="scrollable" scrollButtons="auto">
           <Tab icon={<Dashboard />} label="Dashboard" />
-          <Tab icon={<Support />} label="Support Tickets" />
+          <Tab 
+          icon={
+            <Badge badgeContent={newTicketNotifications} color="error">
+              <Support />
+            </Badge>
+          } 
+          label="Support Tickets" 
+        />
           <Tab icon={<People />} label="User Management" />
           <Tab icon={<LocalParking />} label="Parking Spots" />
           <Tab icon={<BookOnline />} label="Bookings" />
@@ -1076,35 +1227,101 @@ const AdminPanel = () => {
       {/* Reply Dialog */}
       <Dialog open={replyDialog} onClose={() => setReplyDialog(false)} maxWidth="md" fullWidth>
         <DialogTitle>
-          Reply to Ticket: {selectedTicket?.subject}
+          Ticket Conversation: {selectedTicket?.subject}
+          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+            <Chip 
+              label={selectedTicket?.status} 
+              color={getStatusColor(selectedTicket?.status)}
+              size="small"
+            />
+            <Chip 
+              label={selectedTicket?.priority} 
+              color={getPriorityColor(selectedTicket?.priority)}
+              size="small"
+            />
+          </Box>
         </DialogTitle>
         <DialogContent>
           {selectedTicket && (
             <Box>
-              <Typography variant="subtitle2" gutterBottom>
-                From: {selectedTicket.user?.username || selectedTicket.user?.email || 'Unknown User'} ({selectedTicket.user?.email || 'No email'})
+              <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                Created: {formatDate(selectedTicket.createdAt)}
+                {selectedTicket.updatedAt !== selectedTicket.createdAt && 
+                  ` • Last updated: ${formatDate(selectedTicket.updatedAt)}`
+                }
               </Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>
-                {selectedTicket.message}
-              </Typography>
+              
               <Divider sx={{ my: 2 }} />
-              <Typography variant="h6" gutterBottom>Your Response:</Typography>
-              <TextField
-                fullWidth
-                multiline
-                rows={4}
-                value={replyMessage}
-                onChange={(e) => setReplyMessage(e.target.value)}
-                placeholder="Enter your response..."
-              />
+              
+              <Typography variant="h6" gutterBottom>Messages</Typography>
+              
+              <Box sx={{ maxHeight: 400, overflowY: 'auto', mb: 2 }}>
+                {selectedTicket.messages?.map((msg, index) => (
+                  <Box key={index} sx={{ mb: 2 }}>
+                    <Box sx={{ 
+                      display: 'flex', 
+                      justifyContent: msg.senderRole === 'admin' ? 'flex-start' : 'flex-end',
+                      mb: 1
+                    }}>
+                      <Paper sx={{ 
+                        p: 2, 
+                        maxWidth: '70%',
+                        backgroundColor: msg.senderRole === 'admin' ? 'primary.light' : 'grey.100',
+                        color: msg.senderRole === 'admin' ? 'white' : 'text.primary'
+                      }}>
+                        <Typography variant="body2" sx={{ mb: 1 }}>
+                          <strong>{msg.senderName}</strong> ({msg.senderRole})
+                        </Typography>
+                        <Typography variant="body1">
+                          {msg.message}
+                        </Typography>
+                        <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                          {formatDate(msg.timestamp)}
+                        </Typography>
+                      </Paper>
+                    </Box>
+                  </Box>
+                ))}
+              </Box>
+              
+              {/* Typing indicator */}
+              {typingUsers.size > 0 && (
+                <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
+                  Someone is typing...
+                </Typography>
+              )}
+              
+              {(selectedTicket.status === 'open' || selectedTicket.status === 'in_progress') ? (
+                <Box sx={{ mt: 2 }}>
+                  <TextField
+                    fullWidth
+                    label="Add a message"
+                    value={newMessage}
+                    onChange={handleMessageChange}
+                    multiline
+                    rows={3}
+                    disabled={sendingMessage}
+                  />
+                </Box>
+              ) : (
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  This ticket is {selectedTicket.status}. No new messages can be added.
+                </Alert>
+              )}
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setReplyDialog(false)}>Cancel</Button>
-          <Button onClick={handleReplyToTicket} variant="contained">
-            Send Response
-          </Button>
+          <Button onClick={() => setReplyDialog(false)}>Close</Button>
+          {(selectedTicket?.status === 'open' || selectedTicket?.status === 'in_progress') && (
+            <Button 
+              onClick={handleSendMessage} 
+              variant="contained"
+              disabled={!newMessage.trim() || sendingMessage}
+            >
+              {sendingMessage ? 'Sending...' : 'Send Message'}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
 
