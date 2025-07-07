@@ -30,7 +30,8 @@ import {
   Add as AddIcon,
   Message as MessageIcon,
   PriorityHigh as PriorityHighIcon,
-  Schedule as ScheduleIcon
+  Schedule as ScheduleIcon,
+  NewReleases as NewUpdateIcon
 } from '@mui/icons-material';
 
 const SupportPanel = () => {
@@ -74,7 +75,19 @@ const SupportPanel = () => {
         message: `New message in ticket: ${notification.ticketSubject}`,
         severity: 'info'
       });
-      loadTickets(); // Refresh tickets to get latest messages
+      
+      // Update tickets with new update flag if message is from admin
+      if (notification.sender?.role === 'admin') {
+        setTickets(prevTickets => 
+          prevTickets.map(ticket => 
+            ticket.id === notification.ticketId 
+              ? { ...ticket, hasNewUpdate: true, updatedAt: notification.timestamp }
+              : ticket
+          )
+        );
+      } else {
+        loadTickets(); // Refresh tickets to get latest messages
+      }
     });
 
     // Listen for ticket status updates
@@ -84,7 +97,15 @@ const SupportPanel = () => {
         message: `Ticket "${notification.ticketSubject}" status changed to ${notification.newStatus}`,
         severity: 'info'
       });
-      loadTickets();
+      
+      // Update ticket with new update flag for status changes
+      setTickets(prevTickets => 
+        prevTickets.map(ticket => 
+          ticket.id === notification.ticketId 
+            ? { ...ticket, hasNewUpdate: true, updatedAt: notification.timestamp }
+            : ticket
+        )
+      );
     });
 
     // Listen for new messages in specific ticket room
@@ -220,9 +241,31 @@ const SupportPanel = () => {
     }
   };
 
-  const handleViewTicket = (ticket) => {
+  const handleViewTicket = async (ticket) => {
     setSelectedTicket(ticket);
     setViewDialog(true);
+    
+    // Mark ticket as read if it has new updates
+    if (ticket.hasNewUpdate) {
+      try {
+        await fetch(`http://localhost:3001/api/support/tickets/${ticket.id}/read`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentUser.uid}`
+          }
+        });
+        
+        // Update the ticket in the local state
+        setTickets(prevTickets => 
+          prevTickets.map(t => 
+            t.id === ticket.id ? { ...t, hasNewUpdate: false } : t
+          )
+        );
+      } catch (error) {
+        console.error('Error marking ticket as read:', error);
+      }
+    }
   };
 
   const handleSendMessage = async () => {
@@ -341,9 +384,20 @@ const SupportPanel = () => {
               <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" gutterBottom>
-                      {ticket.subject}
-                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                      <Typography variant="h6">
+                        {ticket.subject}
+                      </Typography>
+                      {ticket.hasNewUpdate && (
+                        <Chip
+                          icon={<NewUpdateIcon />}
+                          label="New Update"
+                          color="error"
+                          size="small"
+                          sx={{ fontSize: '0.75rem' }}
+                        />
+                      )}
+                    </Box>
                     <Typography variant="body2" color="textSecondary" sx={{ mb: 1 }}>
                       {ticket.messages?.[0]?.message?.substring(0, 100)}...
                     </Typography>

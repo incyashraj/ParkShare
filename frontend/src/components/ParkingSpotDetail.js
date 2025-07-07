@@ -573,13 +573,41 @@ const ParkingSpotDetail = () => {
                 </Typography>
                 <Card variant="outlined" sx={{ p: 2 }}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                    <Avatar sx={{ width: 48, height: 48, bgcolor: 'primary.main' }}>
-                      <Person />
-                    </Avatar>
-                    <Box>
-                      <Typography variant="h6" fontWeight="bold">
-                        {spot.ownerName || 'Parking Owner'}
-                      </Typography>
+                    <Tooltip title="View owner's profile" arrow>
+                      <Avatar 
+                        sx={{ 
+                          width: 48, 
+                          height: 48, 
+                          bgcolor: 'primary.main',
+                          cursor: 'pointer',
+                          '&:hover': {
+                            opacity: 0.8,
+                            transform: 'scale(1.05)',
+                            transition: 'all 0.2s ease-in-out'
+                          }
+                        }}
+                        onClick={() => navigate(`/user-profile/${spot.owner}`)}
+                      >
+                        <Person />
+                      </Avatar>
+                    </Tooltip>
+                    <Box sx={{ flex: 1 }}>
+                      <Tooltip title="View owner's profile" arrow>
+                        <Typography 
+                          variant="h6" 
+                          fontWeight="bold"
+                          sx={{ 
+                            cursor: 'pointer',
+                            '&:hover': {
+                              color: 'primary.main',
+                              textDecoration: 'underline'
+                            }
+                          }}
+                          onClick={() => navigate(`/user-profile/${spot.owner}`)}
+                        >
+                          {spot.ownerName || 'Parking Owner'}
+                        </Typography>
+                      </Tooltip>
                       <Typography variant="body2" color="text.secondary">
                         Member since {spot.createdAt ? new Date(spot.createdAt).getFullYear() : '2024'}
                       </Typography>

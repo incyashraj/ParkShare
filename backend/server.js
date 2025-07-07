@@ -48,6 +48,7 @@ const MESSAGES_FILE = path.join(DATA_DIR, 'messages.json');
 // File upload configuration
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 const ATTACHMENTS_DIR = path.join(UPLOADS_DIR, 'attachments');
+const VERIFICATION_DOCS_DIR = path.join(UPLOADS_DIR, 'verification-docs');
 
 // Ensure upload directories exist
 if (!fs.existsSync(UPLOADS_DIR)) {
@@ -55,6 +56,9 @@ if (!fs.existsSync(UPLOADS_DIR)) {
 }
 if (!fs.existsSync(ATTACHMENTS_DIR)) {
   fs.mkdirSync(ATTACHMENTS_DIR, { recursive: true });
+}
+if (!fs.existsSync(VERIFICATION_DOCS_DIR)) {
+  fs.mkdirSync(VERIFICATION_DOCS_DIR, { recursive: true });
 }
 
 // Configure multer for file uploads
@@ -92,6 +96,27 @@ const upload = multer({
   fileFilter: fileFilter,
   limits: {
     fileSize: 10 * 1024 * 1024 // 10MB limit
+  }
+});
+
+// Configure multer for verification document uploads
+const verificationStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, VERIFICATION_DOCS_DIR);
+  },
+  filename: (req, file, cb) => {
+    const userId = req.body.userId || req.params.userId;
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, `verification_${userId}_${file.fieldname}_${uniqueSuffix}${ext}`);
+  }
+});
+
+const verificationUpload = multer({
+  storage: verificationStorage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 15 * 1024 * 1024 // 15MB limit for verification docs
   }
 });
 
@@ -133,6 +158,7 @@ app.post('/api/support/tickets', (req, res) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       assignedTo: null,
+      hasNewUpdate: false, // Track if ticket has new admin messages
       messages: [
         {
           senderId: userId,
@@ -212,6 +238,9 @@ app.get('/api/support/tickets', (req, res) => {
       });
     }
     
+    // Sort tickets by most recent update (updatedAt) - newest first
+    tickets.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+    
     res.json({ tickets });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch tickets' });
@@ -268,6 +297,12 @@ app.post('/api/support/tickets/:id/message', (req, res) => {
     if (!ticket.messages) ticket.messages = [];
     ticket.messages.push(msg);
     ticket.updatedAt = new Date().toISOString();
+    
+    // Set hasNewUpdate flag when admin sends a message to user
+    if (senderRole === 'admin') {
+      ticket.hasNewUpdate = true;
+    }
+    
     saveSupportTickets();
     
     // Emit real-time notification for new support ticket message
@@ -324,6 +359,28 @@ app.post('/api/support/tickets/:id/message', (req, res) => {
   } catch (error) {
     console.error('Error adding message to ticket:', error);
     res.status(500).json({ message: 'Failed to add message' });
+  }
+});
+
+// Mark ticket as read (clear new update flag)
+app.patch('/api/support/tickets/:id/read', (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    
+    const ticket = supportTickets.find(t => t.id === req.params.id);
+    if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
+    
+    // Only ticket owner can mark as read
+    if (ticket.userId !== userId) return res.status(403).json({ message: 'Forbidden' });
+    
+    ticket.hasNewUpdate = false;
+    saveSupportTickets();
+    
+    res.json({ message: 'Ticket marked as read' });
+  } catch (error) {
+    console.error('Error marking ticket as read:', error);
+    res.status(500).json({ message: 'Failed to mark ticket as read' });
   }
 });
 
@@ -1165,6 +1222,137 @@ app.get('/parking-spots', (req, res) => {
 
     // Sort by distance but don't filter out spots
     filteredSpots.sort((a, b) => a.distance - b.distance);
+  }
+
+  res.json(filteredSpots);
+});
+
+// Advanced search endpoint
+app.get('/parking-spots/search', (req, res) => {
+  const { 
+    location, 
+    minPrice, 
+    maxPrice, 
+    date, 
+    time, 
+    duration, 
+    amenities, 
+    availability, 
+    minRating, 
+    maxDistance 
+  } = req.query;
+
+  // First, return all spots with owner information
+  let filteredSpots = parkingSpots.map(spot => {
+    // Check if spot has any active (non-cancelled) bookings
+    const activeBookings = bookings.filter(b => 
+      b.spotId === spot.id && 
+      b.status !== 'cancelled'
+    );
+    
+    // Spot is available if it has no active bookings
+    const isActuallyAvailable = activeBookings.length === 0;
+    
+    // Get owner information and tier
+    const owner = users.find(u => u.uid === spot.owner);
+    let ownerTier = null;
+    
+    if (owner) {
+      // Calculate owner's stats for tier
+      const ownerReviews = bookings
+        .filter(booking => booking.spotOwner === spot.owner && booking.review)
+        .map(booking => booking.review.rating);
+      
+      const ownerTotalBookings = bookings.filter(b => b.spotOwner === spot.owner).length;
+      const ownerTotalSpots = parkingSpots.filter(s => s.owner === spot.owner).length;
+      const ownerAverageRating = ownerReviews.length > 0 
+        ? ownerReviews.reduce((sum, rating) => sum + rating, 0) / ownerReviews.length 
+        : 0;
+      
+      ownerTier = calculateUserTier(ownerAverageRating, ownerTotalBookings, ownerTotalSpots);
+    }
+    
+    return {
+      ...spot,
+      available: isActuallyAvailable,
+      ownerTier
+    };
+  });
+
+  // Apply location filter
+  if (location) {
+    filteredSpots = filteredSpots.filter(spot =>
+      spot.location.toLowerCase().includes(location.toLowerCase())
+    );
+  }
+
+  // Apply price range filter
+  if (minPrice) {
+    filteredSpots = filteredSpots.filter(spot => {
+      const price = parseFloat(spot.hourlyRate.replace(/[^0-9.]/g, ''));
+      return price >= parseFloat(minPrice);
+    });
+  }
+
+  if (maxPrice) {
+    filteredSpots = filteredSpots.filter(spot => {
+      const price = parseFloat(spot.hourlyRate.replace(/[^0-9.]/g, ''));
+      return price <= parseFloat(maxPrice);
+    });
+  }
+
+  // Apply rating filter
+  if (minRating) {
+    filteredSpots = filteredSpots.filter(spot => 
+      spot.rating >= parseFloat(minRating)
+    );
+  }
+
+  // Apply availability filter
+  if (availability && availability !== 'all') {
+    if (availability === 'available') {
+      filteredSpots = filteredSpots.filter(spot => spot.available);
+    } else if (availability === 'reserved') {
+      filteredSpots = filteredSpots.filter(spot => !spot.available);
+    }
+  }
+
+  // Apply amenities filter
+  if (amenities) {
+    const amenityList = amenities.split(',');
+    filteredSpots = filteredSpots.filter(spot => {
+      if (!spot.amenities) return false;
+      return amenityList.every(amenity => 
+        spot.amenities.some(spotAmenity => 
+          spotAmenity.toLowerCase().includes(amenity.toLowerCase())
+        )
+      );
+    });
+  }
+
+  // Apply date/time availability check (basic implementation)
+  if (date && time && duration) {
+    const searchDate = new Date(`${date}T${time}`);
+    const endTime = new Date(searchDate.getTime() + (parseInt(duration) * 60 * 60 * 1000));
+    
+    filteredSpots = filteredSpots.filter(spot => {
+      // Check if spot is available for the requested time period
+      const conflictingBookings = bookings.filter(b => 
+        b.spotId === spot.id && 
+        b.status !== 'cancelled' &&
+        new Date(b.startTime) < endTime &&
+        new Date(b.endTime) > searchDate
+      );
+      
+      return conflictingBookings.length === 0;
+    });
+  }
+
+  // Apply distance filter (if coordinates are available)
+  if (maxDistance) {
+    // For now, we'll just return all spots since we don't have user location
+    // In a real implementation, you'd calculate distance from user's location
+    console.log('Distance filter applied (maxDistance):', maxDistance);
   }
 
   res.json(filteredSpots);
@@ -2792,6 +2980,113 @@ const createTestData = () => {
 // Call createTestData on server start
 createTestData();
 
+// Create test support tickets to demonstrate sorting and new update features
+if (supportTickets.length === 0) {
+  const testTickets = [
+    {
+      id: 'ticket_test_001',
+      userId: 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2', // Yashraj's UID
+      username: 'Yashraj Pardeshi',
+      email: 'yashrajpardeshi@gmail.com',
+      subject: 'Payment Issue with Recent Booking',
+      category: 'billing',
+      priority: 'high',
+      status: 'open',
+      createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+      updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+      assignedTo: null,
+      hasNewUpdate: true, // Has new admin message
+      messages: [
+        {
+          senderId: 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2',
+          senderName: 'Yashraj Pardeshi',
+          senderRole: 'user',
+          message: 'I was charged twice for my booking yesterday. Can you please help me resolve this?',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          senderId: 'admin_001',
+          senderName: 'Support Team',
+          senderRole: 'admin',
+          message: 'Hi Yashraj, we have received your complaint and are investigating the double charge. We will process a refund within 24-48 hours.',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    },
+    {
+      id: 'ticket_test_002',
+      userId: 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2',
+      username: 'Yashraj Pardeshi',
+      email: 'yashrajpardeshi@gmail.com',
+      subject: 'How to List My Parking Spot',
+      category: 'general',
+      priority: 'medium',
+      status: 'in_progress',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+      updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
+      assignedTo: 'admin_001',
+      hasNewUpdate: false,
+      messages: [
+        {
+          senderId: 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2',
+          senderName: 'Yashraj Pardeshi',
+          senderRole: 'user',
+          message: 'I want to list my parking spot but I\'m not sure how to get started. Can you guide me through the process?',
+          timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          senderId: 'admin_001',
+          senderName: 'Support Team',
+          senderRole: 'admin',
+          message: 'Sure! Here\'s a step-by-step guide to list your parking spot...',
+          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          senderId: 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2',
+          senderName: 'Yashraj Pardeshi',
+          senderRole: 'user',
+          message: 'Thank you! I\'ve uploaded the photos. What\'s the next step?',
+          timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    },
+    {
+      id: 'ticket_test_003',
+      userId: 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2',
+      username: 'Yashraj Pardeshi',
+      email: 'yashrajpardeshi@gmail.com',
+      subject: 'App Not Working on Android',
+      category: 'technical',
+      priority: 'low',
+      status: 'resolved',
+      createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 1 week ago
+      updatedAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+      assignedTo: 'admin_002',
+      hasNewUpdate: false,
+      messages: [
+        {
+          senderId: 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2',
+          senderName: 'Yashraj Pardeshi',
+          senderRole: 'user',
+          message: 'The app keeps crashing when I try to book a spot on my Android phone.',
+          timestamp: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+        },
+        {
+          senderId: 'admin_002',
+          senderName: 'Tech Support',
+          senderRole: 'admin',
+          message: 'We have identified and fixed the issue. Please update your app to version 2.1.0.',
+          timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
+        }
+      ]
+    }
+  ];
+  
+  supportTickets.push(...testTickets);
+  saveSupportTickets();
+  console.log('Added test support tickets:', testTickets.length);
+}
+
 // Get dashboard statistics
 app.get('/stats', (req, res) => {
   try {
@@ -3019,8 +3314,234 @@ app.get('/users/:userId/verification', (req, res) => {
     mobileVerified: user.mobileVerified || false,
     isVerifiedHost: user.isVerifiedHost || false,
     verifiedEmail: user.verifiedEmail,
-    verifiedMobile: user.verifiedMobile
+    verifiedMobile: user.verifiedMobile,
+    hostVerificationStatus: user.hostVerificationStatus || 'not_started',
+    verificationDocuments: user.verificationDocuments || []
   });
+});
+
+// ===== Host Verification System - Phase 1 =====
+
+// Upload verification documents
+app.post('/api/host-verification/upload-documents', verificationUpload.fields([
+  { name: 'identityDocument', maxCount: 1 },
+  { name: 'addressProof', maxCount: 1 },
+  { name: 'propertyOwnership', maxCount: 1 },
+  { name: 'additionalDocuments', maxCount: 3 }
+]), (req, res) => {
+  try {
+    const userId = req.headers.authorization?.replace('Bearer ', '');
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+    
+    const user = users.find(u => u.uid === userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    const uploadedFiles = req.files;
+    const verificationDocuments = [];
+    
+    // Process uploaded files
+    Object.keys(uploadedFiles).forEach(fieldName => {
+      uploadedFiles[fieldName].forEach(file => {
+        verificationDocuments.push({
+          fieldName,
+          originalName: file.originalname,
+          filename: file.filename,
+          path: file.path,
+          mimetype: file.mimetype,
+          size: file.size,
+          uploadedAt: new Date().toISOString(),
+          status: 'pending_review'
+        });
+      });
+    });
+    
+    // Update user with verification documents
+    if (!user.verificationDocuments) user.verificationDocuments = [];
+    user.verificationDocuments.push(...verificationDocuments);
+    user.hostVerificationStatus = 'documents_submitted';
+    user.verificationSubmittedAt = new Date().toISOString();
+    
+    saveData(USERS_FILE, users);
+    
+    // Emit real-time notification to admins
+    const notification = {
+      type: 'host_verification_submitted',
+      userId: user.uid,
+      username: user.username,
+      email: user.email,
+      documentsCount: verificationDocuments.length,
+      timestamp: new Date().toISOString()
+    };
+    
+    // Notify all admin users
+    const adminUsers = users.filter(u => isAdmin(u.uid));
+    adminUsers.forEach(admin => {
+      io.to(`user-${admin.uid}`).emit('host-verification-notification', notification);
+    });
+    
+    res.json({
+      message: 'Verification documents uploaded successfully',
+      documentsCount: verificationDocuments.length,
+      status: user.hostVerificationStatus
+    });
+    
+  } catch (error) {
+    console.error('Error uploading verification documents:', error);
+    res.status(500).json({ message: 'Failed to upload documents' });
+  }
+});
+
+// Get host verification status
+app.get('/api/host-verification/status/:userId', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = users.find(u => u.uid === userId);
+    
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json({
+      hostVerificationStatus: user.hostVerificationStatus || 'not_started',
+      verificationDocuments: user.verificationDocuments || [],
+      verificationSubmittedAt: user.verificationSubmittedAt,
+      verificationReviewedAt: user.verificationReviewedAt,
+      verificationNotes: user.verificationNotes || '',
+      isVerifiedHost: user.isVerifiedHost || false
+    });
+    
+  } catch (error) {
+    console.error('Error getting verification status:', error);
+    res.status(500).json({ message: 'Failed to get verification status' });
+  }
+});
+
+// Admin: Review host verification (for admin panel)
+app.post('/api/host-verification/review/:userId', (req, res) => {
+  try {
+    const adminId = req.headers.authorization?.replace('Bearer ', '');
+    if (!adminId || !isAdmin(adminId)) {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    
+    const { userId } = req.params;
+    const { status, notes, approvedDocuments } = req.body;
+    
+    const user = users.find(u => u.uid === userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    // Update verification status
+    user.hostVerificationStatus = status;
+    user.verificationReviewedAt = new Date().toISOString();
+    user.verificationNotes = notes || '';
+    user.reviewedBy = adminId;
+    
+    // Update document statuses
+    if (approvedDocuments && user.verificationDocuments) {
+      user.verificationDocuments.forEach(doc => {
+        if (approvedDocuments.includes(doc.filename)) {
+          doc.status = 'approved';
+        } else {
+          doc.status = 'rejected';
+        }
+      });
+    }
+    
+    // If approved, mark as verified host
+    if (status === 'approved') {
+      user.isVerifiedHost = true;
+      user.hostVerifiedAt = new Date().toISOString();
+    }
+    
+    saveData(USERS_FILE, users);
+    
+    // Emit real-time notification to user
+    const notification = {
+      type: 'host_verification_reviewed',
+      status: status,
+      notes: notes,
+      timestamp: new Date().toISOString()
+    };
+    
+    io.to(`user-${userId}`).emit('host-verification-update', notification);
+    
+    // Send notification to user
+    io.to(`user-${userId}`).emit('notification', {
+      type: 'host_verification',
+      title: 'Host Verification Update',
+      message: `Your host verification has been ${status}`,
+      data: {
+        status: status,
+        notes: notes
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+    res.json({
+      message: 'Verification review completed',
+      status: status,
+      isVerifiedHost: user.isVerifiedHost
+    });
+    
+  } catch (error) {
+    console.error('Error reviewing verification:', error);
+    res.status(500).json({ message: 'Failed to review verification' });
+  }
+});
+
+// Get all pending host verifications (admin only)
+app.get('/api/host-verification/pending', (req, res) => {
+  try {
+    const adminId = req.headers.authorization?.replace('Bearer ', '');
+    if (!adminId || !isAdmin(adminId)) {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    
+    const pendingVerifications = users.filter(user => 
+      user.hostVerificationStatus === 'documents_submitted' ||
+      user.hostVerificationStatus === 'under_review'
+    ).map(user => ({
+      uid: user.uid,
+      username: user.username,
+      email: user.email,
+      fullName: user.fullName,
+      hostVerificationStatus: user.hostVerificationStatus,
+      verificationSubmittedAt: user.verificationSubmittedAt,
+      verificationDocuments: user.verificationDocuments || [],
+      verificationNotes: user.verificationNotes || ''
+    }));
+    
+    res.json({ pendingVerifications });
+    
+  } catch (error) {
+    console.error('Error getting pending verifications:', error);
+    res.status(500).json({ message: 'Failed to get pending verifications' });
+  }
+});
+
+// Download verification document (admin only)
+app.get('/api/host-verification/document/:filename', (req, res) => {
+  try {
+    const adminId = req.headers.authorization?.replace('Bearer ', '');
+    if (!adminId || !isAdmin(adminId)) {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+    
+    const { filename } = req.params;
+    const filePath = path.join(VERIFICATION_DOCS_DIR, filename);
+    
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+    
+    res.download(filePath);
+    
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    res.status(500).json({ message: 'Failed to download document' });
+  }
 });
 
 // Receipt generation endpoints

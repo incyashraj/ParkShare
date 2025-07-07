@@ -36,7 +36,12 @@ import {
   ListItemSecondaryAction,
   Tooltip,
   LinearProgress,
-  Badge
+  Badge,
+  FormLabel,
+  FormGroup,
+  FormControlLabel,
+  Checkbox,
+  ListItemIcon
 } from '@mui/material';
 import {
   AdminPanelSettings,
@@ -57,7 +62,9 @@ import {
   WarningAmber,
   ErrorOutline,
   InfoOutlined,
-  Notifications
+  Notifications,
+  Security as SecurityIcon,
+  Description as DocumentIcon
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
 import { useRealtime } from '../contexts/RealtimeContext';
@@ -105,6 +112,14 @@ const AdminPanel = () => {
   const [bookings, setBookings] = useState([]);
   const [bookingFilter, setBookingFilter] = useState('all');
   const [bookingSearch, setBookingSearch] = useState('');
+  
+  // Host verification data
+  const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [selectedVerification, setSelectedVerification] = useState(null);
+  const [verificationReviewDialog, setVerificationReviewDialog] = useState(false);
+  const [reviewNotes, setReviewNotes] = useState('');
+  const [reviewStatus, setReviewStatus] = useState('approved');
+  const [reviewingVerification, setReviewingVerification] = useState(false);
 
   const loadAdminData = React.useCallback(async () => {
     try {
@@ -144,10 +159,11 @@ const AdminPanel = () => {
         fetch('http://localhost:3001/api/users', { headers }).catch(e => ({ ok: false, error: e })),
         fetch('http://localhost:3001/api/admin/spots', { headers }).catch(e => ({ ok: false, error: e })),
         fetch('http://localhost:3001/api/admin/bookings', { headers }).catch(e => ({ ok: false, error: e })),
-        fetch('http://localhost:3001/api/admin/online-users', { headers }).catch(e => ({ ok: false, error: e }))
+        fetch('http://localhost:3001/api/admin/online-users', { headers }).catch(e => ({ ok: false, error: e })),
+        fetch('http://localhost:3001/api/host-verification/pending', { headers }).catch(e => ({ ok: false, error: e }))
       ];
 
-      const [analyticsRes, ticketsRes, usersRes, spotsRes, bookingsRes, onlineUsersRes] = await Promise.all(promises);
+      const [analyticsRes, ticketsRes, usersRes, spotsRes, bookingsRes, onlineUsersRes, verificationsRes] = await Promise.all(promises);
 
       // Handle each response individually
       if (analyticsRes.ok) {
@@ -190,6 +206,13 @@ const AdminPanel = () => {
         setOnlineUsers(onlineUsersData.onlineUsers);
       } else {
         console.error('Online users response not ok:', onlineUsersRes.status, onlineUsersRes.statusText);
+      }
+
+      if (verificationsRes.ok) {
+        const verificationsData = await verificationsRes.json();
+        setPendingVerifications(verificationsData.pendingVerifications);
+      } else {
+        console.error('Verifications response not ok:', verificationsRes.status, verificationsRes.statusText);
       }
 
     } catch (error) {
@@ -652,6 +675,77 @@ const AdminPanel = () => {
     }
   };
 
+  // Host verification functions
+  const handleReviewVerification = async () => {
+    if (!selectedVerification) return;
+    
+    try {
+      setReviewingVerification(true);
+      
+      const response = await fetch(`http://localhost:3001/api/host-verification/review/${selectedVerification.uid}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentUser.uid}`
+        },
+        body: JSON.stringify({
+          status: reviewStatus,
+          notes: reviewNotes
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        showSnackbar(`Verification ${reviewStatus} successfully`, 'success');
+        setVerificationReviewDialog(false);
+        setSelectedVerification(null);
+        setReviewNotes('');
+        setReviewStatus('approved');
+        loadAdminData(); // Reload data
+      } else {
+        const error = await response.json();
+        showSnackbar(error.message || 'Failed to review verification', 'error');
+      }
+    } catch (error) {
+      console.error('Error reviewing verification:', error);
+      showSnackbar('Failed to review verification', 'error');
+    } finally {
+      setReviewingVerification(false);
+    }
+  };
+
+  const handleViewVerification = (verification) => {
+    setSelectedVerification(verification);
+    setVerificationReviewDialog(true);
+  };
+
+  const handleDownloadDocument = async (filename) => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/host-verification/document/${filename}`, {
+        headers: {
+          Authorization: `Bearer ${currentUser.uid}`
+        }
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        showSnackbar('Failed to download document', 'error');
+      }
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      showSnackbar('Failed to download document', 'error');
+    }
+  };
+
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ mt: 4 }}>
@@ -695,6 +789,14 @@ const AdminPanel = () => {
           <Tab icon={<People />} label="User Management" />
           <Tab icon={<LocalParking />} label="Parking Spots" />
           <Tab icon={<BookOnline />} label="Bookings" />
+          <Tab 
+            icon={
+              <Badge badgeContent={pendingVerifications.length} color="warning">
+                <SecurityIcon />
+              </Badge>
+            } 
+            label="Host Verification" 
+          />
         </Tabs>
 
         <Box sx={{ p: 3 }}>
@@ -1133,6 +1235,87 @@ const AdminPanel = () => {
             </Box>
           )}
 
+          {/* Host Verification Tab */}
+          {activeTab === 5 && (
+            <Box>
+              <Box sx={{ mb: 3, display: 'flex', gap: 2, alignItems: 'center' }}>
+                <Typography variant="h6">
+                  Pending Host Verifications ({pendingVerifications.length})
+                </Typography>
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={loadAdminData}
+                >
+                  Refresh
+                </Button>
+              </Box>
+
+              {pendingVerifications.length === 0 ? (
+                <Alert severity="info">
+                  No pending host verifications at this time.
+                </Alert>
+              ) : (
+                <TableContainer component={Paper}>
+                  <Table>
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>User</TableCell>
+                        <TableCell>Email</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell>Documents</TableCell>
+                        <TableCell>Submitted</TableCell>
+                        <TableCell>Actions</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {pendingVerifications.map((verification) => (
+                        <TableRow key={verification.uid}>
+                          <TableCell>
+                            <Typography variant="body2" fontWeight="bold">
+                              {verification.username || verification.fullName || 'Unknown'}
+                            </Typography>
+                          </TableCell>
+                          <TableCell>{verification.email}</TableCell>
+                          <TableCell>
+                            <Chip
+                              label={verification.hostVerificationStatus}
+                              color={
+                                verification.hostVerificationStatus === 'documents_submitted' ? 'warning' :
+                                verification.hostVerificationStatus === 'under_review' ? 'info' : 'default'
+                              }
+                              size="small"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2">
+                              {verification.verificationDocuments?.length || 0} documents
+                            </Typography>
+                          </TableCell>
+                          <TableCell>
+                            {verification.verificationSubmittedAt ? 
+                              formatDate(verification.verificationSubmittedAt) : 'N/A'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            <Tooltip title="Review Verification">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleViewVerification(verification)}
+                              >
+                                <Visibility />
+                              </IconButton>
+                            </Tooltip>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+              )}
+            </Box>
+          )}
+
           {/* Bookings Tab */}
           {activeTab === 4 && (
             <Box>
@@ -1385,6 +1568,115 @@ const AdminPanel = () => {
             color={selectedUser?.banned ? 'success' : 'error'}
           >
             {selectedUser?.banned ? 'Unban' : 'Ban'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Host Verification Review Dialog */}
+      <Dialog open={verificationReviewDialog} onClose={() => setVerificationReviewDialog(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          Review Host Verification: {selectedVerification?.username || selectedVerification?.email}
+        </DialogTitle>
+        <DialogContent>
+          {selectedVerification && (
+            <Box>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" gutterBottom>User Information</Typography>
+                  <Typography><strong>Name:</strong> {selectedVerification.username || selectedVerification.fullName || 'Unknown'}</Typography>
+                  <Typography><strong>Email:</strong> {selectedVerification.email}</Typography>
+                  <Typography><strong>Phone:</strong> {selectedVerification.phone || 'Not provided'}</Typography>
+                  <Typography><strong>Submitted:</strong> {selectedVerification.verificationSubmittedAt ? formatDate(selectedVerification.verificationSubmittedAt) : 'N/A'}</Typography>
+                  <Typography><strong>Status:</strong> {selectedVerification.hostVerificationStatus}</Typography>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Typography variant="h6" gutterBottom>Verification Documents</Typography>
+                  {selectedVerification.verificationDocuments && selectedVerification.verificationDocuments.length > 0 ? (
+                    <List>
+                      {selectedVerification.verificationDocuments.map((doc, index) => (
+                        <ListItem key={index}>
+                          <ListItemIcon>
+                            <DocumentIcon />
+                          </ListItemIcon>
+                          <ListItemText
+                            primary={doc.documentType}
+                            secondary={doc.filename}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDownloadDocument(doc.filename)}
+                          >
+                            <Visibility />
+                          </IconButton>
+                        </ListItem>
+                      ))}
+                    </List>
+                  ) : (
+                    <Typography color="textSecondary">No documents uploaded</Typography>
+                  )}
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="h6" gutterBottom>Review Decision</Typography>
+                  
+                  <FormControl component="fieldset" sx={{ mb: 2 }}>
+                    <FormLabel component="legend">Verification Status</FormLabel>
+                    <FormGroup row>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={reviewStatus === 'approved'}
+                            onChange={() => setReviewStatus('approved')}
+                          />
+                        }
+                        label="Approve"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={reviewStatus === 'rejected'}
+                            onChange={() => setReviewStatus('rejected')}
+                          />
+                        }
+                        label="Reject"
+                      />
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={reviewStatus === 'request_more_info'}
+                            onChange={() => setReviewStatus('request_more_info')}
+                          />
+                        }
+                        label="Request More Information"
+                      />
+                    </FormGroup>
+                  </FormControl>
+
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={4}
+                    label="Review Notes"
+                    value={reviewNotes}
+                    onChange={(e) => setReviewNotes(e.target.value)}
+                    placeholder="Enter review notes, feedback, or reason for rejection..."
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setVerificationReviewDialog(false)}>Cancel</Button>
+          <Button 
+            onClick={handleReviewVerification}
+            variant="contained"
+            disabled={reviewingVerification}
+            color={reviewStatus === 'approved' ? 'success' : reviewStatus === 'rejected' ? 'error' : 'warning'}
+          >
+            {reviewingVerification ? 'Processing...' : `Submit ${reviewStatus}`}
           </Button>
         </DialogActions>
       </Dialog>
