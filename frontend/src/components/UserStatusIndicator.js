@@ -17,9 +17,10 @@ const UserStatusIndicator = ({ userId, username, size = 'small', showTooltip = t
     // Fetch initial presence status
     const fetchPresence = async () => {
       try {
-        const response = await fetch(`http://localhost:3001/api/users/${userId}/presence`, {
+        const uid = currentUser?.uid || localStorage.getItem('userUid') || 'anonymous';
+        const response = await fetch(`http://192.168.1.7:3001/api/users/${userId}/presence`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('userUid') || 'anonymous'}`
+            'Authorization': `Bearer ${uid}`
           }
         });
         

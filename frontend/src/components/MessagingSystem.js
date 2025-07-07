@@ -63,6 +63,7 @@ import UserStatusIndicator from './UserStatusIndicator';
 import FileUpload from './FileUpload';
 import MessageAttachment from './MessageAttachment';
 import * as openpgp from 'openpgp';
+import UserActivityTracker from './UserActivityTracker';
 
 const MessagingSystem = () => {
   const navigate = useNavigate();
@@ -144,6 +145,17 @@ const MessagingSystem = () => {
     return participants.find(p => p.uid !== currentUser?.uid);
   }, [currentUser?.uid]);
 
+  const setSortedConversations = (convs) => {
+    setConversations(
+      (convs || []).sort((a, b) => {
+        // Prefer lastActivity, fallback to lastMessage.timestamp
+        const aTime = new Date(a.lastActivity || (a.lastMessage && a.lastMessage.timestamp) || 0);
+        const bTime = new Date(b.lastActivity || (b.lastMessage && b.lastMessage.timestamp) || 0);
+        return bTime - aTime;
+      })
+    );
+  };
+
   const loadConversations = useCallback(async () => {
     if (!currentUser?.uid) return;
     setLoading(true);
@@ -158,7 +170,7 @@ const MessagingSystem = () => {
       
       if (response.ok) {
         const data = await response.json();
-        setConversations(data.conversations || []);
+        setSortedConversations(data.conversations || []);
       }
     } catch (error) {
       console.error('Error loading conversations:', error);
@@ -210,6 +222,18 @@ const MessagingSystem = () => {
         let decrypted = await decryptMessages(data.messages || []);
         // Sort messages by timestamp ascending (oldest first)
         decrypted = decrypted.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+        // Map backend 'read' to status for own messages
+        const mapMessageStatus = (msgs) => {
+          return msgs.map(msg => {
+            if (msg.senderId === currentUser?.uid) {
+              if (msg.read) return { ...msg, status: 'read' };
+              // If not read, treat as delivered (since delivered/read is only for own messages)
+              return { ...msg, status: 'delivered' };
+            }
+            return msg;
+          });
+        };
+        decrypted = mapMessageStatus(decrypted);
         setMessages(decrypted);
         setPreviousMessageCount(0);
         setTimeout(() => scrollToBottom(), 100);
@@ -250,14 +274,28 @@ const MessagingSystem = () => {
             newMsg = { ...newMsg, content: '[Unable to decrypt]' };
           }
         }
-        // Add to UI and sort
         if (selectedConversation && data.conversationId === selectedConversation.id) {
           setMessages(prev => {
-            // Avoid duplicates
-            const exists = prev.some(msg => msg.id === newMsg.id);
-            const updated = exists ? prev : [...prev, newMsg];
-            return updated.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            // If an optimistic message exists (temp id), replace it
+            const tempIdx = prev.findIndex(msg => msg.id.startsWith('temp_') && msg.content === newMsg.content);
+            if (tempIdx !== -1) {
+              const updated = [...prev];
+              updated[tempIdx] = newMsg;
+              return updated;
+            }
+            // Otherwise, avoid duplicates by id
+            if (prev.some(msg => msg.id === newMsg.id)) return prev;
+            return [...prev, newMsg].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
           });
+          // Emit delivered status
+          if (socket) {
+            socket.emit('message-status', {
+              conversationId: data.conversationId,
+              messageId: newMsg.id,
+              userId: currentUser.uid,
+              status: 'delivered'
+            });
+          }
         }
         setConversations(prev => prev.map(conv =>
           conv.id === data.conversationId
@@ -949,13 +987,17 @@ const MessagingSystem = () => {
   };
 
   const getMessageStatusIcon = (message) => {
-    switch (message.status) {
+    let status = message.status;
+    if (!status && message.senderId === currentUser?.uid) {
+      status = message.read ? 'read' : 'delivered';
+    }
+    switch (status) {
       case 'sending':
         return <CircularProgress size={12} />;
       case 'sent':
         return <DoneIcon sx={{ fontSize: 12, color: 'text.secondary' }} />;
       case 'delivered':
-        return <DoneAllIcon sx={{ fontSize: 12, color: 'text.secondary' }} />;
+        return <span style={{ fontSize: 12, color: '#1976d2', fontWeight: 500, marginLeft: 4 }}>delivered</span>;
       case 'read':
         return <DoneAllIcon sx={{ fontSize: 12, color: 'primary.main' }} />;
       case 'failed':
@@ -1118,8 +1160,57 @@ const MessagingSystem = () => {
     return decryptedMsgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
   };
 
+  // In useEffect, when selectedConversation changes, mark messages as read
+  useEffect(() => {
+    if (!selectedConversation || !currentUser?.uid) return;
+    // Mark all messages as read in this conversation
+    const markAsRead = async () => {
+      try {
+        await fetch(`http://192.168.1.7:3001/api/conversations/${selectedConversation.id}/read`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentUser.uid}`
+          }
+        });
+        // Emit socket event to notify sender
+        if (socket) {
+          socket.emit('message-status', {
+            conversationId: selectedConversation.id,
+            userId: currentUser.uid,
+            status: 'read'
+          });
+        }
+      } catch (e) {
+        // Ignore errors
+      }
+    };
+    markAsRead();
+  }, [selectedConversation, currentUser, socket]);
+
+  // Listen for 'message-status' events and update message status in UI
+  useEffect(() => {
+    if (!socket) return;
+    const handleMessageStatus = (data) => {
+      setMessages(prev => prev.map(msg =>
+        msg.id === data.messageId ? { ...msg, status: data.status } : msg
+      ));
+    };
+    socket.on('message-status', handleMessageStatus);
+    return () => {
+      socket.off('message-status', handleMessageStatus);
+    };
+  }, [socket]);
+
+  // In useEffect, when selectedConversation changes, scroll to bottom after loading messages
+  useEffect(() => {
+    if (!selectedConversation) return;
+    setTimeout(() => scrollToBottom(), 200);
+  }, [selectedConversation]);
+
   return (
     <Container maxWidth="lg" sx={{ py: 4, height: 'calc(100vh - 200px)' }}>
+      {currentUser && <UserActivityTracker userId={currentUser.uid} />}
       {showE2EEWarning && (
         <div className="e2ee-warning" style={{ background: '#fffbe6', color: '#ad8b00', padding: '10px', borderRadius: '6px', marginBottom: '10px', border: '1px solid #ffe58f' }}>
           <strong>Some messages could not be decrypted.</strong><br />
@@ -1631,7 +1722,7 @@ const MessagingSystem = () => {
                                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
                                       {message.timestamp ? getDetailedTime(message.timestamp) : ''}
                                     </Typography>
-                                    {getMessageStatusIcon(message)}
+                                    {isOwnMessage && getMessageStatusIcon(message)}
                                     {message.status === 'failed' && isOwnMessage && (
                                       <Tooltip title="Retry sending">
                                         <IconButton
