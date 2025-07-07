@@ -1,222 +1,24 @@
 [
   {
-    "id": "ticket_1751848097306",
-    "userId": "test-user-123",
-    "username": "testuser",
-    "email": "test@example.com",
-    "subject": "Test Notification Ticket",
-    "category": "technical",
-    "priority": "high",
-    "status": "in_progress",
-    "createdAt": "2025-07-07T00:28:17.306Z",
-    "updatedAt": "2025-07-07T00:28:29.035Z",
-    "assignedTo": null,
-    "messages": [
-      {
-        "senderId": "test-user-123",
-        "senderName": "testuser",
-        "senderRole": "user",
-        "message": "This is a test ticket to verify notification system",
-        "timestamp": "2025-07-07T00:28:17.307Z"
-      },
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "This is an admin response to test the notification system",
-        "timestamp": "2025-07-07T00:28:29.035Z"
-      }
-    ]
-  },
-  {
-    "id": "ticket_1751847678975",
-    "userId": "test-user-123",
-    "username": "testuser",
-    "email": "test@example.com",
-    "subject": "Test Open Ticket",
-    "category": "general",
-    "priority": "low",
-    "status": "in_progress",
-    "createdAt": "2025-07-07T00:21:18.975Z",
-    "updatedAt": "2025-07-07T00:25:41.907Z",
-    "assignedTo": null,
-    "messages": [
-      {
-        "senderId": "test-user-123",
-        "senderName": "testuser",
-        "senderRole": "user",
-        "message": "This is a test ticket that should allow messages",
-        "timestamp": "2025-07-07T00:21:18.975Z"
-      },
-      {
-        "senderId": "test-user-123",
-        "senderName": "testuser",
-        "senderRole": "user",
-        "message": "This message should work because ticket is open",
-        "timestamp": "2025-07-07T00:21:23.390Z"
-      },
-      {
-        "senderId": "test-user-123",
-        "senderName": "testuser",
-        "senderRole": "user",
-        "message": "This message should work because ticket is in progress",
-        "timestamp": "2025-07-07T00:21:32.288Z"
-      },
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "Hi notification check",
-        "timestamp": "2025-07-07T00:25:41.907Z"
-      }
-    ]
-  },
-  {
-    "id": "ticket_1751847660703",
-    "userId": "test-user-123",
-    "username": "testuser",
-    "email": "test@example.com",
-    "subject": "Test Resolved Ticket",
-    "category": "technical",
-    "priority": "medium",
-    "status": "resolved",
-    "createdAt": "2025-07-07T00:21:00.703Z",
-    "updatedAt": "2025-07-07T00:21:05.170Z",
-    "assignedTo": null,
-    "messages": [
-      {
-        "senderId": "test-user-123",
-        "senderName": "testuser",
-        "senderRole": "user",
-        "message": "This is a test ticket to verify resolved status",
-        "timestamp": "2025-07-07T00:21:00.703Z"
-      }
-    ]
-  },
-  {
-    "id": "ticket_1751847178257",
-    "userId": "test-user-123",
-    "username": "testuser",
-    "email": "test@example.com",
-    "subject": "Test Real-time Ticket",
-    "category": "technical",
-    "priority": "high",
-    "status": "open",
-    "createdAt": "2025-07-07T00:12:58.257Z",
-    "updatedAt": "2025-07-07T00:14:59.356Z",
-    "assignedTo": null,
-    "messages": [
-      {
-        "senderId": "test-user-123",
-        "senderName": "testuser",
-        "senderRole": "user",
-        "message": "This is a test ticket to demonstrate real-time notifications",
-        "timestamp": "2025-07-07T00:12:58.257Z"
-      },
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "This is an admin response to test real-time messaging functionality",
-        "timestamp": "2025-07-07T00:13:02.929Z"
-      },
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "HI",
-        "timestamp": "2025-07-07T00:14:59.356Z"
-      }
-    ]
-  },
-  {
-    "id": "ticket_1751846408161",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "username": "Yashraj Pardeshi",
-    "email": "incyashraj@gmail.com",
-    "subject": "Sub check",
-    "message": "Message check",
-    "category": "booking",
-    "priority": "medium",
-    "status": "resolved",
-    "createdAt": "2025-07-07T00:00:08.161Z",
-    "updatedAt": "2025-07-07T00:14:49.590Z",
-    "assignedTo": null,
-    "responses": [],
-    "messages": [
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "check",
-        "timestamp": "2025-07-07T00:06:27.019Z"
-      },
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "check",
-        "timestamp": "2025-07-07T00:14:44.819Z"
-      }
-    ]
-  },
-  {
-    "id": "ticket_1751845492698",
-    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-    "username": "Yashraj Pardeshi",
-    "email": "incyashraj@gmail.com",
-    "subject": "sub check",
-    "message": "mess check",
-    "category": "general",
-    "priority": "medium",
-    "status": "open",
-    "createdAt": "2025-07-06T23:44:52.698Z",
-    "updatedAt": "2025-07-07T00:33:13.351Z",
-    "assignedTo": null,
-    "responses": [
-      {
-        "id": "resp_1751846434916",
-        "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "user": {
-          "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-          "username": "Yashraj Pardeshi",
-          "email": "incyashraj@gmail.com"
-        },
-        "message": "follow the procedure below",
-        "createdAt": "2025-07-07T00:00:34.916Z"
-      }
-    ],
-    "messages": [
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "notif check",
-        "timestamp": "2025-07-07T00:26:05.267Z"
-      },
-      {
-        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "senderName": "Yashraj Pardeshi",
-        "senderRole": "admin",
-        "message": "seq check",
-        "timestamp": "2025-07-07T00:33:13.351Z"
-      }
-    ],
-    "hasNewUpdate": true
-  },
-  {
     "id": "ticket_001",
     "userId": "user_john_123",
     "username": "john_doe",
     "email": "john@example.com",
     "subject": "Payment Issue",
-    "message": "I'm having trouble with the payment system. It keeps showing an error when I try to book a spot.",
-    "status": "resolved",
+    "status": "open",
     "priority": "high",
     "category": "payment",
     "createdAt": "2024-01-15T10:30:00Z",
-    "updatedAt": "2025-07-06T23:57:05.383Z",
-    "responses": []
+    "updatedAt": "2024-01-15T10:30:00Z",
+    "messages": [
+      {
+        "senderId": "user_john_123",
+        "senderName": "john_doe",
+        "senderRole": "user",
+        "message": "I'm having trouble with the payment system. It keeps showing an error when I try to book a spot.",
+        "timestamp": "2024-01-15T10:30:00Z"
+      }
+    ]
   },
   {
     "id": "ticket_002",
@@ -224,20 +26,54 @@
     "username": "jane_smith",
     "email": "jane@example.com",
     "subject": "Spot Not Available",
-    "message": "I booked a spot but when I arrived, it was already occupied by another car. This is very frustrating.",
-    "status": "resolved",
+    "status": "in_progress",
     "priority": "medium",
     "category": "booking",
     "createdAt": "2024-01-14T15:45:00Z",
-    "updatedAt": "2025-07-06T23:57:03.791Z",
-    "responses": [
+    "updatedAt": "2024-01-15T09:20:00Z",
+    "messages": [
       {
-        "id": "resp_001",
-        "adminId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
-        "adminName": "Yashraj Pardeshi",
+        "senderId": "user_jane_456",
+        "senderName": "jane_smith",
+        "senderRole": "user",
+        "message": "I booked a spot but when I arrived, it was already occupied by another car. This is very frustrating.",
+        "timestamp": "2024-01-14T15:45:00Z"
+      },
+      {
+        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "senderName": "Yashraj Pardeshi",
+        "senderRole": "admin",
         "message": "We apologize for this inconvenience. We're investigating the issue and will get back to you within 24 hours.",
-        "createdAt": "2024-01-15T09:20:00Z"
+        "timestamp": "2024-01-15T09:20:00Z"
+      }
+    ]
+  },
+  {
+    "id": "ticket_003",
+    "userId": "user_mike_789",
+    "username": "mike_wilson",
+    "email": "mike@example.com",
+    "subject": "App Not Working",
+    "status": "resolved",
+    "priority": "high",
+    "category": "technical",
+    "createdAt": "2024-01-13T08:15:00Z",
+    "updatedAt": "2024-01-14T16:30:00Z",
+    "messages": [
+      {
+        "senderId": "user_mike_789",
+        "senderName": "mike_wilson",
+        "senderRole": "user",
+        "message": "The mobile app keeps crashing when I try to view my bookings. I've tried reinstalling but the problem persists.",
+        "timestamp": "2024-01-13T08:15:00Z"
+      },
+      {
+        "senderId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "senderName": "Yashraj Pardeshi",
+        "senderRole": "admin",
+        "message": "This issue has been resolved in our latest app update. Please update your app to version 2.1.0.",
+        "timestamp": "2024-01-14T16:30:00Z"
       }
     ]
   }
-]
+] 
