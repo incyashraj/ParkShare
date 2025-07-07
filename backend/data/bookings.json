@@ -304,5 +304,59 @@
       "reviewer": "Jane Smith",
       "date": "2025-06-23T23:24:21.614Z"
     }
+  },
+  {
+    "id": "booking_wadala_001",
+    "spotId": "spot_wadala_001",
+    "userId": "user_john_123",
+    "spotOwner": "user_aanchala_001",
+    "startTime": "2025-07-01T23:54:28.933Z",
+    "endTime": "2025-07-02T02:54:28.933Z",
+    "totalPrice": 36,
+    "amount": 36,
+    "status": "completed",
+    "createdAt": "2025-07-01T23:54:28.933Z",
+    "review": {
+      "rating": 5,
+      "comment": "Excellent parking spot in Wadala! Very convenient location and great security.",
+      "reviewer": "John Doe",
+      "date": "2025-07-02T23:54:28.933Z"
+    }
+  },
+  {
+    "id": "booking_wadala_002",
+    "spotId": "spot_wadala_002",
+    "userId": "user_jane_456",
+    "spotOwner": "user_aanchala_001",
+    "startTime": "2025-06-28T23:54:28.933Z",
+    "endTime": "2025-06-29T01:54:28.933Z",
+    "totalPrice": 16,
+    "amount": 16,
+    "status": "completed",
+    "createdAt": "2025-06-28T23:54:28.933Z",
+    "review": {
+      "rating": 4,
+      "comment": "Good parking near the station. Perfect for commuters.",
+      "reviewer": "Jane Smith",
+      "date": "2025-06-29T23:54:28.933Z"
+    }
+  },
+  {
+    "id": "booking_wadala_003",
+    "spotId": "spot_wadala_003",
+    "userId": "user_mike_789",
+    "spotOwner": "user_aanchala_001",
+    "startTime": "2025-06-24T23:54:28.933Z",
+    "endTime": "2025-06-25T03:54:28.933Z",
+    "totalPrice": 80,
+    "amount": 80,
+    "status": "completed",
+    "createdAt": "2025-06-24T23:54:28.933Z",
+    "review": {
+      "rating": 5,
+      "comment": "Premium parking experience! Valet service was excellent and the facility is top-notch.",
+      "reviewer": "Mike Wilson",
+      "date": "2025-06-25T23:54:28.933Z"
+    }
   }
 ]

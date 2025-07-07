@@ -57,7 +57,7 @@ const SupportPanel = () => {
   const loadTickets = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:3001/api/support/tickets/user/${currentUser.uid}`, {
+      const response = await fetch('http://localhost:3001/api/support/tickets', {
         headers: {
           Authorization: `Bearer ${currentUser.uid}`
         }
@@ -70,6 +70,7 @@ const SupportPanel = () => {
         setError('Failed to load tickets');
       }
     } catch (error) {
+      console.error('Error loading tickets:', error);
       setError('Error loading tickets');
     } finally {
       setLoading(false);
@@ -84,12 +85,7 @@ const SupportPanel = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${currentUser.uid}`
         },
-        body: JSON.stringify({
-          ...newTicket,
-          userId: currentUser.uid,
-          username: currentUser.username || currentUser.email,
-          email: currentUser.email
-        })
+        body: JSON.stringify(newTicket)
       });
 
       if (response.ok) {
@@ -98,9 +94,11 @@ const SupportPanel = () => {
         loadTickets();
         setError(null);
       } else {
-        setError('Failed to create ticket');
+        const errorData = await response.json();
+        setError(errorData.message || 'Failed to create ticket');
       }
     } catch (error) {
+      console.error('Error creating ticket:', error);
       setError('Error creating ticket');
     }
   };

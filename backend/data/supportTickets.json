@@ -1,16 +1,43 @@
 [
   {
+    "id": "ticket_1751845492698",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "username": "Yashraj Pardeshi",
+    "email": "incyashraj@gmail.com",
+    "subject": "sub check",
+    "message": "mess check",
+    "category": "general",
+    "priority": "medium",
+    "status": "open",
+    "createdAt": "2025-07-06T23:44:52.698Z",
+    "updatedAt": "2025-07-07T00:00:34.916Z",
+    "assignedTo": null,
+    "responses": [
+      {
+        "id": "resp_1751846434916",
+        "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "user": {
+          "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+          "username": "Yashraj Pardeshi",
+          "email": "incyashraj@gmail.com"
+        },
+        "message": "follow the procedure below",
+        "createdAt": "2025-07-07T00:00:34.916Z"
+      }
+    ]
+  },
+  {
     "id": "ticket_001",
     "userId": "user_john_123",
     "username": "john_doe",
     "email": "john@example.com",
     "subject": "Payment Issue",
     "message": "I'm having trouble with the payment system. It keeps showing an error when I try to book a spot.",
-    "status": "open",
+    "status": "resolved",
     "priority": "high",
     "category": "payment",
     "createdAt": "2024-01-15T10:30:00Z",
-    "updatedAt": "2024-01-15T10:30:00Z",
+    "updatedAt": "2025-07-06T23:57:05.383Z",
     "responses": []
   },
   {
@@ -20,11 +47,11 @@
     "email": "jane@example.com",
     "subject": "Spot Not Available",
     "message": "I booked a spot but when I arrived, it was already occupied by another car. This is very frustrating.",
-    "status": "in_progress",
+    "status": "resolved",
     "priority": "medium",
     "category": "booking",
     "createdAt": "2024-01-14T15:45:00Z",
-    "updatedAt": "2024-01-15T09:20:00Z",
+    "updatedAt": "2025-07-06T23:57:03.791Z",
     "responses": [
       {
         "id": "resp_001",
@@ -46,7 +73,7 @@
     "priority": "high",
     "category": "technical",
     "createdAt": "2024-01-13T08:15:00Z",
-    "updatedAt": "2024-01-14T16:30:00Z",
+    "updatedAt": "2025-07-06T23:57:01.731Z",
     "responses": [
       {
         "id": "resp_002",
@@ -56,5 +83,20 @@
         "createdAt": "2024-01-14T16:30:00Z"
       }
     ]
+  },
+  {
+    "id": "ticket_1751846408161",
+    "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "username": "Yashraj Pardeshi",
+    "email": "incyashraj@gmail.com",
+    "subject": "Sub check",
+    "message": "Message check",
+    "category": "booking",
+    "priority": "medium",
+    "status": "open",
+    "createdAt": "2025-07-07T00:00:08.161Z",
+    "updatedAt": "2025-07-07T00:00:08.161Z",
+    "assignedTo": null,
+    "responses": []
   }
-] 
+]

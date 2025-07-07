@@ -183,5 +183,13 @@
     "email": "new@example.com",
     "uid": "user_new_004",
     "fullName": "New Host"
+  },
+  {
+    "username": "Aanchala",
+    "email": "aanchalabhongade@gmail.com",
+    "uid": "user_aanchala_001",
+    "fullName": "Aanchala Bhongade",
+    "phone": "+917276228504",
+    "password": "Admin"
   }
 ]

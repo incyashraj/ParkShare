@@ -17,6 +17,11 @@ const io = new Server(server, {
 });
 const port = 3001;
 
+// Middleware - MUST be at the top before routes
+app.use(cors());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
+
 // ===== TEST MODE CONFIGURATION =====
 // Set this to true to bypass payments for testing
 const TEST_MODE = true; // Change to false for production
@@ -27,7 +32,8 @@ const TEST_USER_IDS = [
   'user_john_123',
   'user_jane_456',
   'user_mike_789',
-  'user_sarah_101'
+  'user_sarah_101',
+  'user_aanchala_001'
 ]; // Add your test user IDs here
 // ===================================
 
@@ -102,6 +108,7 @@ function isAdmin(userId) {
   return user && (user.isAdmin || 
                  user.email === 'incyashraj@gmail.com' || 
                  user.email === 'yashrajpardeshi@gmail.com' ||
+                 user.email === 'aanchalabhongade@gmail.com' ||
                  userId === 'z5UJrnuM0NbNl91bD9T4U6zi6Pf2'); // Yashraj's UID
 }
 
@@ -112,14 +119,17 @@ app.post('/api/support/tickets', (req, res) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     const user = users.find(u => u.uid === userId);
     if (!user) return res.status(404).json({ message: 'User not found' });
-    const { subject, message } = req.body;
+    const { subject, message, category, priority } = req.body;
     if (!subject || !message) return res.status(400).json({ message: 'Subject and message required' });
     const ticket = {
       id: `ticket_${Date.now()}`,
       userId,
-      user: { uid: user.uid, username: user.username, email: user.email },
+      username: user.username,
+      email: user.email,
       subject,
       message,
+      category: category || 'general',
+      priority: priority || 'medium',
       status: 'open',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -130,6 +140,7 @@ app.post('/api/support/tickets', (req, res) => {
     saveSupportTickets();
     res.status(201).json({ message: 'Ticket submitted', ticket });
   } catch (error) {
+    console.error('Error creating ticket:', error);
     res.status(500).json({ message: 'Failed to submit ticket' });
   }
 });
@@ -141,6 +152,23 @@ app.get('/api/support/tickets', (req, res) => {
     if (!userId) return res.status(401).json({ message: 'Unauthorized' });
     const admin = isAdmin(userId);
     let tickets = admin ? supportTickets : supportTickets.filter(t => t.userId === userId);
+    
+    // For admin requests, populate user data
+    if (admin) {
+      tickets = tickets.map(ticket => {
+        const user = users.find(u => u.uid === ticket.userId);
+        return {
+          ...ticket,
+          user: user ? {
+            uid: user.uid,
+            username: user.username,
+            email: user.email,
+            fullName: user.fullName
+          } : null
+        };
+      });
+    }
+    
     res.json({ tickets });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch tickets' });
@@ -155,7 +183,20 @@ app.get('/api/support/tickets/:id', (req, res) => {
     const ticket = supportTickets.find(t => t.id === req.params.id);
     if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
     if (!isAdmin(userId) && ticket.userId !== userId) return res.status(403).json({ message: 'Forbidden' });
-    res.json({ ticket });
+    
+    // For admin requests, populate user data
+    let responseTicket = { ...ticket };
+    if (isAdmin(userId)) {
+      const user = users.find(u => u.uid === ticket.userId);
+      responseTicket.user = user ? {
+        uid: user.uid,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName
+      } : null;
+    }
+    
+    res.json({ ticket: responseTicket });
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch ticket' });
   }
@@ -262,9 +303,6 @@ let verificationCodes = {}; // Store verification codes temporarily
 
 console.log(`Loaded ${users.length} users, ${parkingSpots.length} spots, ${bookings.length} bookings, ${conversations.length} conversations, ${messages.length} messages, ${supportTickets.length} support tickets`);
 
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ limit: '10mb', extended: true }));
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 app.use((req, res, next) => {
@@ -1964,7 +2002,16 @@ const createTestData = () => {
     { username: 'premium_host', email: 'premium@example.com', uid: 'user_premium_001', fullName: 'Premium Host' },
     { username: 'trusted_host', email: 'trusted@example.com', uid: 'user_trusted_002', fullName: 'Trusted Host' },
     { username: 'regular_host', email: 'regular@example.com', uid: 'user_regular_003', fullName: 'Regular Host' },
-    { username: 'new_host', email: 'new@example.com', uid: 'user_new_004', fullName: 'New Host' }
+    { username: 'new_host', email: 'new@example.com', uid: 'user_new_004', fullName: 'New Host' },
+    // Aanchala Bhongade - New user with Wadala listings
+    { 
+      username: 'Aanchala', 
+      email: 'aanchalabhongade@gmail.com', 
+      uid: 'user_aanchala_001', 
+      fullName: 'Aanchala Bhongade',
+      phone: '+917276228504',
+      password: 'Admin'
+    }
   ];
   
   // Test parking spots
@@ -2281,6 +2328,88 @@ const createTestData = () => {
       advanceBooking: 12,
       vehicleTypes: ['car'],
       createdAt: new Date().toISOString()
+    },
+    // Aanchala's Wadala Parking Spots
+    {
+      id: 'spot_wadala_001',
+      title: 'Wadala Central Parking',
+      location: 'Wadala Central, Wadala East, Mumbai',
+      coordinates: [19.0183, 72.8477],
+      hourlyRate: '$12',
+      price: 12,
+      description: 'Convenient parking in the heart of Wadala with easy access to major roads and public transport',
+      available: true,
+      available24h: true,
+      status: 'available',
+      owner: 'user_aanchala_001',
+      ownerName: 'Aanchala Bhongade',
+      images: [
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'well_lit', 'security_guard'],
+      amenities: ['covered', 'accessible', 'restroom'],
+      rating: 4.4,
+      reviewCount: 18,
+      parkingType: 'lot',
+      advanceBooking: 24,
+      vehicleTypes: ['car', 'suv'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_wadala_002',
+      title: 'Wadala Station Parking',
+      location: 'Near Wadala Railway Station, Wadala West, Mumbai',
+      coordinates: [19.0201, 72.8456],
+      hourlyRate: '$8',
+      price: 8,
+      description: 'Affordable parking near Wadala railway station, perfect for commuters and visitors',
+      available: true,
+      available24h: false,
+      status: 'available',
+      owner: 'user_aanchala_001',
+      ownerName: 'Aanchala Bhongade',
+      images: [
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'well_lit'],
+      amenities: ['accessible', 'bike_racks'],
+      rating: 4.1,
+      reviewCount: 12,
+      parkingType: 'street',
+      advanceBooking: 12,
+      vehicleTypes: ['car', 'bike'],
+      createdAt: new Date().toISOString()
+    },
+    {
+      id: 'spot_wadala_003',
+      title: 'Wadala Premium Parking',
+      location: 'Wadala Business District, Wadala, Mumbai',
+      coordinates: [19.0167, 72.8498],
+      hourlyRate: '$20',
+      price: 20,
+      description: 'Premium parking facility in Wadala business district with valet service and premium amenities',
+      available: true,
+      available24h: true,
+      status: 'available',
+      owner: 'user_aanchala_001',
+      ownerName: 'Aanchala Bhongade',
+      images: [
+        'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1549924231-f129b911e442?w=400&h=250&fit=crop',
+        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=400&h=250&fit=crop'
+      ],
+      securityFeatures: ['cctv', 'security_guard', 'fenced', 'valet'],
+      amenities: ['covered', 'ev_charging', 'car_wash', 'valet_service', 'restroom'],
+      rating: 4.7,
+      reviewCount: 25,
+      parkingType: 'covered_lot',
+      advanceBooking: 48,
+      vehicleTypes: ['car', 'suv', 'luxury'],
+      createdAt: new Date().toISOString()
     }
   ];
   
@@ -2412,6 +2541,61 @@ const createTestData = () => {
         comment: 'Basic parking spot, needs improvement.',
         reviewer: 'Jane Smith',
         date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    // Aanchala's Wadala Bookings
+    {
+      id: 'booking_wadala_001',
+      spotId: 'spot_wadala_001',
+      userId: 'user_john_123',
+      spotOwner: 'user_aanchala_001',
+      startTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 36,
+      amount: 36,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 5,
+        comment: 'Excellent parking spot in Wadala! Very convenient location and great security.',
+        reviewer: 'John Doe',
+        date: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    {
+      id: 'booking_wadala_002',
+      spotId: 'spot_wadala_002',
+      userId: 'user_jane_456',
+      spotOwner: 'user_aanchala_001',
+      startTime: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 16,
+      amount: 16,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 4,
+        comment: 'Good parking near the station. Perfect for commuters.',
+        reviewer: 'Jane Smith',
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    },
+    {
+      id: 'booking_wadala_003',
+      spotId: 'spot_wadala_003',
+      userId: 'user_mike_789',
+      spotOwner: 'user_aanchala_001',
+      startTime: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+      endTime: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000).toISOString(),
+      totalPrice: 80,
+      amount: 80,
+      status: 'completed',
+      createdAt: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+      review: {
+        rating: 5,
+        comment: 'Premium parking experience! Valet service was excellent and the facility is top-notch.',
+        reviewer: 'Mike Wilson',
+        date: new Date(Date.now() - 11 * 24 * 60 * 60 * 1000).toISOString()
       }
     }
   ];

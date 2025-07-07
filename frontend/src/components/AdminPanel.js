@@ -421,7 +421,7 @@ const AdminPanel = () => {
     if (ticketSearch) {
       filtered = filtered.filter(ticket => 
         ticket.subject.toLowerCase().includes(ticketSearch.toLowerCase()) ||
-        ticket.user.username.toLowerCase().includes(ticketSearch.toLowerCase())
+        (ticket.user?.username || ticket.user?.email || 'Unknown User').toLowerCase().includes(ticketSearch.toLowerCase())
       );
     }
     
@@ -439,7 +439,7 @@ const AdminPanel = () => {
     
     if (userSearch) {
       filtered = filtered.filter(user => 
-        user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+        (user.username || user.email || 'Unknown User').toLowerCase().includes(userSearch.toLowerCase()) ||
         user.email.toLowerCase().includes(userSearch.toLowerCase())
       );
     }
@@ -475,7 +475,7 @@ const AdminPanel = () => {
     
     if (bookingSearch) {
       filtered = filtered.filter(booking => 
-        booking.userDetails?.username.toLowerCase().includes(bookingSearch.toLowerCase()) ||
+        (booking.userDetails?.username || booking.userDetails?.email || 'Unknown User').toLowerCase().includes(bookingSearch.toLowerCase()) ||
         booking.spotDetails?.location.toLowerCase().includes(bookingSearch.toLowerCase())
       );
     }
@@ -615,7 +615,7 @@ const AdminPanel = () => {
                           <ListItem key={user.uid}>
                             <UserPresenceIndicator 
                               userId={user.uid} 
-                              username={user.username} 
+                              username={user.username || user.email || 'Unknown User'} 
                               showDetails={true}
                               size="small"
                               hideOwnStatus={true}
@@ -735,7 +735,7 @@ const AdminPanel = () => {
                     {getFilteredTickets().map((ticket) => (
                       <TableRow key={ticket.id}>
                         <TableCell>{ticket.id}</TableCell>
-                        <TableCell>{ticket.user.username}</TableCell>
+                        <TableCell>{ticket.user?.username || ticket.user?.email || 'Unknown User'}</TableCell>
                         <TableCell>{ticket.subject}</TableCell>
                         <TableCell>
                           <Chip
@@ -836,11 +836,11 @@ const AdminPanel = () => {
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
                             <UserPresenceIndicator 
                               userId={user.uid} 
-                              username={user.username} 
+                              username={user.username || user.email || 'Unknown User'} 
                               size="small"
                             />
                             <Typography variant="body2" sx={{ ml: 1 }}>
-                              {user.username}
+                              {user.username || user.email || 'Unknown User'}
                             </Typography>
                           </Box>
                         </TableCell>
@@ -855,7 +855,7 @@ const AdminPanel = () => {
                         <TableCell>
                           <UserPresenceIndicator 
                             userId={user.uid} 
-                            username={user.username} 
+                            username={user.username || user.email || 'Unknown User'} 
                             size="small"
                             hideOwnStatus={true}
                           />
@@ -1082,7 +1082,7 @@ const AdminPanel = () => {
           {selectedTicket && (
             <Box>
               <Typography variant="subtitle2" gutterBottom>
-                From: {selectedTicket.user.username} ({selectedTicket.user.email})
+                From: {selectedTicket.user?.username || selectedTicket.user?.email || 'Unknown User'} ({selectedTicket.user?.email || 'No email'})
               </Typography>
               <Typography variant="body2" sx={{ mb: 2 }}>
                 {selectedTicket.message}
@@ -1119,7 +1119,7 @@ const AdminPanel = () => {
               <Grid container spacing={2}>
                 <Grid item xs={12} md={6}>
                   <Typography variant="h6" gutterBottom>Basic Information</Typography>
-                  <Typography><strong>Username:</strong> {selectedUser.username}</Typography>
+                  <Typography><strong>Username:</strong> {selectedUser.username || selectedUser.email || 'Unknown User'}</Typography>
                   <Typography><strong>Email:</strong> {selectedUser.email}</Typography>
                   <Typography><strong>Full Name:</strong> {selectedUser.fullName}</Typography>
                   <Typography><strong>Role:</strong> {selectedUser.isAdmin ? 'Admin' : 'User'}</Typography>
