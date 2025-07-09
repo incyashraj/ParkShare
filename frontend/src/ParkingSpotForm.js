@@ -263,7 +263,7 @@ function ParkingSpotForm() {
       console.log('Form data:', formData);
       console.log('Submitting parking spot data:', spotData);
 
-      const response = await fetch(`${API_BASE}/parking-spots`, {
+      const response = await fetch(`${API_BASE}/api/parking-spots`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

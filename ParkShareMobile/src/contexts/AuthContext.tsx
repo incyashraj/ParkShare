@@ -82,7 +82,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Try to login to backend
       try {
-        const response = await axios.post(`${API_BASE_URL}/login`, {
+        const response = await axios.post(`${API_BASE_URL}/api/login`, {
           uid: mockUser.uid,
         });
 
@@ -117,7 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Register in backend
       try {
-        const response = await axios.post(`${API_BASE_URL}/register`, {
+        const response = await axios.post(`${API_BASE_URL}/api/register`, {
           username,
           email,
           password,

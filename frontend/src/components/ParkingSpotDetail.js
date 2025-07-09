@@ -153,7 +153,7 @@ const ParkingSpotDetail = () => {
       }
       
       const userId = currentUser?.uid || 'none';
-      const url = `${API_BASE}/parking-spots/${spotId}?userId=${userId}`;
+      const url = `${API_BASE}/api/parking-spots/${spotId}?userId=${userId}`;
       console.log('Fetching from URL:', url);
       
       const response = await fetch(url);
@@ -248,8 +248,9 @@ const ParkingSpotDetail = () => {
         },
         body: JSON.stringify({
           participants: [currentUser.uid, spot.owner],
-          subject: `Inquiry about ${spot.title}`,
-          initialMessage: contactMessage
+          subject: `Inquiry about ${spot.title || spot.location}`,
+          initialMessage: contactMessage,
+          spotId: spot.id
         })
       });
 
@@ -313,7 +314,7 @@ const ParkingSpotDetail = () => {
     setEditError('');
     
     try {
-      const response = await fetch(`${API_BASE}/parking-spots/${spot.id}`, {
+      const response = await fetch(`${API_BASE}/api/parking-spots/${spot.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

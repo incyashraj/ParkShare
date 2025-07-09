@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run backend:*)",
+      "Bash(npm run start:*)",
+      "Bash(npm start)",
+      "Bash(npm run:*)",
+      "Bash(chmod:*)",
+      "Bash(lsof:*)",
+      "Bash(PORT=3000 npm start)",
+      "Bash(curl:*)",
+      "Bash(pkill:*)",
+      "Bash(./restart-fixed.sh:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)"
+    ],
+    "deny": []
+  }
+}

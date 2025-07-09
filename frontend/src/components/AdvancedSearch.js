@@ -30,7 +30,7 @@ const AdvancedSearch = () => {
   useEffect(() => {
     const fetchMaxPrice = async () => {
       try {
-        const response = await fetch(`${API_BASE}/parking-spots`);
+        const response = await fetch(`${API_BASE}/api/parking-spots`);
         const data = await response.json();
         
         if (Array.isArray(data)) {
@@ -133,7 +133,7 @@ const AdvancedSearch = () => {
         queryParams.append('maxDistance', searchParams.distance);
       }
 
-      const response = await fetch(`${API_BASE}/parking-spots/search?${queryParams.toString()}`);
+      const response = await fetch(`${API_BASE}/api/parking-spots/search?${queryParams.toString()}`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch search results');

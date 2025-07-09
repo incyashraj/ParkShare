@@ -47,7 +47,7 @@ const TestBooking = () => {
 
       console.log('Creating test booking with data:', bookingData);
 
-      const response = await fetch(`${API_BASE}/parking-spots/${bookingData.spotId}/book`, {
+      const response = await fetch(`${API_BASE}/api/parking-spots/${bookingData.spotId}/book`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

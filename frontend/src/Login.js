@@ -208,7 +208,7 @@ function Login() {
 
   const loginToBackend = async (uid) => {
     try {
-      const response = await fetch(`${API_BASE}/login`, {
+      const response = await fetch(`${API_BASE}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -329,7 +329,7 @@ function Login() {
         await loginToBackend(result.user.uid);
       } catch (loginError) {
         // If login fails, try to register
-        const response = await fetch(`${API_BASE}/register`, {
+        const response = await fetch(`${API_BASE}/api/register`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -379,7 +379,7 @@ function Profile() {
 
     setEditListingLoading(true);
     try {
-      const response = await fetch(`${API_BASE}/parking-spots/${selectedListingForEdit.id}`, {
+      const response = await fetch(`${API_BASE}/api/parking-spots/${selectedListingForEdit.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

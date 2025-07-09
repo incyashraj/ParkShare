@@ -9,7 +9,7 @@
     "priority": "high",
     "category": "payment",
     "createdAt": "2024-01-15T10:30:00Z",
-    "updatedAt": "2025-07-07T12:32:13.417Z",
+    "updatedAt": "2025-07-09T16:29:06.357Z",
     "messages": [
       {
         "senderId": "user_john_123",
@@ -24,6 +24,13 @@
         "senderRole": "admin",
         "message": "payments issue was created",
         "timestamp": "2025-07-07T12:32:13.417Z"
+      },
+      {
+        "senderId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "senderName": "Yashraj Pardeshi",
+        "senderRole": "admin",
+        "message": "payment failed",
+        "timestamp": "2025-07-09T16:29:06.357Z"
       }
     ],
     "hasNewUpdate": true

@@ -217,7 +217,7 @@ const ParkingSpotList = () => {
     }
 
     try {
-      const response = await fetch(`${API_BASE}/parking-spots/search?${queryParams.toString()}`);
+      const response = await fetch(`${API_BASE}/api/parking-spots/search?${queryParams.toString()}`);
       const data = await response.json();
       console.log('Fetched parking spots:', data.length);
 

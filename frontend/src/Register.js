@@ -189,7 +189,7 @@ function Register() {
 
   const registerToBackend = async (uid, username, email) => {
     try {
-      const response = await fetch(`${API_BASE}/register`, {
+      const response = await fetch(`${API_BASE}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

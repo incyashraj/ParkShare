@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { createServer } = require('http');
@@ -8,16 +9,17 @@ const multer = require('multer');
 const receiptService = require('./services/receiptService');
 const app = express();
 const server = createServer(app);
+
+// Configuration from environment variables
+const port = process.env.PORT || 3001;
+const BASE_FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+
 const io = new Server(server, {
   cors: {
-    origin: 'http://192.168.1.7:3000',
+    origin: BASE_FRONTEND_URL,
     methods: ['GET', 'POST']
   }
 });
-const port = 3001;
-
-// Set the frontend base URL in one place for CORS and Stripe redirects
-const BASE_FRONTEND_URL = 'http://192.168.1.7:3000';
 
 // Middleware - MUST be at the top before routes
 app.use(cors({
@@ -34,7 +36,7 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // ===== TEST MODE CONFIGURATION =====
 // Set this to true to bypass payments for testing
-const TEST_MODE = true; // Change to false for production
+const TEST_MODE = process.env.TEST_MODE === 'true';
 const TEST_USER_IDS = [
   'oefQiaqHBQUkJxJIo2yhn3m6k9j1',
   'test123',
@@ -922,7 +924,7 @@ function getUserPresenceStatus(userId) {
   return presenceData;
 }
 
-app.post('/register', (req, res) => {
+app.post('/api/register', (req, res) => {
   const { username, email, password, uid } = req.body;
   
   console.log('Registration attempt received:', { username, email, uid });
@@ -968,7 +970,7 @@ app.post('/register', (req, res) => {
   res.status(201).set({'Content-Type': 'application/json'}).json({ message: 'User registered successfully', ok: true });
 });
 
-app.post('/login', (req, res) => {
+app.post('/api/login', (req, res) => {
   res.set({'Content-Type': 'application/json'});
   const { uid } = req.body;
   
@@ -1103,7 +1105,7 @@ function calculateUserTier(averageRating, totalBookings, totalSpots) {
   }
 }
 
-app.post('/parking-spots', async (req, res) => {
+app.post('/api/parking-spots', async (req, res) => {
   const {
     location,
     coordinates,
@@ -1199,7 +1201,7 @@ app.post('/parking-spots', async (req, res) => {
   }
 });
 
-app.get('/parking-spots', (req, res) => {
+app.get('/api/parking-spots', (req, res) => {
   const { search, minPrice, maxPrice, rating, lat, lng, radius, userId } = req.query;
 
   const now = new Date();
@@ -1297,7 +1299,7 @@ app.get('/parking-spots', (req, res) => {
 });
 
 // Advanced search endpoint
-app.get('/parking-spots/search', (req, res) => {
+app.get('/api/parking-spots/search', (req, res) => {
   const { 
     location, 
     minPrice, 
@@ -1403,7 +1405,7 @@ app.get('/parking-spots/search', (req, res) => {
 });
 
 // New endpoint to get a single parking spot by ID
-app.get('/parking-spots/:spotId', (req, res) => {
+app.get('/api/parking-spots/:spotId', (req, res) => {
   const { spotId } = req.params;
   const { userId } = req.query;
   
@@ -1413,13 +1415,15 @@ app.get('/parking-spots/:spotId', (req, res) => {
     return res.status(404).json({ message: 'Parking spot not found' });
   }
   
-  // Check if spot has any active (non-cancelled) bookings
+  // Check if spot has any active (non-cancelled) bookings that overlap with now
+  const now = new Date();
   const activeBookings = bookings.filter(b => 
     b.spotId === spot.id && 
-    b.status !== 'cancelled'
+    b.status !== 'cancelled' &&
+    new Date(b.startTime) <= now && new Date(b.endTime) >= now
   );
   
-  // Spot is available if it has no active bookings
+  // Spot is available if it has no active bookings for now
   const isActuallyAvailable = activeBookings.length === 0;
   
   // Get owner information and tier
@@ -1454,7 +1458,7 @@ app.get('/parking-spots/:spotId', (req, res) => {
 });
 
 // New endpoint to check spot availability
-app.get('/parking-spots/:spotId/availability', (req, res) => {
+app.get('/api/parking-spots/:spotId/availability', (req, res) => {
   const { spotId } = req.params;
   const { startTime, endTime } = req.query;
 
@@ -1479,10 +1483,12 @@ app.get('/spots/user/:userId', (req, res) => {
   const userSpots = parkingSpots.filter(spot => spot.owner === userId);
   
   // Add availability status to each spot
+  const now = new Date();
   const spotsWithAvailability = userSpots.map(spot => {
     const activeBookings = bookings.filter(b => 
       b.spotId === spot.id && 
-      b.status !== 'cancelled'
+      b.status !== 'cancelled' &&
+      new Date(b.startTime) <= now && new Date(b.endTime) >= now
     );
     
     return {
@@ -1495,7 +1501,7 @@ app.get('/spots/user/:userId', (req, res) => {
 });
 
 // Endpoint to update a parking spot
-app.put('/parking-spots/:spotId', (req, res) => {
+app.put('/api/parking-spots/:spotId', (req, res) => {
   const { spotId } = req.params;
   const {
     title,
@@ -3578,7 +3584,7 @@ app.post('/bookings/test', async (req, res) => {
 });
 
 // Get all users (for admin purposes)
-app.get('/users', (req, res) => {
+app.get('/api/users', (req, res) => {
   try {
     // Return users without sensitive information
     const safeUsers = users.map(user => ({
@@ -5204,7 +5210,7 @@ app.get('/api/users/:userId/publicKey', (req, res) => {
 });
 
 // Stripe integration
-const stripe = require('stripe')('sk_test_51RhGUIFfuH7KoJbsGqc8UHhP2LhkeF9Ysqp4dggt3tKOgcYXpyNDt5HdvHyZ5fq1CBdGIJxsh7QXD6jG8ftdpfcT00Ry6UIfqm'); // Hardcoded for local testing
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY || 'sk_test_51RhGUIFfuH7KoJbsGqc8UHhP2LhkeF9Ysqp4dggt3tKOgcYXpyNDt5HdvHyZ5fq1CBdGIJxsh7QXD6jG8ftdpfcT00Ry6UIfqm');
 
 // Create Stripe Checkout session for booking
 app.post('/api/payments/create-session', async (req, res) => {
@@ -5362,6 +5368,7 @@ app.post('/api/announcements', (req, res) => {
   res.status(201).json({ message: 'Announcement published', announcement });
 });
 
-server.listen(port, '0.0.0.0', () => {
-  console.log(`Server listening at http://0.0.0.0:${port}`);
+const host = process.env.HOST || 'localhost';
+server.listen(port, host, () => {
+  console.log(`Server listening at http://${host}:${port}`);
 });

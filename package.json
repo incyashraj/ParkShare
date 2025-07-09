@@ -48,11 +48,6 @@
     "url": "https://github.com/yourusername/parkshare/issues"
   },
   "homepage": "https://github.com/yourusername/parkshare#readme",
-  "workspaces": [
-    "frontend",
-    "backend",
-    "ParkShareMobile"
-  ],
   "dependencies": {
     "axios": "^1.10.0",
     "socket.io-client": "^4.8.1"

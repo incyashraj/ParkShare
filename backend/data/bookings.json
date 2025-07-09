@@ -1,5 +1,107 @@
 [
   {
+    "id": "booking_1752078155588",
+    "spotId": "spot_mumbai_andheri_002",
+    "userId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-09T16:20:00.000Z",
+    "endTime": "2025-07-10T16:20:00.000Z",
+    "hours": 24,
+    "totalPrice": 720,
+    "createdAt": "2025-07-09T16:22:35.588Z",
+    "status": "cancelled",
+    "paymentId": "pi_3Rj0kgFfuH7KoJbs1tzq7MfC",
+    "sessionId": "cs_test_a1I6CZDverQFRA5DtlNl5b8KsKdZtOwKXlzTA37NcU1RzlmIP2Mwgl0ZrA",
+    "paidAt": "2025-07-09T16:22:35.588Z",
+    "paymentAmount": 720,
+    "spotOwner": "user_andheri_host",
+    "spotOwnerName": "Priya Patel",
+    "location": "Near Andheri Railway Station, Mumbai",
+    "spotDetails": {
+      "location": "Near Andheri Railway Station, Mumbai",
+      "hourlyRate": "₹30"
+    },
+    "cancelledAt": "2025-07-09T16:34:35.316Z",
+    "cancelledBy": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "cancelReason": "Spot removed by admin"
+  },
+  {
+    "id": "booking_1752077032630",
+    "spotId": "1751904860203",
+    "userId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-09T16:03:00.000Z",
+    "endTime": "2025-07-10T16:03:00.000Z",
+    "hours": 24,
+    "totalPrice": 240,
+    "createdAt": "2025-07-09T16:03:52.630Z",
+    "status": "cancelled",
+    "paymentId": "pi_3Rj0T8FfuH7KoJbs18g3iXtW",
+    "sessionId": "cs_test_a1RN8MdnTCZBAwR1vaHMjcoL1ueE74ewwkWEqF5NmfRXZUVdL3ap0tUljz",
+    "paidAt": "2025-07-09T16:03:52.630Z",
+    "paymentAmount": 240,
+    "spotOwner": "user_john_123",
+    "spotOwnerName": "john_doe",
+    "location": "Test Location 1",
+    "spotDetails": {
+      "location": "Test Location 1",
+      "hourlyRate": "10"
+    },
+    "cancelledAt": "2025-07-09T16:34:53.877Z",
+    "cancelledBy": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "cancelReason": "requested by user"
+  },
+  {
+    "id": "booking_1752076893852",
+    "spotId": "1751904861838",
+    "userId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-09T15:52:00.000Z",
+    "endTime": "2025-07-10T15:52:00.000Z",
+    "hours": 24,
+    "totalPrice": 288,
+    "createdAt": "2025-07-09T16:01:33.852Z",
+    "status": "paid",
+    "paymentId": "pi_3Rj0IYFfuH7KoJbs1k5E7nSp",
+    "sessionId": "cs_test_a1T9SM4h0DBxyVdaF5hoNKHvxuF5GDWF2mFQiWYlVEj4XjcujsldscVU8T",
+    "paidAt": "2025-07-09T16:01:33.852Z",
+    "paymentAmount": 288,
+    "spotOwner": "user_jane_456",
+    "spotOwnerName": "jane_smith",
+    "location": "Test Location 2",
+    "spotDetails": {
+      "location": "Test Location 2",
+      "hourlyRate": "12"
+    }
+  },
+  {
+    "id": "booking_1751914672863",
+    "spotId": "1751904861838",
+    "userId": "Iy08DCkReuZJFI1zl5GlwQSrFVk1",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "yashrajp114t@gmail.com",
+    "startTime": "2025-07-06T18:56:00.000Z",
+    "endTime": "2025-07-07T18:56:00.000Z",
+    "hours": 24,
+    "totalPrice": 288,
+    "createdAt": "2025-07-07T18:57:52.864Z",
+    "status": "paid",
+    "paymentId": "pi_3RiKELFfuH7KoJbs06LCPIjF",
+    "sessionId": "cs_test_a1ePb1xUXU1ownl22bz2ZePRBHUXZnveBXa70GFnC2prRDBU5QVrC9oPyV",
+    "paidAt": "2025-07-07T18:57:52.864Z",
+    "paymentAmount": 288,
+    "spotOwner": "user_jane_456",
+    "spotOwnerName": "jane_smith",
+    "location": "Test Location 2",
+    "spotDetails": {
+      "location": "Test Location 2",
+      "hourlyRate": "12"
+    }
+  },
+  {
     "id": "booking_1751910159528",
     "spotId": "spot_university_008",
     "userId": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
@@ -286,7 +388,7 @@
     "hours": 24,
     "totalPrice": 720,
     "hourlyRate": "₹30",
-    "status": "confirmed",
+    "status": "cancelled",
     "createdAt": "2025-07-06T16:25:23.269Z",
     "spotOwner": "user_andheri_host",
     "spotOwnerName": "Priya Patel",
@@ -298,7 +400,10 @@
         19.1197,
         72.8464
       ]
-    }
+    },
+    "cancelledAt": "2025-07-09T16:34:35.316Z",
+    "cancelledBy": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "cancelReason": "Spot removed by admin"
   },
   {
     "id": "booking_1751818979630",
@@ -529,30 +634,6 @@
       "comment": "Amazing luxury parking experience!",
       "reviewer": "Jane Smith",
       "date": "2025-06-23T23:24:21.614Z"
-    }
-  },
-  {
-    "id": "booking_1751914672863",
-    "spotId": "1751904861838",
-    "userId": "Iy08DCkReuZJFI1zl5GlwQSrFVk1",
-    "userName": "Yashraj Pardeshi",
-    "userEmail": "yashrajp114t@gmail.com",
-    "startTime": "2025-07-06T18:56:00.000Z",
-    "endTime": "2025-07-07T18:56:00.000Z",
-    "hours": 24,
-    "totalPrice": 288,
-    "createdAt": "2025-07-07T18:57:52.864Z",
-    "status": "paid",
-    "paymentId": "pi_3RiKELFfuH7KoJbs06LCPIjF",
-    "sessionId": "cs_test_a1ePb1xUXU1ownl22bz2ZePRBHUXZnveBXa70GFnC2prRDBU5QVrC9oPyV",
-    "paidAt": "2025-07-07T18:57:52.864Z",
-    "paymentAmount": 288,
-    "spotOwner": "user_jane_456",
-    "spotOwnerName": "jane_smith",
-    "location": "Test Location 2",
-    "spotDetails": {
-      "location": "Test Location 2",
-      "hourlyRate": "12"
     }
   }
 ]

@@ -169,5 +169,74 @@
     "spotId": null,
     "createdAt": "2025-07-07T19:08:29.041Z",
     "lastActivity": "2025-07-07T19:09:49.243Z"
+  },
+  {
+    "id": "conv_1752074122267",
+    "participants": [
+      {
+        "id": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "uid": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "uid": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+        "username": "Unknown User",
+        "email": ""
+      }
+    ],
+    "subject": "Inquiry about 13",
+    "spotId": null,
+    "createdAt": "2025-07-09T15:15:22.267Z",
+    "lastActivity": "2025-07-09T15:42:13.210Z"
+  },
+  {
+    "id": "conv_1752076981814",
+    "participants": [
+      {
+        "id": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "uid": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "user_andheri_host",
+        "uid": "user_andheri_host",
+        "username": "priya_patel",
+        "email": "priya.patel@email.com"
+      }
+    ],
+    "subject": "Inquiry about Andheri Station Parking",
+    "spotId": null,
+    "createdAt": "2025-07-09T16:03:01.814Z",
+    "lastActivity": "2025-07-09T16:19:06.004Z",
+    "starred": {
+      "CilkjMTXThdt9G2Rh0JvYY50Z1i2": true
+    },
+    "archived": {
+      "CilkjMTXThdt9G2Rh0JvYY50Z1i2": false
+    }
+  },
+  {
+    "id": "conv_1752077717517",
+    "participants": [
+      {
+        "id": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "uid": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "username": "Yashraj Pardeshi",
+        "email": "incyashraj@gmail.com"
+      },
+      {
+        "id": "user_jane_456",
+        "uid": "user_jane_456",
+        "username": "jane_smith",
+        "email": "jane@example.com"
+      }
+    ],
+    "subject": "Inquiry about Hospital Parking",
+    "spotId": "spot_hospital_006",
+    "createdAt": "2025-07-09T16:15:17.517Z",
+    "lastActivity": "2025-07-09T16:15:17.519Z"
   }
 ]
