@@ -47,7 +47,7 @@ const TestComponent = () => {
   const testBookingFlow = async () => {
     try {
       // Test the booking endpoint directly
-      const response = await fetch(`${API_BASE}/bookings`, {
+      const response = await fetch(`${API_BASE}/api/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -1,5 +1,35 @@
 [
   {
+    "id": "ticket_1752080689735",
+    "userId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "username": "Yashraj Pardeshi",
+    "email": "incyashraj@gmail.com",
+    "subject": "check",
+    "category": "billing",
+    "priority": "medium",
+    "status": "resolved",
+    "createdAt": "2025-07-09T17:04:49.735Z",
+    "updatedAt": "2025-07-09T17:05:28.834Z",
+    "assignedTo": null,
+    "hasNewUpdate": true,
+    "messages": [
+      {
+        "senderId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "senderName": "Yashraj Pardeshi",
+        "senderRole": "user",
+        "message": "Billing issue",
+        "timestamp": "2025-07-09T17:04:49.735Z"
+      },
+      {
+        "senderId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+        "senderName": "Yashraj Pardeshi",
+        "senderRole": "admin",
+        "message": "Hi Yashraj, thank you for contacting ParkShare support",
+        "timestamp": "2025-07-09T17:05:23.498Z"
+      }
+    ]
+  },
+  {
     "id": "ticket_001",
     "userId": "user_john_123",
     "username": "john_doe",

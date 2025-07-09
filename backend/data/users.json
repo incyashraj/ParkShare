@@ -619,7 +619,8 @@
       "language": "en",
       "timezone": "Asia/Kolkata",
       "currency": "INR"
-    }
+    },
+    "blockedAt": {}
   },
   {
     "username": "Mblue",

@@ -1500,6 +1500,31 @@ app.get('/spots/user/:userId', (req, res) => {
   res.json(spotsWithAvailability);
 });
 
+// API version of the same endpoint
+app.get('/api/spots/user/:userId', (req, res) => {
+  const { userId } = req.params;
+  
+  // Find all spots owned by this user
+  const userSpots = parkingSpots.filter(spot => spot.owner === userId);
+  
+  // Add availability status to each spot
+  const now = new Date();
+  const spotsWithAvailability = userSpots.map(spot => {
+    const activeBookings = bookings.filter(b => 
+      b.spotId === spot.id && 
+      b.status !== 'cancelled' &&
+      new Date(b.startTime) <= now && new Date(b.endTime) >= now
+    );
+    
+    return {
+      ...spot,
+      available: activeBookings.length === 0
+    };
+  });
+  
+  res.json(spotsWithAvailability);
+});
+
 // Endpoint to update a parking spot
 app.put('/api/parking-spots/:spotId', (req, res) => {
   const { spotId } = req.params;
@@ -1637,10 +1662,38 @@ app.get('/users/:userId/bookings', (req, res) => {
     const spot = parkingSpots.find(s => s.id === booking.spotId);
     return {
       ...booking,
-      spotDetails: {
+      spotDetails: spot ? {
         location: spot.location,
         hourlyRate: spot.hourlyRate,
         coordinates: spot.coordinates
+      } : {
+        location: 'Unknown Location',
+        hourlyRate: 'N/A',
+        coordinates: null
+      }
+    };
+  });
+
+  res.send(bookingsWithDetails);
+});
+
+// API version of the same endpoint
+app.get('/api/users/:userId/bookings', (req, res) => {
+  const { userId } = req.params;
+  const userBookings = bookings.filter(booking => booking.userId === userId);
+  
+  const bookingsWithDetails = userBookings.map(booking => {
+    const spot = parkingSpots.find(s => s.id === booking.spotId);
+    return {
+      ...booking,
+      spotDetails: spot ? {
+        location: spot.location,
+        hourlyRate: spot.hourlyRate,
+        coordinates: spot.coordinates
+      } : {
+        location: 'Unknown Location',
+        hourlyRate: 'N/A',
+        coordinates: null
       }
     };
   });
@@ -1676,7 +1729,7 @@ app.post('/parking-spots/:spotId/reviews', (req, res) => {
 });
 
 // Booking Management Routes
-app.post('/bookings/:bookingId/cancel', async (req, res) => {
+app.post('/api/bookings/:bookingId/cancel', async (req, res) => {
   const { bookingId } = req.params;
   try {
     const booking = bookings.find(b => b.id === bookingId);
@@ -1751,7 +1804,7 @@ app.post('/bookings/:bookingId/cancel', async (req, res) => {
   }
 });
 
-app.post('/bookings/:bookingId/modify', async (req, res) => {
+app.post('/api/bookings/:bookingId/modify', async (req, res) => {
   const { bookingId } = req.params;
   const { startTime, endTime } = req.body;
   
@@ -2205,6 +2258,33 @@ app.get('/bookings', (req, res) => {
         hourlyRate: spot.hourlyRate,
         coordinates: spot.coordinates
       } : null
+    };
+  });
+  
+  res.json(bookingsWithDetails);
+});
+
+// API version of the same endpoint
+app.get('/api/bookings', (req, res) => {
+  const { userId } = req.query;
+  if (!userId) {
+    return res.status(400).json({ message: 'userId required' });
+  }
+  const userBookings = bookings.filter(b => b.userId === userId);
+  
+  const bookingsWithDetails = userBookings.map(booking => {
+    const spot = parkingSpots.find(s => s.id === booking.spotId);
+    return {
+      ...booking,
+      spotDetails: spot ? {
+        location: spot.location,
+        hourlyRate: spot.hourlyRate,
+        coordinates: spot.coordinates
+      } : {
+        location: 'Unknown Location',
+        hourlyRate: 'N/A',
+        coordinates: null
+      }
     };
   });
   
@@ -3168,6 +3248,26 @@ app.get('/verify/status/:userId', (req, res) => {
 
 // Get user verification status (alternative endpoint for Profile page)
 app.get('/users/:userId/verification', (req, res) => {
+  const { userId } = req.params;
+  
+  const user = users.find(u => u.uid === userId || u.id === userId);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  res.json({
+    emailVerified: user.emailVerified || false,
+    mobileVerified: user.mobileVerified || false,
+    isVerifiedHost: user.isVerifiedHost || false,
+    verifiedEmail: user.verifiedEmail,
+    verifiedMobile: user.verifiedMobile,
+    hostVerificationStatus: user.hostVerificationStatus || 'not_started',
+    verificationDocuments: user.verificationDocuments || []
+  });
+});
+
+// API version of the same endpoint
+app.get('/api/users/:userId/verification', (req, res) => {
   const { userId } = req.params;
   
   const user = users.find(u => u.uid === userId || u.id === userId);

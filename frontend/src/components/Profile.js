@@ -244,7 +244,7 @@ function Profile() {
     setShowCancelConfirm(false);
     
     try {
-      const response = await fetch(`${API_BASE}/bookings/${bookingToCancel.id}/cancel`, {
+      const response = await fetch(`${API_BASE}/api/bookings/${bookingToCancel.id}/cancel`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -309,7 +309,7 @@ function Profile() {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/bookings/${selectedBookingForEdit.id}/modify`, {
+      const response = await fetch(`${API_BASE}/api/bookings/${selectedBookingForEdit.id}/modify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -435,9 +435,9 @@ function Profile() {
       setNetworkError(null);
 
       const [bookingsResponse, listingsResponse, verificationResponse] = await Promise.allSettled([
-        fetch(`${API_BASE}/users/${userId}/bookings`),
-        fetch(`${API_BASE}/spots/user/${userId}`),
-        fetch(`${API_BASE}/users/${userId}/verification`)
+        fetch(`${API_BASE}/api/users/${userId}/bookings`),
+        fetch(`${API_BASE}/api/spots/user/${userId}`),
+        fetch(`${API_BASE}/api/users/${userId}/verification`)
       ]);
 
       // Handle bookings

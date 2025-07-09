@@ -41,7 +41,7 @@ function BookingManagement() {
         throw new Error('User not authenticated');
       }
 
-      const response = await fetch(`${API_BASE}/users/${user.uid}/bookings`);
+      const response = await fetch(`${API_BASE}/api/users/${user.uid}/bookings`);
       if (!response.ok) {
         throw new Error('Failed to fetch bookings');
       }
@@ -69,7 +69,7 @@ function BookingManagement() {
 
   const confirmCancelBooking = async () => {
     try {
-      const response = await fetch(`${API_BASE}/bookings/${bookingToCancel.id}/cancel`, {
+      const response = await fetch(`${API_BASE}/api/bookings/${bookingToCancel.id}/cancel`, {
         method: 'POST'
       });
 
@@ -108,7 +108,7 @@ function BookingManagement() {
         return;
       }
 
-      const response = await fetch(`${API_BASE}/bookings/${selectedBooking.id}/modify`, {
+      const response = await fetch(`${API_BASE}/api/bookings/${selectedBooking.id}/modify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

@@ -83,7 +83,7 @@ const TestBooking = () => {
     setResult(null);
 
     try {
-      const response = await fetch(`${API_BASE}/users/${currentUser.uid}/bookings`);
+      const response = await fetch(`${API_BASE}/api/users/${currentUser.uid}/bookings`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch bookings');

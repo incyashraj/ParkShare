@@ -38,7 +38,7 @@ const Dashboard = () => {
       const stats = await statsResponse.json();
       
       // Fetch user's bookings
-      const bookingsResponse = await fetch(`${API_BASE}/bookings?userId=${currentUser?.uid}`);
+      const bookingsResponse = await fetch(`${API_BASE}/api/bookings?userId=${currentUser?.uid}`);
       const userBookings = await bookingsResponse.json();
       
       // Calculate user-specific stats

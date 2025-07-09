@@ -1,5 +1,56 @@
 [
   {
+    "id": "booking_1752080625643",
+    "spotId": "spot_hospital_006",
+    "userId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-09T17:03:00.000Z",
+    "endTime": "2025-07-10T17:03:00.000Z",
+    "hours": 24,
+    "totalPrice": 288,
+    "createdAt": "2025-07-09T17:03:45.643Z",
+    "status": "paid",
+    "paymentId": "pi_3Rj1P5FfuH7KoJbs1VxbVTgr",
+    "sessionId": "cs_test_a1Yki5S6lhCFCL9yPR95zE51unPRsIexchmrFSmNVZhUwsYCEXGwoWJMds",
+    "paidAt": "2025-07-09T17:03:45.643Z",
+    "paymentAmount": 288,
+    "spotOwner": "user_jane_456",
+    "spotOwnerName": "Jane Smith",
+    "location": "777 Medical Center Drive",
+    "spotDetails": {
+      "location": "777 Medical Center Drive",
+      "hourlyRate": "$12"
+    }
+  },
+  {
+    "id": "booking_1752080506402",
+    "spotId": "spot_residential_004",
+    "userId": "oefQiaqHBQUkJxJIo2yhn3m6k9j1",
+    "userName": "Mblue",
+    "userEmail": "123@gmail.com",
+    "startTime": "2025-07-09T17:00:00.000Z",
+    "endTime": "2025-07-10T17:00:00.000Z",
+    "hours": 24,
+    "totalPrice": 192,
+    "createdAt": "2025-07-09T17:01:46.402Z",
+    "status": "cancelled",
+    "paymentId": "pi_3Rj1NAFfuH7KoJbs0XEX2ykm",
+    "sessionId": "cs_test_a15P3rymaFSUpJsfsQ51SCgSQ9oRexnej9K5C8BRplACsDkZhSEKC6KukJ",
+    "paidAt": "2025-07-09T17:01:46.402Z",
+    "paymentAmount": 192,
+    "spotOwner": "user_sarah_101",
+    "spotOwnerName": "Sarah Jones",
+    "location": "321 Oak Street, Residential Area",
+    "spotDetails": {
+      "location": "321 Oak Street, Residential Area",
+      "hourlyRate": "$8"
+    },
+    "cancelledAt": "2025-07-09T17:05:51.503Z",
+    "cancelledBy": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "cancelReason": "user requested for cancellation"
+  },
+  {
     "id": "booking_1752078155588",
     "spotId": "spot_mumbai_andheri_002",
     "userId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
@@ -442,14 +493,17 @@
     "totalPrice": 640,
     "hours": 8,
     "createdAt": "2025-07-06T09:00:00.000Z",
-    "status": "paid",
+    "status": "cancelled",
     "paymentId": "pay_colaba_001",
     "paidAt": "2025-07-06T09:00:00.000Z",
     "paymentAmount": 640,
     "spotOwner": "user_colaba_host",
     "spotOwnerName": "Arun Mehta",
     "location": "Near Gateway of India, Colaba, Mumbai",
-    "hourlyRate": "₹80"
+    "hourlyRate": "₹80",
+    "cancelledAt": "2025-07-09T17:05:40.468Z",
+    "cancelledBy": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "cancelReason": "Spot removed by admin"
   },
   {
     "id": "booking_bkc_001",
@@ -634,6 +688,30 @@
       "comment": "Amazing luxury parking experience!",
       "reviewer": "Jane Smith",
       "date": "2025-06-23T23:24:21.614Z"
+    }
+  },
+  {
+    "id": "booking_1752084758175",
+    "spotId": "1751822956343",
+    "userId": "CilkjMTXThdt9G2Rh0JvYY50Z1i2",
+    "userName": "Yashraj Pardeshi",
+    "userEmail": "incyashraj@gmail.com",
+    "startTime": "2025-07-09T18:11:00.000Z",
+    "endTime": "2025-07-10T18:11:00.000Z",
+    "hours": 24,
+    "totalPrice": 2904,
+    "createdAt": "2025-07-09T18:12:38.175Z",
+    "status": "paid",
+    "paymentId": "pi_3Rj2TjFfuH7KoJbs1jEcmYY6",
+    "sessionId": "cs_test_a1ZsIH6DOjhHggrbZrlrB9XUrFA5QBX57flNMoHLaGkluspjcM3cWmZvk9",
+    "paidAt": "2025-07-09T18:12:38.175Z",
+    "paymentAmount": 2904,
+    "spotOwner": "z5UJrnuM0NbNl91bD9T4U6zi6Pf2",
+    "spotOwnerName": "Yashraj Pardeshi",
+    "location": "123, 132, 123 123",
+    "spotDetails": {
+      "location": "123, 132, 123 123",
+      "hourlyRate": "INR 121"
     }
   }
 ]

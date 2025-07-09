@@ -212,7 +212,7 @@ const ParkingSpotCard = ({ spot, onBook, onFavorite, onShare, user, onMessage, i
       console.log('Payment successful:', paymentResult);
       
       // Create booking with payment confirmation
-      const bookingResponse = await fetch(`${API_BASE}/bookings`, {
+      const bookingResponse = await fetch(`${API_BASE}/api/bookings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

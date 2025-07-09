@@ -57,7 +57,7 @@
     ],
     "subject": "check",
     "createdAt": "2025-07-06T19:53:35.525Z",
-    "lastActivity": "2025-07-07T10:57:57.202Z",
+    "lastActivity": "2025-07-09T16:56:56.123Z",
     "starred": {
       "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
     },
@@ -86,7 +86,16 @@
     ],
     "subject": "Inquiry about Residential Street Parking",
     "createdAt": "2025-07-06T20:42:51.742Z",
-    "lastActivity": "2025-07-06T20:51:09.823Z"
+    "lastActivity": "2025-07-09T16:58:42.297Z",
+    "starred": {
+      "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
+    },
+    "muted": {
+      "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
+    },
+    "archived": {
+      "oefQiaqHBQUkJxJIo2yhn3m6k9j1": false
+    }
   },
   {
     "id": "conv_1751834777535",
